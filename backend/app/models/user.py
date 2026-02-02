@@ -23,4 +23,4 @@ class User(Base):
         Index("idx_users_username", "username")
     )
 
-    # relationships ...
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
