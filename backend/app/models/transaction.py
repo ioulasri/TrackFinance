@@ -15,7 +15,7 @@ class Transaction(Base):
 
 	amount = Column(DECIMAL(10, 2), nullable=False)
 	category = Column(String(50), nullable=False)
-	type = Column(Enum(TransactionType), nullable=False)
+	type = Column(String(10), nullable=False)
 	description = Column(String(255))
 	date = Column(TIMESTAMP, nullable=False)
 
