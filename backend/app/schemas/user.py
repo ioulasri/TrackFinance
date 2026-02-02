@@ -1,13 +1,13 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
-	username: str
+	username: str = Field(..., min_length=3, max_length=50)
 	email: EmailStr
 
 class UserCreate(UserBase):
-	password: str
+	password: str = Field(..., min_length=8, max_length=100)
 
 class UserLogin(BaseModel):
 	username: str
@@ -15,8 +15,10 @@ class UserLogin(BaseModel):
 
 class UserResponse(UserBase):
 	id: int
-	total_xp: int
-	current_level: int
+	total_xp: int = 0
+	current_level: int = 0
+	current_streak: int = 0
+	longest_streak: int = 0
 	created_at: datetime
 
 	class Config:
@@ -24,4 +26,7 @@ class UserResponse(UserBase):
 	
 class Token(BaseModel):
 	access_token: str
-	token_type: str
+	token_type: str = "bearer"
+
+class TokenData(BaseModel):
+	username: Optional[str] = None
