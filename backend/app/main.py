@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routes import users
+from app.api.routes import users, transactions
 from app.db.session import engine, Base
 
 # Create database tables
@@ -13,6 +13,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(users.router)
+app.include_router(transactions.router)
 
 @app.get("/")
 def root():
