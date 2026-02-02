@@ -1,22 +1,23 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from app.db.session import Base, engine, get_db
-from app.models.user import User
+from fastapi import FastAPI
+from app.api.routes import users
+from app.db.session import engine, Base
 
-app = FastAPI()
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="Financial Quest API",
+    description="Gamified personal finance tracking",
+    version="1.0.0"
+)
+
+# Include routers
+app.include_router(users.router)
 
 @app.get("/")
 def root():
-    return {"status": "ok"}
-
-@app.post("/users/")
-def create_user(email: str, name: str | None = None, db: Session = Depends(get_db)):
-    user = User(email=email, name=name)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-@app.get("/users/")
-def list_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+    return {
+        "message": "Welcome to Financial Quest API",
+        "docs": "/docs",
+        "version": "1.0.0"
+    }
