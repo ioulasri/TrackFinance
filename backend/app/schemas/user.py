@@ -13,6 +13,21 @@ class UserLogin(BaseModel):
 	username: str
 	password: str
 
+class UserStatsResponse(BaseModel):
+	user_id: int
+	username: str
+	total_xp: int
+	current_level: int
+	current_streak: int
+	longest_streak: int
+
+	xp_to_next_level: int
+	level_progress_percentage: float
+
+	class Config:
+		from_attributes = True
+	
+
 class UserResponse(UserBase):
 	id: int
 	total_xp: int = 0
