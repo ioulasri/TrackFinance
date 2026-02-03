@@ -8,3 +8,8 @@ pydantic-settings==2.1.0
 passlib[bcrypt]
 python-jose[cryptography] 
 pydantic[email]
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.4
+httpx==0.26.0
