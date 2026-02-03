@@ -63,6 +63,7 @@ class BudgetService:
 		
 		if budget_data.monthly_limit is not None:
 			budget.monthly_limit = budget_data.monthly_limit
+		
 		if budget_data.category is not None:
 			budget.category = budget_data.category
 
