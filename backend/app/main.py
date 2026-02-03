@@ -23,8 +23,9 @@ app.add_middleware(
 )
 
 # Create database tables only if not in testing mode
-if os.getenv("TESTING") != "1":
-    Base.metadata.create_all(bind=engine)
+# Disabled for production - use Alembic migrations instead
+# if os.getenv("TESTING") != "1":
+#     Base.metadata.create_all(bind=engine)
 
 app.include_router(users.router)
 app.include_router(transactions.router)
