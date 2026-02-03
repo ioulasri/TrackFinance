@@ -76,7 +76,7 @@ CREATE TABLE achievements (
     xp_reward INTEGER NOT NULL CHECK (xp_reward >= 0),
     category VARCHAR(50) NOT NULL,
     requirements_type VARCHAR(50) NOT NULL,
-    requirement_value VARCHAR(50) NOT NULL,
+    requirement_value INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -104,3 +104,4 @@ CREATE TABLE goals(
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	completed_at TIMESTAMP
 );
+
