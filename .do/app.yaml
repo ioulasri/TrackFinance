@@ -33,16 +33,16 @@ services:
       - key: SECRET_KEY
         scope: RUN_TIME
         type: SECRET
-        # Set this value directly in DigitalOcean dashboard after deployment
+        value: j1XXclRls0CMqvPtueDbKIFd1UE0pJ_rC9AtakiKOcg
       - key: ENVIRONMENT
         scope: RUN_TIME
         value: production
       - key: API_HOST
         scope: RUN_TIME
-        value: 0.0.0.0
+        value: "0.0.0.0"
       - key: API_PORT
         scope: RUN_TIME
-        value: 8000
+        value: "8000"
     health_check:
       http_path: /
       initial_delay_seconds: 30
