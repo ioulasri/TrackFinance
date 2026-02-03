@@ -22,22 +22,25 @@ try:
         current_user = result.scalar()
         print(f"Current user: {current_user}")
         
+        # Quote username for SQL (handles hyphens and special chars)
+        quoted_user = f'"{current_user}"'
+        
         # Grant permissions on public schema
         print("Granting permissions on public schema...")
-        conn.execute(text(f"GRANT ALL ON SCHEMA public TO {current_user}"))
+        conn.execute(text(f"GRANT ALL ON SCHEMA public TO {quoted_user}"))
         
         # Grant permissions on all tables
         print("Granting permissions on all tables...")
-        conn.execute(text(f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {current_user}"))
+        conn.execute(text(f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {quoted_user}"))
         
         # Grant permissions on all sequences
         print("Granting permissions on all sequences...")
-        conn.execute(text(f"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {current_user}"))
+        conn.execute(text(f"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {quoted_user}"))
         
         # Set default privileges for future objects
         print("Setting default privileges...")
-        conn.execute(text(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {current_user}"))
-        conn.execute(text(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO {current_user}"))
+        conn.execute(text(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {quoted_user}"))
+        conn.execute(text(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO {quoted_user}"))
         
         conn.commit()
         print("✅ Permissions granted successfully!")
