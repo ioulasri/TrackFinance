@@ -6,6 +6,8 @@ from app.services.transaction_service import TransactionService
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from typing import List
+from app.services.achievement_checker import AchievementChecker
+from app.services.budget_service import BudgetService
 
 router = APIRouter(prefix="/api/v1/transactions", tags=["transactions"])
 
@@ -16,6 +18,11 @@ def create_transaction(
 	current_user: User = Depends(get_current_user)
 ):
 	transaction = TransactionService.create_transaction(db, current_user.id, transaction_data)
+
+	if transaction.type == "expense":
+		BudgetService.update_spent_amount(db, current_user.id, transaction.category, float(transaction.amount))
+
+	AchievementChecker.check_transaction_achievements(db, current_user.id, transaction)
 	return transaction
 
 @router.get("/", response_model=List[TransactionResponse])
