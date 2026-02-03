@@ -25,9 +25,25 @@ try:
         # Quote username for SQL (handles hyphens and special chars)
         quoted_user = f'"{current_user}"'
         
+        # First check schema owner
+        result = conn.execute(text("SELECT schema_owner FROM information_schema.schemata WHERE schema_name = 'public'"))
+        schema_owner = result.scalar()
+        print(f"Public schema owner: {schema_owner}")
+        
+        # Try to change ownership (may fail if not superuser, that's ok)
+        try:
+            print(f"Attempting to change public schema ownership to {current_user}...")
+            conn.execute(text(f"ALTER SCHEMA public OWNER TO {quoted_user}"))
+            conn.commit()
+            print("✅ Schema ownership changed!")
+        except Exception as e:
+            print(f"⚠️  Could not change ownership (this may be OK): {e}")
+            conn.rollback()
+        
         # Grant permissions on public schema
         print("Granting permissions on public schema...")
         conn.execute(text(f"GRANT ALL ON SCHEMA public TO {quoted_user}"))
+        conn.execute(text(f"GRANT CREATE ON SCHEMA public TO {quoted_user}"))
         
         # Grant permissions on all tables
         print("Granting permissions on all tables...")
