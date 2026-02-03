@@ -96,15 +96,17 @@ CREATE TABLE achievements (
 
 CREATE INDEX idx_achievements_category ON achievements(category);
 
-CREATE TABLE achievements_users (
+CREATE TABLE user_achievements (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     achievement_id INTEGER NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
     unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    progress INTEGER DEFAULT 0,
+    progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
     PRIMARY KEY (user_id, achievement_id)
 );
 
-CREATE INDEX idx_achievements_users_achievement_id ON achievements_users(achievement_id);
+CREATE INDEX idx_user_achievements_user_id ON user_achievements(user_id);
+CREATE INDEX idx_user_achievements_achievement_id ON user_achievements(achievement_id);
+CREATE INDEX idx_user_achievements_unlocked_at ON user_achievements(unlocked_at);
 
 CREATE TABLE goals(
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

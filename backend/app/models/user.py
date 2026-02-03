@@ -9,7 +9,7 @@ class User(Base):
 
 	id = Column(Integer, primary_key=True)
 	email = Column(String(255), unique=True, nullable=False)
-	hashed_password = Column(String(255), unique=True, nullable=False)
+	hashed_password = Column(String(255), nullable=False)
 	username = Column(String(50))
 	total_xp = Column(Integer, nullable=False, server_default=text("0"))
 	current_level = Column(Integer, nullable=False, server_default=text("0"))
