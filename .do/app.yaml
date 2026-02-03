@@ -33,7 +33,6 @@ services:
       - key: SECRET_KEY
         scope: RUN_TIME
         type: SECRET
-        # DO NOT commit the actual secret key to git
         # Set this value directly in DigitalOcean dashboard after deployment
       - key: ENVIRONMENT
         scope: RUN_TIME
