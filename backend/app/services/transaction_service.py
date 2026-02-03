@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app.core.security import hash_password
+from app.services.xp_service import XPService
 from typing import List, Optional
 from datetime import date, datetime
 
@@ -27,7 +28,9 @@ class TransactionService:
 			db.add(new_transaction)
 			db.commit()
 			db.refresh(new_transaction)
+
 			# TODO: Award XP to user (Phase 2)
+			XPService.award_xp(db, user_id, 10)
 			# TODO: Update budget tracking (Phase 3)
 			# TODO: Update user's last_activity_date for streaks (Phase 2)
 
@@ -76,7 +79,7 @@ class TransactionService:
 			return transaction
 		except IntegrityError:
 			db.rollback()
-			raise ValueError("Database contraint violation")
+			raise ValueError("Database constraint violation")
 		
 	@staticmethod
 	def delete_transaction(db: Session, user_id: int, transaction_id: int) -> bool:
