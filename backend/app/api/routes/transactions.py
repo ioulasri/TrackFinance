@@ -19,10 +19,6 @@ def create_transaction(
 	current_user: User = Depends(get_current_user)
 ):
 	transaction = TransactionService.create_transaction(db, current_user.id, transaction_data)
-
-	if transaction.type == "expense":
-		BudgetService.update_spent_amount(db, current_user.id, transaction.category, float(transaction.amount))
-
 	AchievementChecker.check_transaction_achievements(db, current_user.id, transaction)
 	return transaction
 
