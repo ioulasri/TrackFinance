@@ -26,3 +26,5 @@ class Budget(Base):
 		Index("idx_budgets_user_id", "user_id"),
 		Index("idx_budgets_category", "category"),
 	)
+
+	user = relationship("User", back_populates="budgets")
