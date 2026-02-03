@@ -69,7 +69,7 @@ class AchievementChecker:
 			).count()
 
 			eligible = AchievementService.check_achievement_requirements(
-				db, user_id, "income_count"
+				db, user_id, "income_count", income_count
 			)
 
 			for achievement in eligible:
