@@ -26,22 +26,40 @@ admin_engine = create_engine(admin_url)
 
 try:
     with admin_engine.begin() as conn:
-        print("Granting pg_database_owner role to trackfinance-db...")
-        conn.execute(text('GRANT pg_database_owner TO "trackfinance-db"'))
-        print("✅ Successfully granted pg_database_owner role")
+        # Strategy 1: Try to change schema ownership
+        print("Attempting to change public schema ownership...")
+        try:
+            conn.execute(text('ALTER SCHEMA public OWNER TO "trackfinance-db"'))
+            print("✅ Successfully changed schema ownership")
+        except Exception as e:
+            print(f"⚠️  Could not change ownership: {str(e)[:100]}")
+            print("   Trying alternative approach...")
         
+        # Strategy 2: Try to grant pg_database_owner role
+        print("\nAttempting to grant pg_database_owner role...")
+        try:
+            conn.execute(text('GRANT pg_database_owner TO "trackfinance-db"'))
+            print("✅ Successfully granted pg_database_owner role")
+        except Exception as e:
+            print(f"⚠️  Could not grant role: {str(e)[:100]}")
+            print("   Continuing with direct grants...")
+        
+        # Strategy 3: Direct permission grants (should work with doadmin)
         print("\nGranting CREATE permission...")
         conn.execute(text('GRANT CREATE ON SCHEMA public TO "trackfinance-db"'))
+        conn.execute(text('GRANT ALL ON SCHEMA public TO "trackfinance-db"'))
         print("✅ Successfully granted CREATE permission")
         
         print("\nGranting all privileges on existing objects...")
         conn.execute(text('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "trackfinance-db"'))
         conn.execute(text('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "trackfinance-db"'))
+        conn.execute(text('GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO "trackfinance-db"'))
         print("✅ Granted privileges on existing objects")
         
         print("\nSetting default privileges...")
         conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "trackfinance-db"'))
         conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "trackfinance-db"'))
+        conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO "trackfinance-db"'))
         print("✅ Set default privileges")
         
     print("\n" + "=" * 60)

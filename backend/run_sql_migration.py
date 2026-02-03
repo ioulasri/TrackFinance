@@ -89,8 +89,8 @@ CREATE TABLE achievements (
     icon VARCHAR(100),
     xp_reward INTEGER NOT NULL CHECK (xp_reward >= 0),
     category VARCHAR(50) NOT NULL,
-    requirements_type VARCHAR(50) NOT NULL,
-    requirement_value INTEGER NOT NULL,
+    requirement_type VARCHAR(50) NOT NULL,
+    requirement_value INTEGER NOT NULL CHECK (requirement_value > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
