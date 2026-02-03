@@ -17,7 +17,7 @@ services:
   - name: backend
     github:
       repo: ioulasri/TrackFinance
-      branch: main
+      branch: develop
       deploy_on_push: true
     source_dir: /backend
     dockerfile_path: docker/backend.dockerfile
@@ -33,7 +33,8 @@ services:
       - key: SECRET_KEY
         scope: RUN_TIME
         type: SECRET
-        value: your-generated-secret-key-here-change-this-to-random-32-chars
+        # DO NOT commit the actual secret key to git
+        # Set this value directly in DigitalOcean dashboard after deployment
       - key: ENVIRONMENT
         scope: RUN_TIME
         value: production
@@ -52,7 +53,7 @@ static_sites:
   - name: frontend
     github:
       repo: ioulasri/TrackFinance
-      branch: main
+      branch: develop
       deploy_on_push: true
     source_dir: /frontend
     build_command: npm install && npm run build
