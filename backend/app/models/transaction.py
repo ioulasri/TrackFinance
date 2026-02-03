@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP, Boolean, DECIMAL, CheckConstraint, ForeignKey, Index, text, Enum
 from sqlalchemy.orm import relationship
 from app.db.session import Base
+from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
 class TransactionType(str, PyEnum):
@@ -17,12 +18,12 @@ class Transaction(Base):
 	category = Column(String(50), nullable=False)
 	type = Column(String(10), nullable=False)
 	description = Column(String(255))
-	date = Column(TIMESTAMP, nullable=False)
+	date = Column(TIMESTAMP(timezone=True), nullable=False)
 
 	is_deleted = Column(Boolean, server_default=text("FALSE"), nullable=False)
 
-	created_at = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-	updated_at = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+	created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+	updated_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 	__table_args__ = (
 		CheckConstraint("amount > 0", name="ck_transaction_amount"),
