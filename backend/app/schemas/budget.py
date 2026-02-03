@@ -11,7 +11,8 @@ class BudgetCreate(BudgetBase):
 	pass
 
 class BudgetUpdate(BaseModel):
-	monthly_limit: float = Field(None, gt=0, description="Monthly limit should be positive")
+	category: Optional[str] = Field(None, min_length=1, max_length=50)
+	monthly_limit: Optional[float] = Field(None, gt=0, description="Monthly limit should be positive")
 
 class BudgetResponse(BudgetBase):
 	id: int
