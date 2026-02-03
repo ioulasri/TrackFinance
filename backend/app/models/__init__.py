@@ -1,4 +1,7 @@
 from app.models.user import User
 from app.models.transaction import Transaction
+from app.models.achievement import Achievement
+from app.models.user_achievement import UserAchievement
+from app.models.budget import Budget
 
-__all__ = ["User", "Transaction"]
+__all__ = ["User", "Transaction", "Achievement", "Budget", "UserAchievement"]
