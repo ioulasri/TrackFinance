@@ -5,6 +5,7 @@ from app.schemas.transaction import TransactionCreate, TransactionUpdate, Transa
 from app.services.transaction_service import TransactionService
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.models.transaction import Transaction
 from typing import List
 from app.services.achievement_checker import AchievementChecker
 from app.services.budget_service import BudgetService
@@ -68,7 +69,12 @@ def delete_transaction(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user)
 ):
+	transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
 	success = TransactionService.delete_transaction(db, current_user.id, transaction_id)
+
+	if transaction:
+		if transaction.type == "expense":
+			BudgetService.update_spent_amount(db, current_user.id, transaction.category, float(-transaction.amount))
 
 	if not success:
 		raise HTTPException(status_code=404, detail="Transaction not found")

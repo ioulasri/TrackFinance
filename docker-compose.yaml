@@ -18,6 +18,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - trackfinance-network
 
   backend:
     build:
@@ -38,6 +40,24 @@ services:
       - ./backend:/app
     # Ensure uvicorn uses the correct path based on your WORKDIR
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - trackfinance-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.dockerfile
+    container_name: financetracking-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - trackfinance-network
 
 volumes:
   postgres_data:
+
+networks:
+  trackfinance-network:
+    driver: bridge

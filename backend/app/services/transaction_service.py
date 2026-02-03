@@ -6,6 +6,7 @@ from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app.core.security import hash_password
 from app.services.xp_service import XPService
+from app.services.budget_service import BudgetService
 from typing import List, Optional
 from datetime import date, datetime
 
@@ -29,9 +30,13 @@ class TransactionService:
 			db.commit()
 			db.refresh(new_transaction)
 
-			# TODO: Award XP to user (Phase 2)
+			# Award XP to user
 			XPService.award_xp(db, user_id, 10)
-			# TODO: Update budget tracking (Phase 3)
+			
+			# Update budget tracking for expense transactions
+			if new_transaction.type == 'expense':
+				BudgetService.update_spent_amount(db, user_id, new_transaction.category, new_transaction.amount)
+			
 			# TODO: Update user's last_activity_date for streaks (Phase 2)
 
 			return new_transaction
@@ -62,10 +67,17 @@ class TransactionService:
 		if not transaction:
 			return None
 		
+		# Track old values for budget updates
+		old_amount = transaction.amount
+		old_category = transaction.category
+		budget_changed = False
+		
 		if update_data.amount is not None:
 			transaction.amount = update_data.amount
+			budget_changed = True
 		if update_data.category is not None:
 			transaction.category = update_data.category
+			budget_changed = True
 		if update_data.description is not None:
 			transaction.description = update_data.description
 		if update_data.date is not None:
@@ -76,6 +88,14 @@ class TransactionService:
 		try:
 			db.commit()
 			db.refresh(transaction)
+			
+			# Update budget if amount or category changed for expense transactions
+			if budget_changed and transaction.type == 'expense':
+				# Revert old amount from old category
+				BudgetService.update_spent_amount(db, user_id, old_category, -old_amount)
+				# Add new amount to new category
+				BudgetService.update_spent_amount(db, user_id, transaction.category, transaction.amount)
+			
 			return transaction
 		except IntegrityError:
 			db.rollback()
@@ -87,6 +107,10 @@ class TransactionService:
 
 		if not transaction:
 			return False
+		
+		# Revert budget tracking for expense transactions
+		if transaction.type == 'expense':
+			BudgetService.update_spent_amount(db, user_id, transaction.category, -transaction.amount)
 		
 		transaction.is_deleted = True
 		transaction.updated_at = datetime.now()
