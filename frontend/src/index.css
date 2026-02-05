@@ -7,9 +7,9 @@
   line-height: 1.5;
   font-weight: 400;
   
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color-scheme: light;
+  color: rgba(17, 24, 39, 0.87);
+  background: #f9fafb;
   
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,40 +20,29 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: #f9fafb;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-}
-
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-}
-
-.glass-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f9fafb;
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+    @apply px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-sm hover:shadow-md;
   }
   
   .btn-secondary {
-    @apply px-6 py-3 glass text-white rounded-lg font-semibold hover:bg-white/20 transition-all duration-300;
+    @apply px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg font-semibold hover:bg-gray-50 transition-all duration-200;
   }
   
   .card {
-    @apply glass rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1;
+    @apply bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200;
   }
   
   .input-field {
-    @apply w-full px-4 py-3 glass text-white placeholder-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all;
+    @apply w-full px-4 py-3 bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all;
   }
 }
