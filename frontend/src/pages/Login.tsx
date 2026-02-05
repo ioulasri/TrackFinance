@@ -28,28 +28,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="card">
+        <div className="bg-white rounded-2xl shadow-sm p-8">
           <div className="text-center mb-8">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="inline-block"
-            >
-              <LogIn className="w-16 h-16 mx-auto text-purple-400 mb-4" />
-            </motion.div>
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
-            <p className="text-gray-300">Log in to continue your financial journey</p>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-2xl mb-4">
+              <LogIn className="w-8 h-8 text-purple-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
+            <p className="text-gray-600">Log in to continue your financial journey</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Username
               </label>
               <div className="relative">
@@ -58,7 +54,7 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Enter your username"
                   required
                 />
@@ -66,7 +62,7 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -75,7 +71,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Enter your password"
                   required
                 />
@@ -86,7 +82,7 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm"
+                className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm"
               >
                 {error}
               </motion.div>
@@ -95,15 +91,15 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-gray-300">
+          <p className="mt-6 text-center text-gray-600">
             Don't have an account?{' '}
-            <Link to="/register" className="text-purple-400 hover:text-purple-300 font-semibold">
+            <Link to="/register" className="text-purple-600 hover:text-purple-700 font-semibold">
               Sign up
             </Link>
           </p>
