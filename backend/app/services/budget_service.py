@@ -2,10 +2,13 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.budget import Budget
+from app.models.transaction import Transaction
 from app.schemas.budget import BudgetCreate, BudgetUpdate
 from app.core.security import hash_password
 from typing import List, Optional
 from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
+from sqlalchemy import func
 from app.models import budget
 
 class BudgetService:
@@ -13,15 +16,23 @@ class BudgetService:
 
 	@staticmethod
 	def create_budget(db: Session, user_id: int, budget_data: BudgetCreate) -> Budget:
+		now = datetime.now(timezone.utc)
+		start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+		
+		current_spent = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
+			Transaction.user_id == user_id,
+			Transaction.category == budget_data.category,
+			Transaction.type == 'expense',
+			Transaction.is_deleted == False,
+			Transaction.date >= start_of_month
+		).scalar() or Decimal(0)
 
 		new_budget = Budget(
 			user_id=user_id,
 			category=budget_data.category,
 			monthly_limit=budget_data.monthly_limit,
-			current_spent=0,
-			last_reset_date=datetime.now(timezone.utc)
-		)
-
+			current_spent=current_spent,
+			last_reset_date=now)
 		try:
 			db.add(new_budget)
 			db.commit()
