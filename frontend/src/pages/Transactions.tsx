@@ -64,17 +64,17 @@ export default function Transactions() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-16">
-        <div className="animate-pulse text-white">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
+        <div className="animate-pulse text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4">
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-white">Transactions</h1>
+          <h1 className="text-4xl font-bold text-gray-900">Transactions</h1>
           <button onClick={() => setShowModal(true)} className="btn-primary flex items-center space-x-2">
             <Plus className="w-5 h-5" />
             <span>Add Transaction</span>
@@ -93,16 +93,16 @@ export default function Transactions() {
               <div className="flex items-center space-x-4">
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    transaction.type === 'income' ? 'bg-green-500/20' : 'bg-red-500/20'
+                    transaction.type === 'income' ? 'bg-emerald-100' : 'bg-blue-100'
                   }`}
                 >
                   <span className="text-2xl">
-                    {transaction.type === 'income' ? '💰' : '💸'}
+                    {transaction.type === 'income' ? '💰' : '💳'}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-lg">{transaction.category}</h3>
-                  <p className="text-gray-400 text-sm">{transaction.description || 'No description'}</p>
+                  <h3 className="text-gray-900 font-semibold text-lg">{transaction.category}</h3>
+                  <p className="text-gray-600 text-sm">{transaction.description || 'No description'}</p>
                   <p className="text-gray-500 text-xs mt-1">
                     {new Date(transaction.date).toLocaleDateString()}
                   </p>
@@ -111,16 +111,16 @@ export default function Transactions() {
               <div className="flex items-center space-x-4">
                 <p
                   className={`text-2xl font-bold ${
-                    transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
+                    transaction.type === 'income' ? 'text-emerald-600' : 'text-blue-600'
                   }`}
                 >
-                  {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
+                  {transaction.type === 'income' ? '+' : '-'}MAD {transaction.amount}
                 </p>
                 <button
                   onClick={() => handleDelete(transaction.id)}
-                  className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
                 >
-                  <Trash2 className="w-5 h-5 text-red-400" />
+                  <Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-500" />
                 </button>
               </div>
             </motion.div>
@@ -139,18 +139,18 @@ export default function Transactions() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               onClick={(e) => e.stopPropagation()}
-              className="card max-w-md w-full"
+              className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Add Transaction</h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">Add Transaction</h2>
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">Amount</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount (MAD)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -162,7 +162,7 @@ export default function Transactions() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                   <input
                     type="text"
                     value={form.category}
@@ -174,7 +174,7 @@ export default function Transactions() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -182,9 +182,9 @@ export default function Transactions() {
                         value="expense"
                         checked={form.type === 'expense'}
                         onChange={(e) => setForm({ ...form, type: e.target.value })}
-                        className="w-4 h-4"
+                        className="w-4 h-4 text-purple-600"
                       />
-                      <span className="text-white">Expense</span>
+                      <span className="text-gray-700">Expense</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -192,15 +192,15 @@ export default function Transactions() {
                         value="income"
                         checked={form.type === 'income'}
                         onChange={(e) => setForm({ ...form, type: e.target.value })}
-                        className="w-4 h-4"
+                        className="w-4 h-4 text-purple-600"
                       />
-                      <span className="text-white">Income</span>
+                      <span className="text-gray-700">Income</span>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">Description (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -210,7 +210,7 @@ export default function Transactions() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                   <input
                     type="date"
                     value={form.date}
