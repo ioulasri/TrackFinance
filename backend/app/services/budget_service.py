@@ -7,7 +7,6 @@ from app.schemas.budget import BudgetCreate, BudgetUpdate
 from app.core.security import hash_password
 from typing import List, Optional
 from datetime import datetime, timezone
-from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
 from app.models import budget
 
