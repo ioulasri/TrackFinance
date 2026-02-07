@@ -56,6 +56,9 @@ export const transactionAPI = {
     api.patch(`/api/v1/transactions/${id}`, data),
   
   delete: (id: number) => api.delete(`/api/v1/transactions/${id}`),
+  
+  getTransactionsByCategory: () =>
+    api.get('/api/v1/transactions/?skip=0&limit=1000'),
 };
 
 export const budgetAPI = {

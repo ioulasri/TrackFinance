@@ -16,9 +16,12 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [budgetStatus, setBudgetStatus] = useState<any>(null);
+  const [costAnalysisData, setCostAnalysisData] = useState<any[]>([]);
+  const [loadingCostAnalysis, setLoadingCostAnalysis] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
+    loadCostAnalysis();
   }, []);
 
   const loadDashboardData = async () => {
@@ -36,6 +39,51 @@ export default function Dashboard() {
       console.error('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCostAnalysis = async () => {
+    try {
+      setLoadingCostAnalysis(true);
+      const response = await transactionAPI.getTransactionsByCategory();
+      const transactions = response.data;
+
+      // Filter only expense transactions
+      const expenses = transactions.filter((t: any) => t.type === 'expense');
+      
+      // Calculate total expenses
+      const totalExpenses = expenses.reduce((sum: number, t: any) => sum + t.amount, 0);
+
+      // Group by category and calculate percentages
+      const categoryMap: { [key: string]: number } = {};
+      expenses.forEach((t: any) => {
+        if (categoryMap[t.category]) {
+          categoryMap[t.category] += t.amount;
+        } else {
+          categoryMap[t.category] = t.amount;
+        }
+      });
+
+      // Define colors for categories
+      const colors = ['#FCD34D', '#FB923C', '#A3E635', '#34D399', '#60A5FA', '#C084FC', '#F87171', '#FBBF24'];
+      
+      // Convert to array format with percentages
+      const categoryData = Object.entries(categoryMap).map(([name, amount], index) => ({
+        name,
+        value: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0,
+        color: colors[index % colors.length],
+      }));
+
+      // Sort by value descending
+      categoryData.sort((a, b) => b.value - a.value);
+
+      setCostAnalysisData(categoryData);
+    } catch (error) {
+      console.error('Failed to load cost analysis:', error);
+      // Set default empty data on error
+      setCostAnalysisData([]);
+    } finally {
+      setLoadingCostAnalysis(false);
     }
   };
 
@@ -71,16 +119,6 @@ export default function Dashboard() {
 
   const balanceData = calculateBalanceData();
 
-  const costAnalysisData = [
-    { name: 'Housing', value: 18, color: '#FCD34D' },
-    { name: 'Debt payments', value: 7, color: '#FB923C' },
-    { name: 'Food', value: 4, color: '#A3E635' },
-    { name: 'Transportation', value: 9, color: '#34D399' },
-    { name: 'Healthcare', value: 7, color: '#60A5FA' },
-    { name: 'Entertainment', value: 11, color: '#C084FC' },
-    { name: 'Other', value: 33, color: '#F87171' },
-  ];
-
   // Calculate totals from real data
   const totalIncome = recentTransactions
     .filter(t => t.type === 'income')
@@ -92,6 +130,11 @@ export default function Dashboard() {
   
   const savedBalance = totalIncome - totalExpenses;
   const totalBalance = savedBalance;
+
+  // Calculate totals from balance data for chart legend
+  const chartTotalIncome = balanceData.reduce((sum, day) => sum + day.income, 0);
+  const chartTotalExpenses = balanceData.reduce((sum, day) => sum + day.expenses, 0);
+  const chartTotalSavings = chartTotalIncome - chartTotalExpenses;
   
   const monthlyLimit = budgetStatus?.total_monthly_limit || 0;
   const spentThisMonth = budgetStatus?.total_spent || 0;
@@ -168,17 +211,17 @@ export default function Dashboard() {
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-yellow-400 rounded-sm"></div>
                 <span className="text-gray-600">Savings</span>
-                <span className="font-semibold">MAD 350</span>
+                <span className="font-semibold">MAD {chartTotalSavings.toLocaleString()}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-400 rounded-sm"></div>
                 <span className="text-gray-600">Income</span>
-                <span className="font-semibold">MAD 700</span>
+                <span className="font-semibold">MAD {chartTotalIncome.toLocaleString()}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-orange-400 rounded-sm"></div>
                 <span className="text-gray-600">Expenses</span>
-                <span className="font-semibold">MAD 400</span>
+                <span className="font-semibold">MAD {chartTotalExpenses.toLocaleString()}</span>
               </div>
             </div>
 
@@ -268,19 +311,29 @@ export default function Dashboard() {
               </select>
             </div>
             <div className="text-center mb-4">
-              <h4 className="text-2xl font-bold text-gray-900">MAD 8,450</h4>
+              <h4 className="text-2xl font-bold text-gray-900">MAD {totalExpenses.toLocaleString()}</h4>
             </div>
-            <div className="space-y-2">
-              {costAnalysisData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-gray-600">{item.name}</span>
+            {loadingCostAnalysis ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              </div>
+            ) : costAnalysisData.length > 0 ? (
+              <div className="space-y-2">
+                {costAnalysisData.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                      <span className="text-gray-600">{item.name}</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">{item.value}%</span>
                   </div>
-                  <span className="font-semibold text-gray-900">{item.value}%</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 text-xs">
+                No expense data available
+              </div>
+            )}
           </div>
 
           {/* Financial Health */}
