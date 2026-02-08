@@ -63,11 +63,11 @@ export function RecentTransactions() {
             const Icon = iconMap[transaction.category] || (transaction.transaction_type === 'income' ? ArrowUpRight : ArrowDownRight);
             const isIncome = transaction.transaction_type === 'income';
 
-          return (
-            <div
-              key={transaction.id}
-              className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-            >
+            return (
+              <div
+                key={transaction.id}
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
               <div className={`p-2.5 rounded-xl ${
                 isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
               }`}>
@@ -92,7 +92,8 @@ export function RecentTransactions() {
                 {isIncome ? '+' : '-'} MAD {transaction.amount.toLocaleString()}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

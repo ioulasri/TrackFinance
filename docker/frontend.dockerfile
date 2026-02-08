@@ -14,7 +14,7 @@ RUN npm ci
 # Copy source code
 COPY frontend/ ./
 
-# Build the app
+# Build the app (Vite outputs to dist)
 RUN npm run build
 
 # Production stage with nginx
