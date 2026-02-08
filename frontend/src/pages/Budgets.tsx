@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Wallet, X, Check, Trash2 } from 'lucide-react';
+import { Plus, Wallet, X, Check, Trash2, Edit2 } from 'lucide-react';
 import { budgetAPI } from '../api';
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<any>(null);
   const [form, setForm] = useState({
     category: '',
     monthly_limit: '',
@@ -27,19 +28,40 @@ export default function Budgets() {
     }
   };
 
+  const handleEdit = (budget: any) => {
+    setEditingBudget(budget);
+    setForm({
+      category: budget.category,
+      monthly_limit: budget.monthly_limit.toString(),
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingBudget(null);
+    setForm({ category: '', monthly_limit: '' });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await budgetAPI.create({
+      const payload = {
         category: form.category,
         monthly_limit: parseFloat(form.monthly_limit),
-      });
-      setShowModal(false);
-      setForm({ category: '', monthly_limit: '' });
+      };
+
+      if (editingBudget) {
+        await budgetAPI.update(editingBudget.id, { monthly_limit: payload.monthly_limit });
+      } else {
+        await budgetAPI.create(payload);
+      }
+
+      handleCloseModal();
       loadBudgets();
     } catch (error) {
-      console.error('Failed to create budget:', error);
-      alert('Failed to create budget. Category might already exist.');
+      console.error(`Failed to ${editingBudget ? 'update' : 'create'} budget:`, error);
+      alert(`Failed to ${editingBudget ? 'update' : 'create'} budget.${editingBudget ? '' : ' Category might already exist.'}`);
     }
   };
 
@@ -109,13 +131,22 @@ export default function Budgets() {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 capitalize">{budget.category}</h3>
                   </div>
-                  <button
-                    onClick={() => handleDelete(budget.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
-                    title="Delete budget"
-                  >
-                    <Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-500" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(budget)}
+                      className="p-2 hover:bg-purple-50 rounded-lg transition-colors group"
+                      title="Edit budget"
+                    >
+                      <Edit2 className="w-5 h-5 text-gray-400 group-hover:text-purple-600" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(budget.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                      title="Delete budget"
+                    >
+                      <Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-500" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -182,8 +213,10 @@ export default function Budgets() {
               className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Create Budget</h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {editingBudget ? 'Edit Budget' : 'Create Budget'}
+                </h2>
+                <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -198,7 +231,12 @@ export default function Budgets() {
                     className="input-field"
                     placeholder="e.g., groceries, entertainment"
                     required
+                    disabled={!!editingBudget}
+                    title={editingBudget ? "Category cannot be changed" : ""}
                   />
+                  {editingBudget && (
+                    <p className="text-xs text-gray-500 mt-1">Category cannot be changed once created</p>
+                  )}
                 </div>
 
                 <div>
@@ -216,7 +254,7 @@ export default function Budgets() {
 
                 <button type="submit" className="btn-primary w-full flex items-center justify-center space-x-2">
                   <Check className="w-5 h-5" />
-                  <span>Create Budget</span>
+                  <span>{editingBudget ? 'Update Budget' : 'Create Budget'}</span>
                 </button>
               </form>
             </motion.div>
