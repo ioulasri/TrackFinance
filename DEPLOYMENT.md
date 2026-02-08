@@ -10,19 +10,20 @@ In your DigitalOcean App Platform:
 2. Navigate to **Environment Variables**
 3. Add:
    ```
-   VITE_API_URL=https://your-backend-app-name.ondigitalocean.app
+   VITE_API_URL=${backend.PUBLIC_URL}
    ```
+   (This references your backend component automatically)
 4. Redeploy the frontend
 
-### Option 2: Update .env.production file
+### Option 2: Already Configured!
 
-Before deploying, update `frontend/.env.production`:
+The `frontend/.env.production` file already contains:
 
 ```env
-VITE_API_URL=https://your-backend-app-name.ondigitalocean.app
+VITE_API_URL=${backend.PUBLIC_URL}
 ```
 
-Then commit and push.
+This will automatically resolve to your backend URL in DigitalOcean.
 
 ## How to Find Your Backend URL
 
