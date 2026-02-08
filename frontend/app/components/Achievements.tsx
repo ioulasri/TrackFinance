@@ -224,12 +224,10 @@ export function Achievements() {
               {/* Content */}
               <div className="space-y-2">
                 <h4 className="font-semibold text-gray-900">
-                  {achievement.unlocked ? achievement.title : '???'}
+                  {achievement.title}
                 </h4>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {achievement.unlocked 
-                    ? achievement.description 
-                    : achievement.requirement || 'Complete the requirement to unlock'}
+                  {achievement.description}
                 </p>
 
                 {/* Category & XP Badge */}
