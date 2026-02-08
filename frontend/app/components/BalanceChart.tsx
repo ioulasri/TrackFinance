@@ -40,10 +40,10 @@ export function BalanceChart() {
         
         const dayTransactions = transactions.filter(t => t.date.startsWith(dayKey));
         const income = dayTransactions
-          .filter(t => t.transaction_type === 'income')
+          .filter(t => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
         const expenses = dayTransactions
-          .filter(t => t.transaction_type === 'expense')
+          .filter(t => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
 
         result.push({
@@ -66,10 +66,10 @@ export function BalanceChart() {
         });
 
         const income = weekTransactions
-          .filter(t => t.transaction_type === 'income')
+          .filter(t => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
         const expenses = weekTransactions
-          .filter(t => t.transaction_type === 'expense')
+          .filter(t => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
 
         result.unshift({

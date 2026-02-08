@@ -19,43 +19,76 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
     description: editingTransaction?.description || '',
     date: editingTransaction?.date ? new Date(editingTransaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
+  const [customCategory, setCustomCategory] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  const categories = [
+    'Food & Dining', 'Shopping', 'Transportation', 'Bills & Utilities', 'Entertainment',
+    'Healthcare', 'Education', 'Electronics', 'Other'
+  ];
 
   React.useEffect(() => {
     if (editingTransaction) {
+      const isPredefinedCategory = categories.includes(editingTransaction.category);
       setFormData({
         amount: editingTransaction.amount.toString(),
-        category: editingTransaction.category,
+        category: isPredefinedCategory ? editingTransaction.category : 'Other',
         type: editingTransaction.type,
         description: editingTransaction.description || '',
         date: new Date(editingTransaction.date).toISOString().split('T')[0],
       });
+      
+      if (!isPredefinedCategory) {
+        setShowCustomInput(true);
+        setCustomCategory(editingTransaction.category);
+      } else {
+        setShowCustomInput(false);
+        setCustomCategory('');
+      }
     } else {
       setFormData({
         amount: '',
-        category: 'Food',
+        category: 'Food & Dining',
         type: 'expense',
         description: '',
         date: new Date().toISOString().split('T')[0],
       });
+      setShowCustomInput(false);
+      setCustomCategory('');
     }
   }, [editingTransaction, isOpen]);
 
-  const categories = [
-    'Food', 'Shopping', 'Transport', 'Bills', 'Entertainment',
-    'Healthcare', 'Education', 'Other'
-  ];
+  const handleCategoryChange = (category: string) => {
+    setFormData({ ...formData, category });
+    if (category === 'Other') {
+      setShowCustomInput(true);
+    } else {
+      setShowCustomInput(false);
+      setCustomCategory('');
+    }
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    const finalCategory = showCustomInput && customCategory.trim() 
+      ? customCategory.trim() 
+      : formData.category;
+    
+    onSubmit({
+      ...formData,
+      category: finalCategory,
+    });
     onClose();
     setFormData({
       amount: '',
-      category: 'Food',
+      category: 'Food & Dining',
       type: 'expense',
       description: '',
       date: new Date().toISOString().split('T')[0],
     });
+    setShowCustomInput(false);
+    setCustomCategory('');
   };
 
   return (
@@ -108,7 +141,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
           <label className="block mb-2 text-gray-900">Category</label>
           <select
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
             required
           >
@@ -116,6 +149,20 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
+          
+          {/* Custom Category Input */}
+          {showCustomInput && (
+            <div className="mt-3">
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Enter custom category name"
+                className="w-full px-4 py-2.5 bg-white border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required={showCustomInput}
+              />
+            </div>
+          )}
         </div>
 
         {/* Description */}

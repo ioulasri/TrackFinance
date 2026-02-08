@@ -58,7 +58,7 @@ export function Dashboard() {
     .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
   
   const balance = totalIncome - totalExpenses;
-  const totalBudget = budgetStatus?.total_budget || 0;
+  const totalBudget = budgetStatus?.total_monthly_limit || 0;
   const totalSpent = budgetStatus?.total_spent || 0;
   const remaining = totalBudget - totalSpent;
 
@@ -116,24 +116,34 @@ export function Dashboard() {
         {/* Monthly Spending Progress */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-gray-900 mb-6">Monthly Spending Progress</h3>
-          <div className="space-y-4">
-            <ProgressBar current={totalSpent} max={totalBudget || 1} />
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                <p className="text-sm text-gray-600">Spent this month</p>
-                <p className="text-2xl font-bold text-gray-900">MAD {totalSpent.toLocaleString()}</p>
+          {totalBudget > 0 ? (
+            <div className="space-y-4">
+              <ProgressBar current={totalSpent} max={totalBudget} />
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  <p className="text-sm text-gray-600">Spent this month</p>
+                  <p className="text-2xl font-bold text-gray-900">MAD {totalSpent.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Budget limit</p>
+                  <p className="text-2xl font-bold text-gray-900">MAD {totalBudget.toLocaleString()}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Budget limit</p>
-                <p className="text-2xl font-bold text-gray-900">MAD {totalBudget.toLocaleString()}</p>
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-600">
+                  Remaining: <span className={`font-semibold ${remaining >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>MAD {remaining.toLocaleString()}</span>
+                </p>
               </div>
             </div>
-            <div className="pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-600">
-                Remaining: <span className="font-semibold text-emerald-600">MAD {remaining.toLocaleString()}</span>
-              </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Wallet size={32} className="text-gray-400" />
+              </div>
+              <p className="text-gray-900 font-semibold mb-1">No budgets set</p>
+              <p className="text-sm text-gray-500">Create a budget to track your monthly spending</p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Quick Budget Tips */}
