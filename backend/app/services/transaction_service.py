@@ -70,14 +70,15 @@ class TransactionService:
 		# Track old values for budget updates
 		old_amount = transaction.amount
 		old_category = transaction.category
-		budget_changed = False
+		old_type = transaction.type
 		
+		# Update fields
 		if update_data.amount is not None:
 			transaction.amount = update_data.amount
-			budget_changed = True
 		if update_data.category is not None:
 			transaction.category = update_data.category
-			budget_changed = True
+		if update_data.type is not None:
+			transaction.type = update_data.type.value
 		if update_data.description is not None:
 			transaction.description = update_data.description
 		if update_data.date is not None:
@@ -89,8 +90,18 @@ class TransactionService:
 			db.commit()
 			db.refresh(transaction)
 			
-			# Update budget if amount or category changed for expense transactions
-			if budget_changed and transaction.type == 'expense':
+			# Handle budget tracking updates
+			# If type changed or it's an expense with changed amount/category
+			if old_type != transaction.type:
+				# Type changed
+				if old_type == 'expense':
+					# Was expense, remove from budget tracking
+					BudgetService.update_spent_amount(db, user_id, old_category, -old_amount)
+				if transaction.type == 'expense':
+					# Now expense, add to budget tracking
+					BudgetService.update_spent_amount(db, user_id, transaction.category, transaction.amount)
+			elif transaction.type == 'expense' and (update_data.amount is not None or update_data.category is not None):
+				# Type didn't change but it's an expense with updated amount or category
 				# Revert old amount from old category
 				BudgetService.update_spent_amount(db, user_id, old_category, -old_amount)
 				# Add new amount to new category

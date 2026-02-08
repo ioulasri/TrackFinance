@@ -19,6 +19,7 @@ class TransactionCreate(TransactionBase):
 class TransactionUpdate(BaseModel):
 	amount: float = Field(None, gt=0)
 	category: str = Field(None, min_length=1, max_length=50)
+	type: TransactionType = None
 	description: str = Field(None, max_length=255)
 	date: datetime = None
 
