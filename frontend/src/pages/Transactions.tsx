@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, X, Check } from 'lucide-react';
+import { Plus, Trash2, X, Check, Edit2 } from 'lucide-react';
 import { transactionAPI } from '../api';
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [form, setForm] = useState({
     amount: '',
     category: '',
@@ -30,25 +31,50 @@ export default function Transactions() {
     }
   };
 
+  const handleEdit = (transaction: any) => {
+    setEditingTransaction(transaction);
+    setForm({
+      amount: transaction.amount.toString(),
+      category: transaction.category,
+      type: transaction.type,
+      description: transaction.description || '',
+      date: new Date(transaction.date).toISOString().split('T')[0],
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingTransaction(null);
+    setForm({
+      amount: '',
+      category: '',
+      type: 'expense',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await transactionAPI.create({
+      const payload = {
         ...form,
         amount: parseFloat(form.amount),
         date: new Date(form.date).toISOString(),
-      });
-      setShowModal(false);
-      setForm({
-        amount: '',
-        category: '',
-        type: 'expense',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-      });
+      };
+
+      if (editingTransaction) {
+        await transactionAPI.update(editingTransaction.id, payload);
+      } else {
+        await transactionAPI.create(payload);
+      }
+
+      handleCloseModal();
       loadTransactions();
     } catch (error) {
-      console.error('Failed to create transaction:', error);
+      console.error(`Failed to ${editingTransaction ? 'update' : 'create'} transaction:`, error);
+      alert(`Failed to ${editingTransaction ? 'update' : 'create'} transaction.`);
     }
   };
 
@@ -117,8 +143,16 @@ export default function Transactions() {
                   {transaction.type === 'income' ? '+' : '-'}MAD {transaction.amount}
                 </p>
                 <button
+                  onClick={() => handleEdit(transaction)}
+                  className="p-2 hover:bg-purple-50 rounded-lg transition-colors group"
+                  title="Edit transaction"
+                >
+                  <Edit2 className="w-5 h-5 text-gray-400 group-hover:text-purple-600" />
+                </button>
+                <button
                   onClick={() => handleDelete(transaction.id)}
                   className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                  title="Delete transaction"
                 >
                   <Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-500" />
                 </button>
@@ -142,8 +176,10 @@ export default function Transactions() {
               className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Add Transaction</h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {editingTransaction ? 'Edit Transaction' : 'Add Transaction'}
+                </h2>
+                <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -222,7 +258,7 @@ export default function Transactions() {
 
                 <button type="submit" className="btn-primary w-full flex items-center justify-center space-x-2">
                   <Check className="w-5 h-5" />
-                  <span>Create Transaction</span>
+                  <span>{editingTransaction ? 'Update Transaction' : 'Create Transaction'}</span>
                 </button>
               </form>
             </motion.div>
