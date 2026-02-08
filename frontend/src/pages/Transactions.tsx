@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, X, Check, Edit2 } from 'lucide-react';
 import { transactionAPI } from '../api';
@@ -55,7 +55,7 @@ export default function Transactions() {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const payload = {

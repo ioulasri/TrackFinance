@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Wallet, X, Check, Trash2, Edit2 } from 'lucide-react';
 import { budgetAPI } from '../api';
@@ -43,7 +43,7 @@ export default function Budgets() {
     setForm({ category: '', monthly_limit: '' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const payload = {
