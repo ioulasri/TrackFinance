@@ -7,6 +7,7 @@ interface CreateBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (budget: any) => void;
+  editingBudget?: any;
 }
 
 const categories = [
@@ -20,9 +21,19 @@ const categories = [
   { name: 'Education', icon: GraduationCap },
 ];
 
-export function CreateBudgetModal({ isOpen, onClose, onSubmit }: CreateBudgetModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState('Food & Dining');
-  const [monthlyLimit, setMonthlyLimit] = useState('');
+export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget }: CreateBudgetModalProps) {
+  const [selectedCategory, setSelectedCategory] = useState(editingBudget?.category || 'Food & Dining');
+  const [monthlyLimit, setMonthlyLimit] = useState(editingBudget?.monthly_limit?.toString() || '');
+
+  React.useEffect(() => {
+    if (editingBudget) {
+      setSelectedCategory(editingBudget.category);
+      setMonthlyLimit(editingBudget.monthly_limit.toString());
+    } else {
+      setSelectedCategory('Food & Dining');
+      setMonthlyLimit('');
+    }
+  }, [editingBudget, isOpen]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -36,7 +47,7 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit }: CreateBudgetMod
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Budget">
+    <Modal isOpen={isOpen} onClose={onClose} title={editingBudget ? 'Edit Budget' : 'Create Budget'}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Category Selection */}
         <div>
@@ -49,7 +60,8 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit }: CreateBudgetMod
                   key={category.name}
                   type="button"
                   onClick={() => setSelectedCategory(category.name)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  disabled={!!editingBudget}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${editingBudget ? 'opacity-50 cursor-not-allowed' : ''} ${
                     selectedCategory === category.name
                       ? 'border-purple-600 bg-purple-50'
                       : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
@@ -70,6 +82,7 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit }: CreateBudgetMod
           </div>
           <p className="mt-2 text-sm text-gray-600">
             Selected: <span className="font-semibold text-purple-600">{selectedCategory}</span>
+            {editingBudget && <span className="ml-2 text-xs">(Category cannot be changed)</span>}
           </p>
         </div>
 
@@ -97,7 +110,7 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit }: CreateBudgetMod
             Cancel
           </Button>
           <Button type="submit" variant="primary" size="large" className="flex-1">
-            Create Budget
+            {editingBudget ? 'Update Budget' : 'Create Budget'}
           </Button>
         </div>
       </form>

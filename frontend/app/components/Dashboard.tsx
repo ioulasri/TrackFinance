@@ -7,11 +7,12 @@ import { CostAnalysis } from './CostAnalysis';
 import { GoalsTracker } from './GoalsTracker';
 import { RecentTransactions } from './RecentTransactions';
 import { XPBar } from './XPBar';
-import { authAPI, budgetAPI } from '../api';
+import { authAPI, budgetAPI, transactionAPI } from '../api';
 
 export function Dashboard() {
   const [userStats, setUserStats] = useState<any>(null);
   const [budgetStatus, setBudgetStatus] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,12 +22,14 @@ export function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, budgetRes] = await Promise.all([
+      const [statsRes, budgetRes, transactionsRes] = await Promise.all([
         authAPI.getUserStats(),
         budgetAPI.getStatus(),
+        transactionAPI.list(0, 1000),
       ]);
       setUserStats(statsRes.data);
       setBudgetStatus(budgetRes.data);
+      setTransactions(transactionsRes.data || []);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -45,20 +48,27 @@ export function Dashboard() {
     );
   }
 
-  if (!userStats) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-gray-600">Failed to load dashboard data</p>
-      </div>
-    );
-  }
-
-  const totalIncome = userStats.total_income || 0;
-  const totalExpenses = userStats.total_expenses || 0;
+  // Calculate totals from transactions (not from userStats which doesn't have these fields)
+  const totalIncome = transactions
+    .filter((t: any) => t.type === 'income')
+    .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+  
+  const totalExpenses = transactions
+    .filter((t: any) => t.type === 'expense')
+    .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+  
   const balance = totalIncome - totalExpenses;
   const totalBudget = budgetStatus?.total_budget || 0;
   const totalSpent = budgetStatus?.total_spent || 0;
   const remaining = totalBudget - totalSpent;
+
+  if (!userStats) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-600">Failed to load user stats</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -66,9 +76,9 @@ export function Dashboard() {
       <div className="flex justify-end">
         <div className="w-80">
           <XPBar 
-            currentXP={userStats.current_xp || 0} 
+            currentXP={userStats.total_xp || 0} 
             requiredXP={userStats.xp_to_next_level || 100} 
-            level={userStats.level || 1} 
+            level={userStats.current_level || 1} 
           />
         </div>
       </div>

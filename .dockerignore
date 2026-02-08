@@ -1,0 +1,77 @@
+# Old frontend (not needed)
+frontend_old/
+
+# Node modules (huge, will be installed during build)
+**/node_modules/
+**/dist/
+**/build/
+
+# Python cache
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+**/tests/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+**/*.log
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Docker
+.dockerignore
+docker-compose*.yaml
+docker-compose*.yml
+**/Dockerfile
+**/*.dockerfile
+
+# Documentation
+README.md
+*.md
+WORKFLOW.md
+DEPLOYMENT.md
+DOCKER.md
+PROJECT_STATUS.md
+
+# Scripts and config
+Makefile
+create_issues.sh
+main.py
+pyproject.toml
+uv.lock
+
+# DigitalOcean
+.do/

@@ -8,16 +8,37 @@ interface CreateTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (transaction: any) => void;
+  editingTransaction?: any;
 }
 
-export function CreateTransactionModal({ isOpen, onClose, onSubmit }: CreateTransactionModalProps) {
+export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTransaction }: CreateTransactionModalProps) {
   const [formData, setFormData] = useState({
-    amount: '',
-    category: 'Food',
-    type: 'expense',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
+    amount: editingTransaction?.amount?.toString() || '',
+    category: editingTransaction?.category || 'Food',
+    type: editingTransaction?.type || 'expense',
+    description: editingTransaction?.description || '',
+    date: editingTransaction?.date ? new Date(editingTransaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
+
+  React.useEffect(() => {
+    if (editingTransaction) {
+      setFormData({
+        amount: editingTransaction.amount.toString(),
+        category: editingTransaction.category,
+        type: editingTransaction.type,
+        description: editingTransaction.description || '',
+        date: new Date(editingTransaction.date).toISOString().split('T')[0],
+      });
+    } else {
+      setFormData({
+        amount: '',
+        category: 'Food',
+        type: 'expense',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
+  }, [editingTransaction, isOpen]);
 
   const categories = [
     'Food', 'Shopping', 'Transport', 'Bills', 'Entertainment',
@@ -38,7 +59,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit }: CreateTran
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Transaction">
+    <Modal isOpen={isOpen} onClose={onClose} title={editingTransaction ? 'Edit Transaction' : 'Create Transaction'}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Amount */}
         <div>
@@ -131,7 +152,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit }: CreateTran
             Cancel
           </Button>
           <Button type="submit" variant="primary" size="large" className="flex-1">
-            Create Transaction
+            {editingTransaction ? 'Update Transaction' : 'Create Transaction'}
           </Button>
         </div>
       </form>

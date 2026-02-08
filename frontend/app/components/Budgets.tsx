@@ -23,6 +23,7 @@ export function Budgets() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<any>(null);
+  const [editingBudget, setEditingBudget] = useState<any>(null);
 
   useEffect(() => {
     fetchBudgets();
@@ -42,13 +43,20 @@ export function Budgets() {
 
   const handleCreateBudget = async (data: any) => {
     try {
-      await budgetAPI.create({
-        category: data.category,
-        monthly_limit: parseFloat(data.limit),
-      });
+      if (editingBudget) {
+        await budgetAPI.update(editingBudget.id, {
+          monthly_limit: parseFloat(data.limit),
+        });
+      } else {
+        await budgetAPI.create({
+          category: data.category,
+          monthly_limit: parseFloat(data.limit),
+        });
+      }
       await fetchBudgets();
+      setEditingBudget(null);
     } catch (error) {
-      console.error('Failed to create budget:', error);
+      console.error('Failed to create/update budget:', error);
     }
   };
 
@@ -73,7 +81,7 @@ export function Budgets() {
   };
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.monthly_limit, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.current_spending, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + b.current_spent, 0);
   const totalRemaining = totalBudget - totalSpent;
 
   if (loading) {
@@ -121,9 +129,9 @@ export function Budgets() {
       <div className="grid grid-cols-3 gap-6">
         {budgets.map((budget) => {
           const Icon = iconMap[budget.category] || ShoppingCart;
-          const percentage = (budget.current_spending / budget.monthly_limit) * 100;
-          const remaining = budget.monthly_limit - budget.current_spending;
-          const spent = budget.current_spending;
+          const percentage = (budget.current_spent / budget.monthly_limit) * 100;
+          const remaining = budget.monthly_limit - budget.current_spent;
+          const spent = budget.current_spent;
           const limit = budget.monthly_limit;
           const status = getBudgetStatus(spent, limit);
           const isHovered = hoveredBudget === budget.id;
@@ -139,6 +147,15 @@ export function Budgets() {
               <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${
                 isHovered ? 'opacity-100' : 'opacity-0'
               }`}>
+                <button 
+                  onClick={() => {
+                    setEditingBudget(budget);
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                >
+                  <Edit size={16} />
+                </button>
                 <button 
                   onClick={() => {
                     setSelectedBudget(budget);
@@ -221,8 +238,12 @@ export function Budgets() {
       {/* Modals */}
       <CreateBudgetModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingBudget(null);
+        }}
         onSubmit={handleCreateBudget}
+        editingBudget={editingBudget}
       />
 
       <DeleteConfirmationModal

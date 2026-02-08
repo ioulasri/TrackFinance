@@ -28,6 +28,7 @@ export function Transactions() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -48,16 +49,27 @@ export function Transactions() {
 
   const handleCreateTransaction = async (data: any) => {
     try {
-      await transactionAPI.create({
-        amount: parseFloat(data.amount),
-        category: data.category,
-        transaction_type: data.type,
-        description: data.description,
-        date: data.date,
-      });
+      if (editingTransaction) {
+        await transactionAPI.update(editingTransaction.id, {
+          amount: parseFloat(data.amount),
+          category: data.category,
+          type: data.type,
+          description: data.description,
+          date: data.date,
+        });
+      } else {
+        await transactionAPI.create({
+          amount: parseFloat(data.amount),
+          category: data.category,
+          type: data.type,
+          description: data.description,
+          date: data.date,
+        });
+      }
       await fetchTransactions();
+      setEditingTransaction(null);
     } catch (error) {
-      console.error('Failed to create transaction:', error);
+      console.error('Failed to create/update transaction:', error);
     }
   };
 
@@ -77,7 +89,7 @@ export function Transactions() {
     const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          transaction.category?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || transaction.category === selectedCategory;
-    const matchesType = selectedType === 'all' || transaction.transaction_type === selectedType;
+    const matchesType = selectedType === 'all' || transaction.type === selectedType;
     
     return matchesSearch && matchesCategory && matchesType;
   });
@@ -241,8 +253,8 @@ export function Transactions() {
                 </tr>
               ) : (
                 displayedTransactions.map((transaction) => {
-                  const Icon = iconMap[transaction.category] || (transaction.transaction_type === 'income' ? ArrowUpRight : ArrowDownRight);
-                  const isIncome = transaction.transaction_type === 'income';
+                  const Icon = iconMap[transaction.category] || (transaction.type === 'income' ? ArrowUpRight : ArrowDownRight);
+                  const isIncome = transaction.type === 'income';
 
                   return (
                     <tr key={transaction.id} className="hover:bg-gray-50 transition-colors group">
@@ -251,7 +263,7 @@ export function Transactions() {
                           isIncome ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
                         }`}>
                           <Icon size={16} />
-                          <span className="text-sm font-medium capitalize">{transaction.transaction_type}</span>
+                          <span className="text-sm font-medium capitalize">{transaction.type}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -274,6 +286,15 @@ export function Transactions() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => {
+                              setEditingTransaction(transaction);
+                              setIsCreateModalOpen(true);
+                            }}
+                            className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          >
+                            <Edit size={16} />
+                          </button>
                           <button 
                             onClick={() => {
                               setSelectedTransaction(transaction);
@@ -340,8 +361,12 @@ export function Transactions() {
       {/* Modals */}
       <CreateTransactionModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingTransaction(null);
+        }}
         onSubmit={handleCreateTransaction}
+        editingTransaction={editingTransaction}
       />
 
       <DeleteConfirmationModal

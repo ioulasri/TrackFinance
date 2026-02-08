@@ -7,14 +7,18 @@ interface DeleteConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  itemName: string;
-  itemType: string;
+  title?: string;
+  message?: string;
+  itemName?: string;
+  itemType?: string;
 }
 
 export function DeleteConfirmationModal({ 
   isOpen, 
   onClose, 
   onConfirm, 
+  title,
+  message,
   itemName, 
   itemType 
 }: DeleteConfirmationModalProps) {
@@ -23,8 +27,15 @@ export function DeleteConfirmationModal({
     onClose();
   };
 
+  const modalTitle = title || 'Confirm Deletion';
+  const modalMessage = message || 
+    (itemName && itemType 
+      ? `You're about to delete the ${itemType} "${itemName}". This action cannot be undone.`
+      : 'Are you sure you want to proceed with this deletion? This action cannot be undone.'
+    );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Confirm Deletion" maxWidth="sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="sm">
       <div className="text-center space-y-4">
         {/* Warning Icon */}
         <div className="flex justify-center">
@@ -35,12 +46,7 @@ export function DeleteConfirmationModal({
 
         {/* Message */}
         <div>
-          <h4 className="text-gray-900 mb-2">Are you sure?</h4>
-          <p className="text-gray-600">
-            You're about to delete the {itemType}{' '}
-            <span className="font-semibold text-gray-900">"{itemName}"</span>.
-            This action cannot be undone.
-          </p>
+          <p className="text-gray-600">{modalMessage}</p>
         </div>
 
         {/* Actions */}
