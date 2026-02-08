@@ -28,7 +28,7 @@ export default function Dashboard() {
     try {
       const [statsRes, transactionsRes, budgetRes] = await Promise.all([
         authAPI.getUserStats(),
-        transactionAPI.list(0, 10),
+        transactionAPI.list(0, 1000),
         budgetAPI.getStatus(),
       ]);
 
