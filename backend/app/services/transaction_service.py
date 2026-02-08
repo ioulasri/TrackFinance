@@ -50,7 +50,7 @@ class TransactionService:
 		return db.query(Transaction).filter(
 			Transaction.user_id == user_id,
 			Transaction.is_deleted == False
-		).offset(skip).limit(limit).all()
+		).order_by(Transaction.date.desc(), Transaction.created_at.desc()).offset(skip).limit(limit).all()
 	
 	@staticmethod
 	def get_transaction(db: Session, user_id: int, transaction_id: int) -> Optional[Transaction]:
