@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Sidebar } from './components/Sidebar';
@@ -10,7 +11,6 @@ import { Settings } from './components/Settings';
 import { authAPI } from './api';
 
 type AuthState = 'login' | 'register' | 'authenticated';
-type Page = 'dashboard' | 'transactions' | 'budgets' | 'achievements' | 'settings';
 
 interface User {
   id: number;
@@ -23,7 +23,6 @@ interface User {
 
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>('login');
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +57,6 @@ export default function App() {
     localStorage.removeItem('token');
     setUser(null);
     setAuthState('login');
-    setCurrentPage('dashboard');
   };
 
   if (loading) {
@@ -95,30 +93,35 @@ export default function App() {
     );
   }
 
-  // Main App Layout
+  // Main App Layout with Routing
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar 
-        currentPage={currentPage} 
-        onPageChange={(page) => setCurrentPage(page as Page)}
-        user={{
-          name: user?.username || 'User',
-          level: user?.level || 1,
-          avatar: '',
-        }}
-      />
+    <BrowserRouter>
+      <div className="flex min-h-screen bg-gray-50">
+        {/* Sidebar */}
+        <Sidebar 
+          user={{
+            name: user?.username || 'User',
+            level: user?.level || 1,
+            avatar: '',
+          }}
+          onLogout={handleLogout}
+        />
 
-      {/* Main Content */}
-      <main className="flex-1 ml-60 p-8">
-        <div className="max-w-7xl mx-auto">
-          {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'transactions' && <Transactions />}
-          {currentPage === 'budgets' && <Budgets />}
-          {currentPage === 'achievements' && <Achievements />}
-          {currentPage === 'settings' && <Settings />}
-        </div>
-      </main>
-    </div>
+        {/* Main Content */}
+        <main className="flex-1 ml-60 p-8">
+          <div className="max-w-7xl mx-auto">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </div>
+        </main>
+      </div>
+    </BrowserRouter>
   );
 }
