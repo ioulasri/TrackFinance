@@ -50,13 +50,21 @@ export function Transactions() {
   const handleCreateTransaction = async (data: any) => {
     try {
       if (editingTransaction) {
-        await transactionAPI.update(editingTransaction.id, {
+        // Only include changed fields in the update
+        const updatePayload: any = {
           amount: parseFloat(data.amount),
           category: data.category,
           type: data.type,
           description: data.description,
-          date: data.date,
-        });
+        };
+        
+        // Only include date if it changed
+        const originalDate = new Date(editingTransaction.date).toISOString().split('T')[0];
+        if (data.date !== originalDate) {
+          updatePayload.date = data.date;
+        }
+        
+        await transactionAPI.update(editingTransaction.id, updatePayload);
       } else {
         await transactionAPI.create({
           amount: parseFloat(data.amount),
