@@ -1,7 +1,36 @@
 import axios from 'axios';
 
-// Use environment variable or fallback to localhost for development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // 1. Use explicit environment variable if set
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // 2. In production, try to detect backend URL from current domain
+  if (import.meta.env.PROD) {
+    // If frontend is at app.domain.com, backend might be at api.domain.com
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // For DigitalOcean App Platform, services are often at same domain with different ports
+    // or as separate subdomains. Adjust this logic based on your deployment:
+    if (hostname.includes('ondigitalocean.app')) {
+      // If services are deployed separately, frontend might be frontend-xxx.ondigitalocean.app
+      // and backend might be backend-xxx.ondigitalocean.app
+      // You'll need to update this with your actual backend URL
+      return `${protocol}//${hostname.replace('frontend', 'backend')}`;
+    }
+    
+    // Default production fallback
+    return `${protocol}//${hostname}:8000`;
+  }
+  
+  // 3. Development fallback
+  return 'http://localhost:8000';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,6 +38,11 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Log API URL in development for debugging
+if (import.meta.env.DEV) {
+  console.log('🔌 API URL:', API_URL);
+}
 
 // Request interceptor to add token
 api.interceptors.request.use(
@@ -26,10 +60,31 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log errors in development
+    if (import.meta.env.DEV) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+    }
+    
     if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('token');
       window.location.href = '/';
     }
+    
+    // Network error - likely can't reach backend
+    if (!error.response) {
+      console.error('❌ Cannot connect to backend at:', API_URL);
+      console.error('Please check:');
+      console.error('1. Backend is running');
+      console.error('2. VITE_API_URL is set correctly');
+      console.error('3. CORS is configured on backend');
+    }
+    
     return Promise.reject(error);
   }
 );
