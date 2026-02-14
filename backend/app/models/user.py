@@ -28,3 +28,4 @@ class User(Base):
 	transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
 	user_achievements = relationship("UserAchievement", back_populates="user")
 	budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan")
+	goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")

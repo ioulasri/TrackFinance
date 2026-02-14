@@ -139,4 +139,36 @@ export const achievementAPI = {
   getStats: () => api.get('/api/v1/achievements/me/stats'),
 };
 
+export const goalAPI = {
+  list: () => api.get('/api/v1/goals/'),
+  
+  create: (data: {
+    name: string;
+    icon?: string;
+    target_amount: number;
+    current_amount?: number;
+    deadline?: string;
+    category?: string;
+    description?: string;
+  }) => api.post('/api/v1/goals/', data),
+  
+  update: (id: number, data: any) => api.patch(`/api/v1/goals/${id}`, data),
+  
+  delete: (id: number) => api.delete(`/api/v1/goals/${id}`),
+  
+  getActive: () => api.get('/api/v1/goals/active'),
+  
+  getCompleted: () => api.get('/api/v1/goals/completed'),
+  
+  getOverdue: () => api.get('/api/v1/goals/overdue'),
+  
+  getStats: () => api.get('/api/v1/goals/stats'),
+  
+  updateProgress: (id: number, amount: number) =>
+    api.patch(`/api/v1/goals/${id}/progress`, null, { params: { amount } }),
+  
+  addToGoal: (id: number, amount: number) =>
+    api.patch(`/api/v1/goals/${id}/add`, null, { params: { amount } }),
+};
+
 export default api;
