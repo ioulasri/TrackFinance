@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Target, PiggyBank, Plane, Plus, TrendingUp, Home, GraduationCap, Heart, Zap } from 'lucide-react';
 import { ProgressBar } from './ProgressBar';
+import { CreateGoalModal } from './CreateGoalModal';
 import { goalAPI } from '../api';
 
 interface Goal {
@@ -42,6 +43,7 @@ export function GoalsTracker() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const colorClasses: Record<string, string> = {
     emerald: 'bg-emerald-50 text-emerald-600',
@@ -64,6 +66,16 @@ export function GoalsTracker() {
       setError(err.response?.data?.detail || 'Failed to load goals');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateGoal = async (goalData: any) => {
+    try {
+      await goalAPI.create(goalData);
+      await fetchGoals(); // Refresh the goals list
+    } catch (err: any) {
+      console.error('Error creating goal:', err);
+      alert(err.response?.data?.detail || 'Failed to create goal');
     }
   };
 
@@ -108,32 +120,46 @@ export function GoalsTracker() {
 
   if (goals.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-gray-900">Goals Tracker</h3>
-          <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
-            <Plus size={16} />
-            Add Goal
-          </button>
+      <>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-gray-900">Goals Tracker</h3>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            >
+              <Plus size={16} />
+              Add Goal
+            </button>
+          </div>
+          <div className="text-center py-12">
+            <Target className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+            <p className="text-gray-500 text-sm">No active goals yet</p>
+            <p className="text-gray-400 text-xs mt-1">Create your first financial goal to get started</p>
+          </div>
         </div>
-        <div className="text-center py-12">
-          <Target className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">No active goals yet</p>
-          <p className="text-gray-400 text-xs mt-1">Create your first financial goal to get started</p>
-        </div>
-      </div>
+        <CreateGoalModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onSubmit={handleCreateGoal} 
+        />
+      </>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-gray-900">Goals Tracker</h3>
-        <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
-          <Plus size={16} />
-          Add Goal
-        </button>
-      </div>
+    <>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-gray-900">Goals Tracker</h3>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+          >
+            <Plus size={16} />
+            Add Goal
+          </button>
+        </div>
 
       <div className="grid grid-cols-3 gap-4">
         {goals.map((goal) => {
@@ -177,5 +203,11 @@ export function GoalsTracker() {
         })}
       </div>
     </div>
+    <CreateGoalModal 
+      isOpen={isModalOpen} 
+      onClose={() => setIsModalOpen(false)} 
+      onSubmit={handleCreateGoal} 
+    />
+  </>
   );
 }
