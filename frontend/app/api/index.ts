@@ -32,18 +32,17 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-// Strip trailing /api if present to avoid duplication
-const normalizedApiUrl = API_URL.replace(/\/api\/?$/, '');
-
 const api = axios.create({
-  baseURL: normalizedApiUrl,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Log API URL for debugging (in all environments to troubleshoot)
-console.log('🔌 API URL:', normalizedApiUrl);
+// Log API URL in development for debugging
+if (import.meta.env.DEV) {
+  console.log('🔌 API URL:', API_URL);
+}
 
 // Request interceptor to add token
 api.interceptors.request.use(
