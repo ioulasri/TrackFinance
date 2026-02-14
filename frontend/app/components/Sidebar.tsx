@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, List, Wallet, Trophy, Settings, LogOut } from 'lucide-react';
+import { Home, List, Wallet, Target, Trophy, Settings, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   user: {
@@ -16,6 +16,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: Home },
     { id: 'transactions', path: '/transactions', label: 'Transactions', icon: List },
     { id: 'budgets', path: '/budgets', label: 'Budgets', icon: Wallet },
+    { id: 'goals', path: '/goals', label: 'Goals', icon: Target },
     { id: 'achievements', path: '/achievements', label: 'Achievements', icon: Trophy },
     { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
   ];
