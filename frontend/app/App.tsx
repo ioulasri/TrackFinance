@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
 import { Budgets } from './components/Budgets';
+import { Goals } from './components/Goals';
 import { Achievements } from './components/Achievements';
 import { Settings } from './components/Settings';
 import { authAPI } from './api';
@@ -115,6 +116,7 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/budgets" element={<Budgets />} />
+              <Route path="/goals" element={<Goals />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
