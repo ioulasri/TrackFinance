@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, computed_field
 from datetime import date, datetime
 from typing import Optional
 
@@ -56,8 +56,8 @@ class GoalResponse(GoalBase):
     user_id: int
     created_at: datetime
     updated_at: datetime
-    progress_percentage: float = Field(description="Progress percentage (0-100)")
 
+    @computed_field
     @property
     def progress_percentage(self) -> float:
         """Calculate progress percentage"""
