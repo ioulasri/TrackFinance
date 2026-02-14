@@ -95,7 +95,7 @@ export default function App() {
 
   // Main App Layout with Routing
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar */}
         <Sidebar 
