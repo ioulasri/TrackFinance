@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.db.session import Base
 
 class Goal(Base):
@@ -24,3 +25,15 @@ class Goal(Base):
 
     def __repr__(self):
         return f"<Goal {self.name} - {self.current_amount}/{self.target_amount} MAD>"
+
+    @hybrid_property
+    def is_completed(self) -> bool:
+        """Instance-level property: whether the goal has been reached."""
+        if self.target_amount is None:
+            return False
+        return float(self.current_amount or 0.0) >= float(self.target_amount or 0.0)
+
+    @is_completed.expression
+    def is_completed(cls):
+        """Class-level SQL expression usable in queries."""
+        return cls.current_amount >= cls.target_amount
