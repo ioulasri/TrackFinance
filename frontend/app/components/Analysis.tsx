@@ -386,7 +386,7 @@ export function Analysis() {
       insights.push({
         type: 'info',
         title: `${topCategories[0].category} is Your Top Expense`,
-        description: `You've spent $${topCategories[0].amount} on ${topCategories[0].category} this month. Consider if this aligns with your priorities.`,
+        description: `You've spent MAD${topCategories[0].amount} on ${topCategories[0].category} this month. Consider if this aligns with your priorities.`,
       });
     }
 
