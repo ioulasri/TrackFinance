@@ -563,11 +563,11 @@ export function Analysis() {
             </div>
           </div>
           <h3 className="text-sm font-medium text-gray-600 mb-1">Current Month</h3>
-          <p className="text-2xl font-bold text-gray-900">
-            ${monthlyComparison.current_month.toLocaleString()}
+            <p className="text-2xl font-bold text-gray-900">
+            MAD {monthlyComparison.current_month.toLocaleString()}
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            vs ${monthlyComparison.previous_month.toLocaleString()} last month
+            vs MAD {monthlyComparison.previous_month.toLocaleString()} last month
           </p>
         </div>
 
@@ -583,7 +583,7 @@ export function Analysis() {
           </div>
           <h3 className="text-sm font-medium text-gray-600 mb-1">Next Month Estimate</h3>
           <p className="text-2xl font-bold text-gray-900">
-            ${predictions.next_month_spending.toLocaleString()}
+            MAD {predictions.next_month_spending.toLocaleString()}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Based on 3-month average (AI prediction coming soon)
@@ -712,7 +712,7 @@ export function Analysis() {
                 <span className="text-sm font-medium text-gray-900">{item.category}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">
-                    ${item.spent} / ${item.budget}
+                    MAD {item.spent} / MAD {item.budget}
                   </span>
                   <span
                     className={`text-xs font-semibold px-2 py-1 rounded ${
@@ -759,7 +759,7 @@ export function Analysis() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{item.category}</p>
-                  <p className="text-sm text-gray-600">${item.amount}</p>
+                  <p className="text-sm text-gray-600">MAD {item.amount}</p>
                 </div>
               </div>
               <div
