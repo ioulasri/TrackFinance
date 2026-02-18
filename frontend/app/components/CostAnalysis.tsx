@@ -25,7 +25,7 @@ export function CostAnalysis() {
     setLoading(true);
     try {
       const response = await transactionAPI.list(0, 1000);
-      const expenses = response.data.filter((t: any) => t.transaction_type === 'expense');
+      const expenses = response.data.filter((t: any) => t.type === 'expense');
       
       const categoryTotals: Record<string, number> = {};
       expenses.forEach((t: any) => {
