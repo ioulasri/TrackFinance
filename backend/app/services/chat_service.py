@@ -248,7 +248,9 @@ class FinanceChatService:
             if response.tool_calls:
                 tool_call = response.tool_calls[0]
                 function_called = tool_call.function.name
+                
                 function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                function_args = function_args or {}
 
                 # Execute the function
                 result = self._handle_tool_call(function_called, function_args, user_id, db)
