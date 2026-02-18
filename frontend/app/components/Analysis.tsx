@@ -32,85 +32,39 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
-import { analysisAPI, AnalysisData } from '../api';
+import { transactionAPI, budgetAPI } from '../api';
 
 /**
  * Analysis Component
  * 
- * Comprehensive financial analysis page powered by backend ML model.
+ * Comprehensive financial analysis page with real data from backend.
  * 
- * Features:
- * - Financial health score with visual indicator
- * - Spending trends over time (line chart)
- * - Category breakdown (pie chart)
+ * Real Data (from backend):
+ * - Spending trends over time (from transactions)
+ * - Category breakdown (from transactions)
  * - Income vs Expenses comparison
- * - Savings rate visualization
+ * - Savings rate calculation
  * - Budget performance tracking
- * - AI-powered insights and alerts
- * - Predictive analytics for next month
  * - Month-over-month comparisons
  * - Top spending categories with trends
+ * 
+ * Demo Data (AI features - to be implemented):
+ * - Financial health score (requires ML model)
+ * - AI-powered insights (requires LLM)
+ * - Predictive analytics (requires ML model)
  */
 
-// Mock data for development (will be replaced by API)
-const mockAnalysisData: AnalysisData = {
-  financial_health_score: 78,
-  spending_trend: [
-    { month: 'Jan', spending: 2400, income: 3200 },
-    { month: 'Feb', spending: 2100, income: 3200 },
-    { month: 'Mar', spending: 2500, income: 3400 },
-    { month: 'Apr', spending: 2700, income: 3400 },
-    { month: 'May', spending: 2300, income: 3600 },
-    { month: 'Jun', spending: 2800, income: 3600 },
-  ],
-  category_breakdown: [
-    { category: 'Food & Dining', amount: 680, percentage: 28 },
-    { category: 'Shopping', amount: 520, percentage: 21 },
-    { category: 'Transportation', amount: 360, percentage: 15 },
-    { category: 'Entertainment', amount: 280, percentage: 12 },
-    { category: 'Bills & Utilities', amount: 480, percentage: 20 },
-    { category: 'Other', amount: 100, percentage: 4 },
-  ],
-  savings_rate: 25.3,
-  monthly_comparison: {
-    current_month: 2800,
-    previous_month: 2300,
-    change_percentage: 21.7,
-  },
-  top_categories: [
-    { category: 'Food & Dining', amount: 680, trend: 'up' },
-    { category: 'Shopping', amount: 520, trend: 'down' },
-    { category: 'Bills & Utilities', amount: 480, trend: 'stable' },
-  ],
-  insights: [
-    {
-      type: 'warning',
-      title: 'Spending Increase Detected',
-      description: 'Your spending has increased by 21.7% compared to last month. Consider reviewing discretionary expenses.',
-    },
-    {
-      type: 'success',
-      title: 'Great Savings Rate!',
-      description: 'You\'re saving 25.3% of your income, which is above the recommended 20%.',
-    },
-    {
-      type: 'info',
-      title: 'Food Spending Pattern',
-      description: 'Food & Dining is your highest expense category. Meal planning could help reduce costs.',
-    },
-  ],
-  predictions: {
-    next_month_spending: 2650,
-    next_month_income: 3600,
-    confidence_score: 87,
-  },
-  budget_performance: [
-    { category: 'Food & Dining', budget: 700, spent: 680, percentage: 97 },
-    { category: 'Shopping', budget: 500, spent: 520, percentage: 104 },
-    { category: 'Transportation', budget: 400, spent: 360, percentage: 90 },
-    { category: 'Entertainment', budget: 300, spent: 280, percentage: 93 },
-  ],
-};
+interface AnalysisData {
+  financial_health_score: number;  // Demo: AI feature
+  spending_trend: { month: string; spending: number; income: number }[];
+  category_breakdown: { category: string; amount: number; percentage: number }[];
+  savings_rate: number;
+  monthly_comparison: { current_month: number; previous_month: number; change_percentage: number };
+  top_categories: { category: string; amount: number; trend: 'up' | 'down' | 'stable' }[];
+  insights: { type: 'warning' | 'success' | 'info'; title: string; description: string }[];  // Demo: AI feature
+  predictions: { next_month_spending: number; next_month_income: number; confidence_score: number };  // Demo: AI feature
+  budget_performance: { category: string; budget: number; spent: number; percentage: number }[];
+}
 
 const COLORS = ['#9333EA', '#A855F7', '#C084FC', '#D8B4FE', '#E9D5FF', '#F3E8FF'];
 
@@ -127,16 +81,329 @@ export function Analysis() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await analysisAPI.getAnalysis();
-      setAnalysisData(data);
+      // Fetch real data from backend
+      const [transactionsRes, budgetsRes] = await Promise.all([
+        transactionAPI.list(0, 1000),
+        budgetAPI.list(),
+      ]);
+
+      const transactions = transactionsRes.data;
+      const budgets = budgetsRes.data;
+
+      // Process real data
+      const processedData = processFinancialData(transactions, budgets);
+      setAnalysisData(processedData);
     } catch (err) {
       console.error('Failed to load analysis:', err);
-      // Use mock data as fallback
-      setAnalysisData(mockAnalysisData);
-      setError('Using demo data. Connect to backend for live analysis.');
+      setError('Failed to load financial data. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const processFinancialData = (transactions: any[], budgets: any[]): AnalysisData => {
+    const now = new Date();
+    
+    // Calculate spending trends (last 6 months)
+    const spendingTrend = calculateSpendingTrend(transactions);
+    
+    // Calculate category breakdown (current month)
+    const categoryBreakdown = calculateCategoryBreakdown(transactions);
+    
+    // Calculate monthly comparison
+    const monthlyComparison = calculateMonthlyComparison(transactions);
+    
+    // Calculate savings rate
+    const savingsRate = calculateSavingsRate(transactions);
+    
+    // Calculate top categories with trends
+    const topCategories = calculateTopCategories(transactions);
+    
+    // Calculate budget performance
+    const budgetPerformance = calculateBudgetPerformance(transactions, budgets);
+    
+    // Demo data for AI features (to be replaced with ML models)
+    const demoHealthScore = calculateBasicHealthScore(savingsRate, monthlyComparison.change_percentage);
+    const demoInsights = generateBasicInsights(savingsRate, monthlyComparison, topCategories);
+    const demoPredictions = generateBasicPredictions(spendingTrend);
+
+    return {
+      financial_health_score: demoHealthScore,
+      spending_trend: spendingTrend,
+      category_breakdown: categoryBreakdown,
+      savings_rate: savingsRate,
+      monthly_comparison: monthlyComparison,
+      top_categories: topCategories,
+      insights: demoInsights,
+      predictions: demoPredictions,
+      budget_performance: budgetPerformance,
+    };
+  };
+
+  const calculateSpendingTrend = (transactions: any[]) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const trend = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+      const monthTransactions = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        return tDate >= monthStart && tDate <= monthEnd;
+      });
+
+      const income = monthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const spending = monthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      trend.push({
+        month: months[date.getMonth()],
+        spending: Math.round(spending),
+        income: Math.round(income),
+      });
+    }
+
+    return trend;
+  };
+
+  const calculateCategoryBreakdown = (transactions: any[]) => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const currentMonthExpenses = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return t.type === 'expense' && tDate >= monthStart;
+    });
+
+    const categoryTotals: { [key: string]: number } = {};
+    let total = 0;
+
+    currentMonthExpenses.forEach(t => {
+      const amount = parseFloat(t.amount);
+      categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
+      total += amount;
+    });
+
+    return Object.entries(categoryTotals)
+      .map(([category, amount]) => ({
+        category,
+        amount: Math.round(amount),
+        percentage: Math.round((amount / total) * 100) || 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  };
+
+  const calculateMonthlyComparison = (transactions: any[]) => {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const currentMonth = transactions
+      .filter(t => {
+        const tDate = new Date(t.date);
+        return t.type === 'expense' && tDate >= currentMonthStart;
+      })
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const previousMonth = transactions
+      .filter(t => {
+        const tDate = new Date(t.date);
+        return t.type === 'expense' && tDate >= previousMonthStart && tDate <= previousMonthEnd;
+      })
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const changePercentage = previousMonth > 0
+      ? Math.round(((currentMonth - previousMonth) / previousMonth) * 100)
+      : 0;
+
+    return {
+      current_month: Math.round(currentMonth),
+      previous_month: Math.round(previousMonth),
+      change_percentage: changePercentage,
+    };
+  };
+
+  const calculateSavingsRate = (transactions: any[]) => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const currentMonthTransactions = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate >= monthStart;
+    });
+
+    const income = currentMonthTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const expenses = currentMonthTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const savings = income - expenses;
+    return income > 0 ? Math.round((savings / income) * 100 * 10) / 10 : 0;
+  };
+
+  const calculateTopCategories = (transactions: any[]) => {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const currentMonth = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return t.type === 'expense' && tDate >= currentMonthStart;
+    });
+
+    const previousMonth = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return t.type === 'expense' && tDate >= previousMonthStart && tDate <= previousMonthEnd;
+    });
+
+    const currentCategories: { [key: string]: number } = {};
+    const previousCategories: { [key: string]: number } = {};
+
+    currentMonth.forEach(t => {
+      currentCategories[t.category] = (currentCategories[t.category] || 0) + parseFloat(t.amount);
+    });
+
+    previousMonth.forEach(t => {
+      previousCategories[t.category] = (previousCategories[t.category] || 0) + parseFloat(t.amount);
+    });
+
+    return Object.entries(currentCategories)
+      .map(([category, amount]) => {
+        const prevAmount = previousCategories[category] || 0;
+        let trend: 'up' | 'down' | 'stable' = 'stable';
+        
+        if (prevAmount > 0) {
+          const change = ((amount - prevAmount) / prevAmount) * 100;
+          if (change > 10) trend = 'up';
+          else if (change < -10) trend = 'down';
+        } else if (amount > 0) {
+          trend = 'up';
+        }
+
+        return { category, amount: Math.round(amount), trend };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3);
+  };
+
+  const calculateBudgetPerformance = (transactions: any[], budgets: any[]) => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const currentMonthExpenses = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return t.type === 'expense' && tDate >= monthStart;
+    });
+
+    const categorySpending: { [key: string]: number } = {};
+    currentMonthExpenses.forEach(t => {
+      categorySpending[t.category] = (categorySpending[t.category] || 0) + parseFloat(t.amount);
+    });
+
+    return budgets.map(budget => {
+      const spent = categorySpending[budget.category] || 0;
+      const percentage = Math.round((spent / budget.monthly_limit) * 100);
+      
+      return {
+        category: budget.category,
+        budget: budget.monthly_limit,
+        spent: Math.round(spent),
+        percentage,
+      };
+    });
+  };
+
+  // Demo functions for AI features (to be replaced with ML models)
+  const calculateBasicHealthScore = (savingsRate: number, changePercentage: number): number => {
+    let score = 50; // Base score
+    
+    // Adjust based on savings rate
+    if (savingsRate >= 20) score += 25;
+    else if (savingsRate >= 10) score += 15;
+    else if (savingsRate >= 0) score += 5;
+    else score -= 10;
+    
+    // Adjust based on spending trend
+    if (changePercentage <= -10) score += 15; // Spending decreased
+    else if (changePercentage <= 0) score += 10;
+    else if (changePercentage <= 10) score += 5;
+    else score -= 10; // Spending increased significantly
+    
+    return Math.min(100, Math.max(0, score));
+  };
+
+  const generateBasicInsights = (
+    savingsRate: number,
+    monthlyComparison: any,
+    topCategories: any[]
+  ) => {
+    const insights: any[] = [];
+
+    // Savings rate insight
+    if (savingsRate >= 20) {
+      insights.push({
+        type: 'success',
+        title: 'Great Savings Rate!',
+        description: `You're saving ${savingsRate}% of your income, which is above the recommended 20%.`,
+      });
+    } else if (savingsRate < 10) {
+      insights.push({
+        type: 'warning',
+        title: 'Low Savings Rate',
+        description: `Your savings rate is ${savingsRate}%. Consider reducing expenses to save at least 20% of your income.`,
+      });
+    }
+
+    // Spending change insight
+    if (monthlyComparison.change_percentage > 15) {
+      insights.push({
+        type: 'warning',
+        title: 'Spending Increase Detected',
+        description: `Your spending has increased by ${monthlyComparison.change_percentage}% compared to last month. Consider reviewing discretionary expenses.`,
+      });
+    } else if (monthlyComparison.change_percentage < -15) {
+      insights.push({
+        type: 'success',
+        title: 'Decreased Spending',
+        description: `Great job! You've reduced spending by ${Math.abs(monthlyComparison.change_percentage)}% this month.`,
+      });
+    }
+
+    // Top category insight
+    if (topCategories.length > 0) {
+      insights.push({
+        type: 'info',
+        title: `${topCategories[0].category} is Your Top Expense`,
+        description: `You've spent $${topCategories[0].amount} on ${topCategories[0].category} this month. Consider if this aligns with your priorities.`,
+      });
+    }
+
+    return insights;
+  };
+
+  const generateBasicPredictions = (spendingTrend: any[]) => {
+    // Simple average-based prediction (to be replaced with ML model)
+    const recentMonths = spendingTrend.slice(-3);
+    const avgSpending = recentMonths.reduce((sum, m) => sum + m.spending, 0) / recentMonths.length;
+    const avgIncome = recentMonths.reduce((sum, m) => sum + m.income, 0) / recentMonths.length;
+
+    return {
+      next_month_spending: Math.round(avgSpending),
+      next_month_income: Math.round(avgIncome),
+      confidence_score: 65, // Low confidence for simple average
+    };
   };
 
   if (isLoading) {
@@ -200,10 +467,16 @@ export function Analysis() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Financial Analysis</h1>
         <p className="text-gray-600">
-          AI-powered insights and comprehensive breakdown of your financial health
+          Real-time insights from your financial data
         </p>
+        {!error && (
+          <div className="mt-3 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
+            <strong>Data sources:</strong> Transactions and budgets from your account. 
+            Health score and predictions use basic calculations (AI enhancement coming soon).
+          </div>
+        )}
         {error && (
-          <div className="mt-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
             {error}
           </div>
         )}
@@ -215,7 +488,7 @@ export function Analysis() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Financial Health Score</h2>
             <p className="text-sm text-gray-600">
-              Overall assessment of your financial situation
+              Basic assessment of your financial situation
             </p>
           </div>
           <Zap className="text-purple-600" size={28} />
@@ -305,15 +578,15 @@ export function Analysis() {
               <TrendingUp className="text-blue-600" size={20} />
             </div>
             <div className="px-2 py-1 bg-blue-100 rounded-md text-xs font-medium text-blue-700">
-              Predicted
+              Est. Average
             </div>
           </div>
-          <h3 className="text-sm font-medium text-gray-600 mb-1">Next Month</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Next Month Estimate</h3>
           <p className="text-2xl font-bold text-gray-900">
             ${predictions.next_month_spending.toLocaleString()}
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Expected income: ${predictions.next_month_income.toLocaleString()}
+            Based on 3-month average (AI prediction coming soon)
           </p>
         </div>
 
@@ -512,9 +785,14 @@ export function Analysis() {
         </div>
       </div>
 
-      {/* AI Insights */}
+      {/* Insights */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">AI-Powered Insights</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Financial Insights</h2>
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+            Basic Rules
+          </span>
+        </div>
         <div className="space-y-3">
           {insights.map((insight, index) => {
             const Icon =
