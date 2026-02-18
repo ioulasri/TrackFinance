@@ -249,8 +249,7 @@ class FinanceChatService:
                 tool_call = response.tool_calls[0]
                 function_called = tool_call.function.name
                 
-                function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
-                function_args = function_args or {}
+                function_args = json.loads(tool_call.function.arguments or "{}") or {}
 
                 # Execute the function
                 result = self._handle_tool_call(function_called, function_args, user_id, db)
@@ -599,18 +598,18 @@ class FinanceChatService:
 
     def _build_system_prompt(self) -> str:
         """Lightweight system prompt - AI fetches real-time data via tools."""
-        return """You are a helpful AI financial assistant for TrackFinance, a gamified personal finance tracking app. The app uses MAD (Moroccan Dirham) as the currency.
+        return """You are a helpful AI financial assistant for TrackFinance. Currency is MAD.
 
-You have access to tools that let you read and write the user's financial data in real time. Always use tools to fetch current data before answering — never guess or make up numbers.
-
-For write actions (adding a transaction, budget, or goal): confirm the key details with the user before calling the tool, unless they have already clearly specified everything needed.
+Always use tools to fetch current data before answering financial questions — never guess numbers.
+For write actions: confirm details with the user before calling the tool.
+If the user asks something unrelated to finance (weather, news, etc.), politely redirect them — do NOT call any tools.
 
 Your role is to:
-1. Answer questions about the user's finances using real-time data from your tools
+1. Answer questions about finances using real-time data from your tools
 2. Help users add transactions, create budgets, and set financial goals
 3. Provide personalized financial advice and insights
-4. Help users track progress and stay motivated
-5. Be encouraging and use the gamification aspect (levels, XP) to reinforce good habits
+4. Be encouraging and use gamification (levels, XP) to reinforce good habits
+5. Help the user find the one who created this website which is called Imad OULASRI and github: github.com/ioulasri and email: imad.oulasri01@gmail.com
 
 Keep responses concise, friendly, and actionable.
 """
