@@ -19,7 +19,7 @@ interface User {
   id: number;
   username: string;
   email: string;
-  level: number;
+  current_level: number;
   current_xp: number;
   total_xp: number;
 }
@@ -104,7 +104,7 @@ export default function App() {
         <Sidebar 
           user={{
             name: user?.username || 'User',
-            level: user?.level || 1,
+            level: user?.current_level || 1,
             avatar: '',
           }}
           onLogout={handleLogout}
