@@ -177,11 +177,7 @@ async def get_chat_suggestions(
     suggestions = [
         "What's my total spending this month?",
         "How much did I spend on food last month?",
-        "Am I on track with my budgets?",
         "What are my biggest expenses this month?",
-        "Show me my savings progress",
-        "How can I save more money?",
-        "What's my current financial health?",
         "Help me set a new budget goal"
     ]
     
