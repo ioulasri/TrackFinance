@@ -171,4 +171,89 @@ export const goalAPI = {
     api.patch(`/api/v1/goals/${id}/add`, null, { params: { amount } }),
 };
 
+// Analysis API types
+export interface AnalysisData {
+  financial_health_score: number;
+  spending_trend: {
+    month: string;
+    spending: number;
+    income: number;
+  }[];
+  category_breakdown: {
+    category: string;
+    amount: number;
+    percentage: number;
+  }[];
+  savings_rate: number;
+  monthly_comparison: {
+    current_month: number;
+    previous_month: number;
+    change_percentage: number;
+  };
+  top_categories: {
+    category: string;
+    amount: number;
+    trend: 'up' | 'down' | 'stable';
+  }[];
+  insights: {
+    type: 'warning' | 'success' | 'info';
+    title: string;
+    description: string;
+  }[];
+  predictions: {
+    next_month_spending: number;
+    next_month_income: number;
+    confidence_score: number;
+  };
+  budget_performance: {
+    category: string;
+    budget: number;
+    spent: number;
+    percentage: number;
+  }[];
+}
+
+export const analysisAPI = {
+  getAnalysis: async (): Promise<AnalysisData> => {
+    const response = await api.get('/api/v1/analysis/financial-analysis');
+    return response.data;
+  },
+};
+
+// Chat API types
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  function_called?: string | null;
+  function_args?: object | null;
+  data?: object | null;
+  conversation_history: ChatMessage[];
+}
+
+export interface SuggestionsResponse {
+  suggestions: string[];
+}
+
+export const chatAPI = {
+  sendMessage: async (
+    message: string,
+    history: { role: string; content: string }[] = []
+  ): Promise<ChatResponse> => {
+    const response = await api.post('/api/v1/chat/chat', {
+      message,
+      conversation_history: history,
+    });
+    return response.data;
+  },
+
+  getSuggestions: async (): Promise<SuggestionsResponse> => {
+    const response = await api.get('/api/v1/chat/chat/suggestions');
+    return response.data;
+  },
+};
+
 export default api;

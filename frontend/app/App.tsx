@@ -7,8 +7,10 @@ import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
 import { Budgets } from './components/Budgets';
 import { Goals } from './components/Goals';
+import { Analysis } from './components/Analysis';
 import { Achievements } from './components/Achievements';
 import { Settings } from './components/Settings';
+import { AIAssistant } from './components/AIAssistant';
 import { authAPI } from './api';
 
 type AuthState = 'login' | 'register' | 'authenticated';
@@ -117,12 +119,16 @@ export default function App() {
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/goals" element={<Goals />} />
+              <Route path="/analysis" element={<Analysis />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </div>
         </main>
+
+        {/* AI Assistant - Available on all pages */}
+        <AIAssistant />
       </div>
     </BrowserRouter>
   );
