@@ -371,18 +371,6 @@ class FinanceChatService:
 			"data": None,
 			"conversation_history": updated_history
 		}
-	
-	def _get_cycle_start(self) -> datetime:
-		"""Returns the start of the current billing cycle (17th of current or previous month)."""
-		now = datetime.now(timezone.utc)
-		cycle_day = 17
-		if now.day >= cycle_day:
-			return now.replace(day=cycle_day, hour=0, minute=0, second=0, microsecond=0)
-		else:
-			# We're before the 17th, cycle started last month
-			first_of_month = now.replace(day=1)
-			last_month = first_of_month - timedelta(days=1)
-			return last_month.replace(day=cycle_day, hour=0, minute=0, second=0, microsecond=0)
 
 	# ============================================================
 	# Tool call router
@@ -466,7 +454,7 @@ class FinanceChatService:
 			return self._empty_context()
 
 		now = datetime.now(timezone.utc)
-		month_start = self._get_cycle_start()
+		month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
 
 		def sum_transactions(type_: str, since=None):
 			q = db.query(func.sum(Transaction.amount)).filter(
