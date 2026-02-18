@@ -62,12 +62,7 @@ TOOLS = [
             "description": "Get the user's most recent transactions including amount, type, category, description and date",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Number of transactions to return (default 10, max 50)"
-                    }
-                }
+                "properties": {}
             }
         }
     },
@@ -302,7 +297,7 @@ class FinanceChatService:
         elif function_name == "get_goals":
             return self._get_goals(user_id, db)
         elif function_name == "get_recent_transactions":
-            return self._get_recent_transactions(user_id, db, limit=args.get("limit", 10))
+            return self._get_recent_transactions(user_id, db, limit=10)
         elif function_name == "get_spending_by_category":
             return self._get_spending_by_category(user_id, db)
         elif function_name == "add_transaction":
