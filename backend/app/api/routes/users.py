@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token
+from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset
 from app.services.user_service import UserService
 from app.api.dependencies import get_current_user
 from app.models.user import User
@@ -18,6 +18,22 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 	try:
 		new_user = UserService.create_user(db, user_data)
 		return new_user
+	except ValueError as e:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=str(e)
+		)
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(reset_data: UserPasswordReset, db: Session = Depends(get_db)):
+	try:
+		UserService.reset_forgotten_password(
+			db=db,
+			username=reset_data.username,
+			old_password=reset_data.old_password,
+			new_password=reset_data.new_password
+		)
+		return {"message": "Password has been successfully reset."}
 	except ValueError as e:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,6 +62,26 @@ def login_user(credentials: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_current_user_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 	return current_user
+
+@router.put("/me/password", status_code=status.HTTP_200_OK)
+def change_password(
+	password_data: UserPasswordChange,
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
+	try:
+		UserService.change_password(
+			db=db,
+			user=current_user,
+			current_password=password_data.current_password,
+			new_password=password_data.new_password
+		)
+		return {"message": "Password updated successfully"}
+	except ValueError as e:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=str(e)
+		)
 
 @router.get("/me/stats", response_model=UserStatsResponse)
 def get_current_user_stats(current_user: User = Depends(get_current_user)):
