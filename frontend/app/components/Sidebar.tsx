@@ -1,12 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, List, Wallet, Target, Trophy, Settings, LogOut, LineChart } from 'lucide-react';
+import { XPBar } from './XPBar';
 
 interface SidebarProps {
   user: {
     name: string;
     level: number;
     avatar: string;
+    currentXP?: number;
+    requiredXP?: number;
   };
   onLogout: () => void;
 }
@@ -23,16 +26,16 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   ];
 
   return (
-    <div className="w-60 h-screen bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0">
+    <div className="w-60 h-screen bg-sidebar border-r border-border flex flex-col fixed left-0 top-0">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-border bg-sidebar">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-purple-600 rounded-xl">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          <div className="flex items-center justify-center w-9 h-9 bg-primary rounded-xl shadow-sm">
+            <svg className="w-5 h-5 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <span className="font-bold text-gray-900 text-lg">TrackFinance</span>
+          <span className="font-bold text-foreground text-lg tracking-tight">TrackFinance</span>
         </div>
       </div>
 
@@ -40,48 +43,53 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          
+
           return (
             <NavLink
               key={item.id}
               to={item.path}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  isActive 
-                    ? 'bg-purple-50 text-purple-600' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                `w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive
+                  ? 'bg-secondary text-foreground font-semibold shadow-sm border border-border/50'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                 }`
               }
             >
-              <Icon size={20} />
-              <span className="font-medium">{item.label}</span>
+              <Icon size={18} />
+              <span className="text-sm">{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-gray-200 space-y-3">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-50">
-          <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold">
+      <div className="p-4 border-t border-border space-y-4">
+        <div className="flex items-center gap-3 py-1">
+          <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-semibold border border-border shadow-sm">
             {user.name.substring(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm truncate">{user.name}</p>
-            <div className="flex items-center gap-1.5">
-              <div className="px-2 py-0.5 bg-purple-600 rounded-md">
-                <span className="text-xs font-bold text-white">LVL {user.level}</span>
+            <p className="font-medium text-foreground text-sm truncate">{user.name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="px-1.5 py-0.5 bg-secondary border border-border rounded flex items-center gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground">LVL {user.level}</span>
+                <span className="text-[10px]" title="7 Day Streak">🔥</span>
               </div>
             </div>
           </div>
         </div>
-        
+
+        {/* Sleek Sidebar XP Bar */}
+        <div className="px-1 pb-2">
+          <XPBar currentXP={user.currentXP || 0} requiredXP={user.requiredXP || 100} level={user.level} />
+        </div>
+
         {/* Logout Button */}
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-all shadow-sm bg-white"
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           <span className="font-medium text-sm">Logout</span>
         </button>
       </div>
