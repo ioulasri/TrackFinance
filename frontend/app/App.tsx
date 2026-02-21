@@ -11,9 +11,10 @@ import { Analysis } from './components/Analysis';
 import { Achievements } from './components/Achievements';
 import { Settings } from './components/Settings';
 import { AIAssistant } from './components/AIAssistant';
+import { LandingPage } from './components/LandingPage';
 import { authAPI } from './api';
 
-type AuthState = 'login' | 'register' | 'authenticated';
+type AuthState = 'landing' | 'login' | 'register' | 'authenticated';
 
 interface User {
   id: number;
@@ -25,7 +26,7 @@ interface User {
 }
 
 export default function App() {
-  const [authState, setAuthState] = useState<AuthState>('login');
+  const [authState, setAuthState] = useState<AuthState>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,45 +40,59 @@ export default function App() {
     }
   }, []);
 
-  const fetchUser = async () => {
+  const fetchUser = async (fromLogin = false) => {
     try {
       const response = await authAPI.getCurrentUser();
       setUser(response.data);
       setAuthState('authenticated');
     } catch (error) {
       localStorage.removeItem('token');
-      setAuthState('login');
+      // If we came from a login attempt, stay on the login page.
+      // If we came from the initial token check on mount, go to landing.
+      setAuthState(fromLogin ? 'login' : 'landing');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogin = () => {
-    fetchUser();
+    // Token is already stored in localStorage by Login.tsx.
+    // Immediately navigate to authenticated, then fetch user details.
+    setAuthState('authenticated');
+    fetchUser(true);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    setAuthState('login');
+    setAuthState('landing');
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl mb-4 shadow-[0_0_20px_rgba(127,13,242,0.4)]">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <h2 className="text-gray-900 font-semibold">Loading...</h2>
+          <h2 className="text-foreground font-semibold">Loading...</h2>
         </div>
       </div>
     );
   }
 
   // Auth screens
+  if (authState === 'landing') {
+    return (
+      <LandingPage
+        onLoginClick={() => setAuthState('login')}
+        onRegisterClick={() => setAuthState('register')}
+      />
+    );
+  }
+
   if (authState === 'login') {
     return (
       <Login
@@ -99,20 +114,22 @@ export default function App() {
   // Main App Layout with Routing
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-background text-foreground transition-colors duration-200">
         {/* Sidebar */}
-        <Sidebar 
+        <Sidebar
           user={{
             name: user?.username || 'User',
             level: user?.current_level || 1,
             avatar: '',
+            currentXP: user?.current_xp || 0,
+            requiredXP: user?.total_xp || 500, // Assuming total_xp holds the required amount if xp_to_next_level isn't directly on User
           }}
           onLogout={handleLogout}
         />
 
         {/* Main Content */}
         <main className="flex-1 ml-60 p-8">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
