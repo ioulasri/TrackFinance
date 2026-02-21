@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, TrendingUp, Shield, Sparkles, ChevronRight } from 'lucide-react';
+import { ArrowRight, TrendingUp, Shield, Sparkles, ChevronRight, Activity, CreditCard, DollarSign, Wallet, PieChart, Home, Settings, LogOut } from 'lucide-react';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -100,31 +100,163 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-[2rem] blur opacity-20" />
                     <div className="relative bg-card rounded-[1.5rem] border border-border shadow-2xl overflow-hidden aspect-video flex items-center justify-center">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-                        {/* Abstract Dashboard representation */}
-                        <div className="w-full h-full p-8 flex gap-6 z-10">
-                            <div className="w-64 h-full bg-background/50 rounded-2xl border border-border p-6 flex flex-col gap-4">
-                                <div className="w-32 h-8 bg-muted rounded-lg" />
-                                <div className="w-full h-24 bg-primary/10 border border-primary/20 rounded-xl mt-4 flex items-center px-4">
-                                    <div className="w-12 h-12 rounded-full bg-primary/20" />
-                                    <div className="ml-4 flex-1">
-                                        <div className="w-16 h-4 bg-muted mb-2 rounded" />
-                                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                                            <div className="w-2/3 h-full bg-primary" />
-                                        </div>
+                        {/* Realistic Dashboard Mockup */}
+                        <div className="w-full h-full p-6 flex gap-6 z-10 bg-background/40">
+                            {/* Sidebar Mockup */}
+                            <div className="w-56 h-full bg-card rounded-2xl border border-border p-5 flex flex-col gap-6 shadow-sm">
+                                {/* Logo / Title */}
+                                <div className="flex items-center gap-3 px-2">
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md">
+                                        <Activity size={16} className="text-white" />
+                                    </div>
+                                    <span className="font-bold text-foreground tracking-tight">TrackFinance</span>
+                                </div>
+                                {/* Navigation Menu */}
+                                <div className="flex flex-col gap-2 mt-4">
+                                    <div className="flex items-center gap-3 px-3 py-2.5 bg-primary/10 rounded-xl text-primary font-medium">
+                                        <Home size={18} />
+                                        <span className="text-sm">Dashboard</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-3 py-2.5 text-muted-foreground hover:bg-muted/50 rounded-xl transition-colors">
+                                        <CreditCard size={18} />
+                                        <span className="text-sm font-medium">Transactions</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-3 py-2.5 text-muted-foreground hover:bg-muted/50 rounded-xl transition-colors">
+                                        <PieChart size={18} />
+                                        <span className="text-sm font-medium">Budgets</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-3 py-2.5 text-muted-foreground hover:bg-muted/50 rounded-xl transition-colors">
+                                        <Shield size={18} />
+                                        <span className="text-sm font-medium">Goals</span>
                                     </div>
                                 </div>
                                 <div className="flex-1" />
-                                <div className="w-full h-10 bg-muted rounded-lg" />
-                            </div>
-                            <div className="flex-1 flex flex-col gap-6">
-                                <div className="w-full h-32 bg-background/50 rounded-2xl border border-border flex items-center px-8 gap-8">
-                                    <div className="w-48 h-16 bg-muted rounded-xl" />
-                                    <div className="w-48 h-16 bg-muted rounded-xl" />
-                                    <div className="w-48 h-16 bg-muted rounded-xl" />
+                                {/* Bottom Menu */}
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-3 px-3 py-2.5 text-muted-foreground hover:bg-muted/50 rounded-xl transition-colors">
+                                        <Settings size={18} />
+                                        <span className="text-sm font-medium">Settings</span>
+                                    </div>
+                                    {/* User Avatar Row */}
+                                    <div className="flex items-center gap-3 px-2 py-3 mt-2 border-t border-border">
+                                        <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                                            IA
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-foreground">Imad</span>
+                                            <span className="text-xs text-muted-foreground">Pro Member</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            {/* Main Content Area */}
+                            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                                {/* Top KPI Cards Row */}
+                                <div className="grid grid-cols-3 gap-6">
+                                    {/* Card 1: Balance */}
+                                    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-3 group hover:border-primary/30 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both" style={{ animationDelay: '200ms' }}>
+                                        <div className="flex items-center gap-3 text-muted-foreground">
+                                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                                <Wallet size={16} />
+                                            </div>
+                                            <span className="text-sm font-medium">Total Balance</span>
+                                        </div>
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-2xl font-bold text-foreground">MAD 12,450</span>
+                                            <span className="text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md mb-1">+5.2%</span>
+                                        </div>
+                                    </div>
+                                    {/* Card 2: Income */}
+                                    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-3 group hover:border-emerald-500/30 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both" style={{ animationDelay: '300ms' }}>
+                                        <div className="flex items-center gap-3 text-muted-foreground">
+                                            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
+                                                <TrendingUp size={16} />
+                                            </div>
+                                            <span className="text-sm font-medium">Income</span>
+                                        </div>
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-2xl font-bold text-foreground">MAD 9,200</span>
+                                            <span className="text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md mb-1">+12.4%</span>
+                                        </div>
+                                    </div>
+                                    {/* Card 3: Expenses */}
+                                    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-3 group hover:border-destructive/30 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both" style={{ animationDelay: '400ms' }}>
+                                        <div className="flex items-center gap-3 text-muted-foreground">
+                                            <div className="p-2 bg-destructive/10 rounded-lg text-destructive">
+                                                <DollarSign size={16} />
+                                            </div>
+                                            <span className="text-sm font-medium">Monthly Expenses</span>
+                                        </div>
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-2xl font-bold text-foreground">MAD 1,850</span>
+                                            <span className="text-xs font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded-md mb-1">-2.1%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Chart and Transactions Area */}
                                 <div className="flex-1 flex gap-6">
-                                    <div className="flex-1 bg-background/50 rounded-2xl border border-border" />
-                                    <div className="w-1/3 bg-background/50 rounded-2xl border border-border" />
+                                    {/* Chart Placeholder */}
+                                    <div className="flex-[3] bg-card rounded-2xl border border-border p-6 shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both" style={{ animationDelay: '500ms' }}>
+                                        <h3 className="font-semibold text-foreground mb-4">Spending Overview</h3>
+                                        <div className="flex-1 w-full bg-muted/20 rounded-xl relative overflow-hidden flex items-end px-2 pt-6 border border-border/50">
+                                            {/* Abstract CSS Line Chart rendering */}
+                                            <svg className="w-full h-full text-primary opacity-20 absolute inset-0 mix-blend-multiply" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                                <path d="M0,100 L0,60 Q25,40 50,70 T100,30 L100,100 Z" fill="currentColor" className="animate-[pulse_4s_ease-in-out_infinite]" />
+                                                <path d="M0,60 Q25,40 50,70 T100,30" fill="none" stroke="currentColor" strokeWidth="2" className="animate-[pulse_4s_ease-in-out_infinite]" />
+                                            </svg>
+                                            <div className="w-full flex justify-between items-end gap-3 h-full z-10 px-6 pb-4">
+                                                <div className="w-full bg-primary/40 h-[40%] rounded-t-sm hover:bg-primary transition-colors cursor-pointer animate-[grow-up_1s_ease-out_forwards]" style={{ transformOrigin: 'bottom' }} />
+                                                <div className="w-full bg-primary/60 h-[70%] rounded-t-sm hover:bg-primary transition-colors cursor-pointer animate-[grow-up_1s_ease-out_forwards]" style={{ transformOrigin: 'bottom', animationDelay: '100ms' }} />
+                                                <div className="w-full bg-primary/30 h-[30%] rounded-t-sm hover:bg-primary transition-colors cursor-pointer animate-[grow-up_1s_ease-out_forwards]" style={{ transformOrigin: 'bottom', animationDelay: '200ms' }} />
+                                                <div className="w-full bg-primary/80 h-[90%] rounded-t-sm hover:bg-primary transition-colors cursor-pointer animate-[grow-up_1s_ease-out_forwards]" style={{ transformOrigin: 'bottom', animationDelay: '300ms' }} />
+                                                <div className="w-full bg-primary/50 h-[50%] rounded-t-sm hover:bg-primary transition-colors cursor-pointer animate-[grow-up_1s_ease-out_forwards]" style={{ transformOrigin: 'bottom', animationDelay: '400ms' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Transactions List Placeholder */}
+                                    <div className="flex-[2] bg-card rounded-2xl border border-border p-6 shadow-sm flex flex-col animate-in fade-in slide-in-from-right-8 duration-700 ease-out fill-mode-both" style={{ animationDelay: '600ms' }}>
+                                        <h3 className="font-semibold text-foreground mb-6">Recent Transactions</h3>
+                                        <div className="flex flex-col gap-6">
+                                            <div className="flex items-center justify-between group p-2 hover:bg-muted/30 rounded-xl transition-colors -mx-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+                                                        <CreditCard size={20} />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-base font-semibold text-foreground">Groceries</span>
+                                                        <span className="text-sm text-muted-foreground">Today, 2:45 PM</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-base font-bold text-foreground whitespace-nowrap text-right">- MAD 450</span>
+                                            </div>
+                                            <div className="flex items-center justify-between group p-2 hover:bg-muted/30 rounded-xl transition-colors -mx-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                                                        <TrendingUp size={20} />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-base font-semibold text-foreground">Salary</span>
+                                                        <span className="text-sm text-muted-foreground whitespace-nowrap">Yesterday, 9:00 AM</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-base font-bold text-emerald-600 whitespace-nowrap text-right">+ MAD 4,200</span>
+                                            </div>
+                                            <div className="flex items-center justify-between group p-2 hover:bg-muted/30 rounded-xl transition-colors -mx-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">
+                                                        <Activity size={20} />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-base font-semibold text-foreground">Gym Membership</span>
+                                                        <span className="text-sm text-muted-foreground whitespace-nowrap">Oct 24, 11:30 AM</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-base font-bold text-foreground whitespace-nowrap text-right">- MAD 250</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
