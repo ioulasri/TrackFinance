@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Lightbulb } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Lightbulb, Sparkles } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { BalanceChart } from './BalanceChart';
 import { ProgressBar } from './ProgressBar';
 import { CostAnalysis } from './CostAnalysis';
 import { GoalsTracker } from './GoalsTracker';
 import { RecentTransactions } from './RecentTransactions';
-import { XPBar } from './XPBar';
 import { authAPI, budgetAPI, transactionAPI } from '../api';
 
 export function Dashboard() {
@@ -52,11 +51,11 @@ export function Dashboard() {
   const totalIncome = transactions
     .filter((t: any) => t.type === 'income')
     .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
-  
+
   const totalExpenses = transactions
     .filter((t: any) => t.type === 'expense')
     .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
-  
+
   const balance = totalIncome - totalExpenses;
   const totalBudget = budgetStatus?.total_monthly_limit || 0;
   const totalSpent = budgetStatus?.total_spent || 0;
@@ -71,15 +70,21 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* XP Bar */}
-      <div className="flex justify-end">
-        <div className="w-80">
-          <XPBar 
-            currentXP={userStats.total_xp || 0} 
-            requiredXP={userStats.xp_to_next_level || 100} 
-            level={userStats.current_level || 1} 
-          />
+    <div className="relative space-y-8 min-h-full">
+      {/* Deep Atmospheric Background for Desktop Widescreen */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-30%] right-[-20%] w-[70vw] h-[70vw] bg-primary/10 rounded-full blur-[180px] mix-blend-screen opacity-40 animate-pulse" style={{ animationDuration: '12s' }} />
+        <div className="absolute bottom-[-30%] left-[-20%] w-[70vw] h-[70vw] bg-blue-900/10 rounded-full blur-[180px] mix-blend-screen opacity-40 animate-pulse" style={{ animationDuration: '15s' }} />
+      </div>
+
+      {/* Hero Stats Row (This Month's Overview) */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-primary/10 border border-primary/20 text-primary">
+            <Lightbulb size={14} />
+            <span className="text-xs font-medium uppercase tracking-wider">Level 1 - Novice</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70 tracking-tight">This Month's Overview</h2>
         </div>
       </div>
 
@@ -108,92 +113,104 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Balance Overview Chart */}
-      <BalanceChart />
+      {/* Widescreen Main Area - 3 Column Grid Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 relative z-10 w-full mb-8">
 
-      {/* Two-Column Section */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Monthly Spending Progress */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-gray-900 mb-6">Monthly Spending Progress</h3>
-          {totalBudget > 0 ? (
-            <div className="space-y-4">
-              <ProgressBar current={totalSpent} max={totalBudget} />
-              <div className="flex items-center justify-between pt-2">
-                <div>
-                  <p className="text-sm text-gray-600">Spent this month</p>
-                  <p className="text-2xl font-bold text-gray-900">MAD {totalSpent.toLocaleString()}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Budget limit</p>
-                  <p className="text-2xl font-bold text-gray-900">MAD {totalBudget.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="pt-4 border-t border-gray-100">
-                <p className="text-sm text-gray-600">
-                  Remaining: <span className={`font-semibold ${remaining >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>MAD {remaining.toLocaleString()}</span>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Wallet size={32} className="text-gray-400" />
-              </div>
-              <p className="text-gray-900 font-semibold mb-1">No budgets set</p>
-              <p className="text-sm text-gray-500">Create a budget to track your monthly spending</p>
-            </div>
-          )}
+        {/* --- ROW 1 --- */}
+        {/* Left (Spans 2): Balance Chart */}
+        <div className="xl:col-span-2 flex flex-col gap-8">
+          <BalanceChart />
         </div>
 
-        {/* Quick Budget Tips */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-gray-900 mb-6">Quick Budget Tips</h3>
-          <div className="space-y-4">
-            {[
-              {
-                tip: 'You\'re spending 32% more on dining out this month',
-                color: 'orange',
-              },
-              {
-                tip: 'Great job! Your entertainment budget is under control',
-                color: 'emerald',
-              },
-              {
-                tip: 'Consider setting aside MAD 500 more for savings',
-                color: 'blue',
-              },
-            ].map((item, index) => (
-              <div
-                key={index}
-                className={`flex items-start gap-3 p-3 rounded-xl ${
-                  item.color === 'orange' ? 'bg-orange-50' :
-                  item.color === 'emerald' ? 'bg-emerald-50' :
-                  'bg-blue-50'
-                }`}
-              >
-                <div className={`p-1.5 rounded-lg ${
-                  item.color === 'orange' ? 'bg-orange-100 text-orange-600' :
-                  item.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
-                  'bg-blue-100 text-blue-600'
-                }`}>
-                  <Lightbulb size={16} />
+        {/* Right (Spans 1): Cost Analysis */}
+        <div className="xl:col-span-1 flex flex-col gap-8">
+          <CostAnalysis />
+        </div>
+
+        {/* --- ROW 2 --- */}
+        {/* Left (Spans 2): Recent Transactions & Goals Tracker */}
+        <div className="xl:col-span-2 flex flex-col gap-8">
+          <RecentTransactions />
+          <GoalsTracker />
+        </div>
+
+        {/* Right (Spans 1): Spending Progress & AI Insights */}
+        <div className="xl:col-span-1 flex flex-col gap-8">
+          {/* Monthly Spending Progress */}
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
+            <h3 className="text-xl text-foreground mb-8 font-bold">Monthly Spending Progress</h3>
+            {totalBudget > 0 ? (
+              <div className="space-y-6">
+                <ProgressBar current={totalSpent} max={totalBudget} />
+                <div className="flex items-center justify-between pt-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground font-medium">Spent this month</p>
+                    <p className="text-3xl font-bold text-foreground mt-1">MAD {totalSpent.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground font-medium">Budget limit</p>
+                    <p className="text-3xl font-bold text-foreground mt-1">MAD {totalBudget.toLocaleString()}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-700 flex-1">{item.tip}</p>
+                <div className="pt-6 border-t border-border/50">
+                  <p className="text-sm text-muted-foreground font-medium flex justify-between items-center">
+                    <span>Remaining Balance:</span>
+                    <span className={`text-lg px-3 py-1 rounded-lg ${remaining >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>MAD {remaining.toLocaleString()}</span>
+                  </p>
+                </div>
               </div>
-            ))}
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(127,13,242,0.2)]">
+                  <Wallet size={36} className="text-primary" />
+                </div>
+                <p className="text-xl text-foreground font-bold mb-2">No budgets set</p>
+                <p className="text-sm text-muted-foreground max-w-[250px]">Create a budget to track your monthly spending and earn points.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Budget Tips */}
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
+            <h3 className="text-xl text-foreground mb-6 font-bold flex items-center gap-2">
+              <Sparkles size={20} className="text-primary" />
+              AI Insights
+            </h3>
+            <div className="space-y-4">
+              {[
+                {
+                  tip: 'You\'re spending 32% more on dining out this month.',
+                  color: 'orange',
+                },
+                {
+                  tip: 'Great job! Your entertainment budget is under control.',
+                  color: 'emerald',
+                },
+                {
+                  tip: 'Consider setting aside MAD 500 more for savings.',
+                  color: 'blue',
+                },
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  className={`group flex items-start gap-4 p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg ${item.color === 'orange' ? 'bg-orange-500/5 border-orange-500/20 hover:shadow-orange-500/10' :
+                    item.color === 'emerald' ? 'bg-emerald-500/5 border-emerald-500/20 hover:shadow-emerald-500/10' :
+                      'bg-blue-500/5 border-blue-500/20 hover:shadow-blue-500/10'
+                    }`}
+                >
+                  <div className={`p-2.5 rounded-xl transition-transform group-hover:scale-110 ${item.color === 'orange' ? 'bg-orange-500/20 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' :
+                    item.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
+                      'bg-blue-500/20 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                    }`}>
+                    <Lightbulb size={18} />
+                  </div>
+                  <p className="text-sm text-foreground flex-1 font-medium leading-relaxed">{item.tip}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Cost Analysis Breakdown */}
-      <CostAnalysis />
-
-      {/* Goals Tracker */}
-      <GoalsTracker />
-
-      {/* Recent Transactions */}
-      <RecentTransactions />
     </div>
   );
 }

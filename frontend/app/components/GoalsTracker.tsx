@@ -48,7 +48,7 @@ export function GoalsTracker() {
   const colorClasses: Record<string, string> = {
     emerald: 'bg-emerald-50 text-emerald-600',
     blue: 'bg-blue-50 text-blue-600',
-    purple: 'bg-purple-50 text-purple-600',
+    purple: 'bg-secondary text-primary',
   };
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export function GoalsTracker() {
     const deadlineDate = new Date(deadline);
     const timeDiff = deadlineDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
+
     if (daysDiff < 0) return 'Overdue';
     if (daysDiff === 0) return 'Today';
     if (daysDiff === 1) return '1 day';
@@ -94,12 +94,12 @@ export function GoalsTracker() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-gray-900">Goals Tracker</h3>
+      <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/50">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xl text-foreground font-bold">Goals Tracker</h3>
         </div>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -107,11 +107,11 @@ export function GoalsTracker() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-gray-900">Goals Tracker</h3>
+      <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/50">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xl text-foreground font-bold">Goals Tracker</h3>
         </div>
-        <div className="text-center py-8 text-red-600">
+        <div className="text-center py-8 text-destructive">
           <p>{error}</p>
         </div>
       </div>
@@ -121,27 +121,27 @@ export function GoalsTracker() {
   if (goals.length === 0) {
     return (
       <>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-gray-900">Goals Tracker</h3>
-            <button 
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl text-foreground font-bold tracking-tight">Goals Tracker</h3>
+            <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-sm transition-all text-sm font-medium hover:opacity-90"
             >
               <Plus size={16} />
               Add Goal
             </button>
           </div>
-          <div className="text-center py-12">
-            <Target className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-            <p className="text-gray-500 text-sm">No active goals yet</p>
-            <p className="text-gray-400 text-xs mt-1">Create your first financial goal to get started</p>
+          <div className="text-center py-12 bg-muted/30 rounded-xl border border-border/50 border-dashed">
+            <Target className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
+            <p className="text-foreground font-medium text-sm">No active goals yet</p>
+            <p className="text-muted-foreground text-xs mt-1">Create your first financial goal to get started</p>
           </div>
         </div>
-        <CreateGoalModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          onSubmit={handleCreateGoal} 
+        <CreateGoalModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleCreateGoal}
         />
       </>
     );
@@ -149,65 +149,65 @@ export function GoalsTracker() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-gray-900">Goals Tracker</h3>
-          <button 
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xl text-foreground font-bold tracking-tight">Goals Tracker</h3>
+          <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-sm hover:opacity-90 transition-all text-sm font-medium"
           >
             <Plus size={16} />
             Add Goal
           </button>
         </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {goals.map((goal) => {
-          const IconComponent = iconMap[goal.icon] || Target;
-          const color = getColorForCategory(goal.category);
-          const percentage = (goal.current_amount / goal.target_amount) * 100;
-          const daysRemaining = calculateDaysRemaining(goal.deadline);
+        <div className="grid grid-cols-1 gap-4">
+          {goals.map((goal) => {
+            const IconComponent = iconMap[goal.icon] || Target;
+            const color = getColorForCategory(goal.category);
+            const percentage = (goal.current_amount / goal.target_amount) * 100;
+            const daysRemaining = calculateDaysRemaining(goal.deadline);
 
-          return (
-            <div key={goal.id} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2 rounded-xl ${colorClasses[color]}`}>
-                  <IconComponent size={20} />
+            return (
+              <div key={goal.id} className="group bg-background rounded-xl p-5 border border-border/60 hover:border-border transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-2.5 rounded-lg transition-transform duration-300 group-hover:scale-105 ${colorClasses[color]}`}>
+                    <IconComponent size={20} />
+                  </div>
+                  <h4 className="font-semibold text-foreground tracking-tight truncate">{goal.name}</h4>
                 </div>
-                <h4 className="font-semibold text-gray-900 text-sm">{goal.name}</h4>
+
+                <ProgressBar current={goal.current_amount} max={goal.target_amount} showPercentage={false} />
+
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground font-medium">Current</span>
+                    <span className="font-semibold text-foreground">
+                      MAD {goal.current_amount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground font-medium">Target</span>
+                    <span className="font-semibold text-foreground">
+                      MAD {goal.target_amount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="pt-3 mt-1 border-t border-border">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {daysRemaining} remaining
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              <ProgressBar current={goal.current_amount} max={goal.target_amount} showPercentage={false} />
-
-              <div className="mt-3 space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Current</span>
-                  <span className="font-semibold text-gray-900">
-                    MAD {goal.current_amount.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Target</span>
-                  <span className="font-semibold text-gray-900">
-                    MAD {goal.target_amount.toLocaleString()}
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-gray-100">
-                  <span className="text-xs text-gray-500">
-                    {daysRemaining} remaining
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-    <CreateGoalModal 
-      isOpen={isModalOpen} 
-      onClose={() => setIsModalOpen(false)} 
-      onSubmit={handleCreateGoal} 
-    />
-  </>
+      <CreateGoalModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateGoal}
+      />
+    </>
   );
 }

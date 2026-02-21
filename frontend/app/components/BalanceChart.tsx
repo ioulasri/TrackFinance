@@ -16,7 +16,7 @@ export function BalanceChart() {
     try {
       const response = await transactionAPI.list(0, 1000);
       const transactions = response.data;
-      
+
       const aggregated = aggregateTransactions(transactions, period);
       setData(aggregated);
     } catch (error) {
@@ -37,7 +37,7 @@ export function BalanceChart() {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         const dayKey = date.toISOString().split('T')[0];
-        
+
         const dayTransactions = transactions.filter(t => t.date.startsWith(dayKey));
         const income = dayTransactions
           .filter(t => t.type === 'income')
@@ -85,36 +85,34 @@ export function BalanceChart() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
         <div className="flex items-center justify-center h-80">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-gray-900">Balance Overview</h3>
-        <div className="flex gap-2">
+    <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-xl text-foreground font-bold tracking-tight">Balance Overview</h3>
+        <div className="flex gap-1.5 bg-muted p-1 rounded-lg">
           <button
             onClick={() => setPeriod('7d')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              period === '7d'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-1.5 rounded-md font-medium text-sm transition-all ${period === '7d'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
           >
             7d
           </button>
           <button
             onClick={() => setPeriod('30d')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              period === '30d'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-1.5 rounded-md font-medium text-sm transition-all ${period === '30d'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
           >
             30d
           </button>
@@ -123,37 +121,42 @@ export function BalanceChart() {
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-          <XAxis 
-            dataKey="day" 
-            tick={{ fill: '#6B7280', fontSize: 12 }}
-            axisLine={{ stroke: '#E5E7EB' }}
+          <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+          <XAxis
+            dataKey="day"
+            tick={{ fill: '#71717a', fontSize: 12 }}
+            axisLine={{ stroke: '#e4e4e7' }}
+            tickLine={false}
           />
-          <YAxis 
-            tick={{ fill: '#6B7280', fontSize: 12 }}
-            axisLine={{ stroke: '#E5E7EB' }}
+          <YAxis
+            tick={{ fill: '#71717a', fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'white', 
-              border: '1px solid #E5E7EB',
+          <Tooltip
+            contentStyle={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #e4e4e7',
               borderRadius: '8px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              color: '#09090b'
             }}
+            itemStyle={{ color: '#09090b', fontWeight: 500 }}
+            cursor={{ fill: '#f4f4f5' }}
           />
-          <Legend 
+          <Legend
             wrapperStyle={{ paddingTop: '20px' }}
             iconType="circle"
           />
-          <Bar 
-            dataKey="income" 
-            fill="#059669" 
+          <Bar
+            dataKey="income"
+            fill="#10B981"
             radius={[8, 8, 0, 0]}
             name="Income"
           />
-          <Bar 
-            dataKey="expenses" 
-            fill="#2563EB" 
+          <Bar
+            dataKey="expenses"
+            fill="#3B82F6"
             radius={[8, 8, 0, 0]}
             name="Expenses"
           />
