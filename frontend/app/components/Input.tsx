@@ -10,25 +10,25 @@ export function Input({ label, error, icon, className = '', ...props }: InputPro
   return (
     <div className="w-full">
       {label && (
-        <label className="block mb-1.5 text-gray-900">
+        <label className="block mb-2 text-sm font-medium text-foreground">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
             {icon}
           </div>
         )}
         <input
-          className={`w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent 
-            transition-all ${icon ? 'pl-10' : ''} ${error ? 'border-red-600' : ''} ${className}`}
+          className={`w-full px-4 py-3 bg-muted/30 border border-border/80 rounded-xl text-foreground placeholder-muted-foreground
+            focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary focus:bg-muted/50
+            hover:border-primary/30 transition-all ${icon ? 'pl-11' : ''} ${error ? 'border-destructive focus:border-destructive focus:ring-destructive/50' : ''} ${className}`}
           {...props}
         />
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm font-medium text-destructive">{error}</p>
       )}
     </div>
   );
