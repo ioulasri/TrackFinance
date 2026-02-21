@@ -13,6 +13,15 @@ class UserLogin(BaseModel):
 	username: str
 	password: str
 
+class UserPasswordChange(BaseModel):
+	current_password: str = Field(..., min_length=1)
+	new_password: str = Field(..., min_length=8, max_length=100)
+
+class UserPasswordReset(BaseModel):
+	username: str
+	old_password: str
+	new_password: str = Field(..., min_length=8, max_length=100)
+
 class UserStatsResponse(BaseModel):
 	user_id: int
 	username: str
