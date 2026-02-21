@@ -53,6 +53,30 @@ class UserService:
 			return None
 
 		return user
+
+	@staticmethod
+	def change_password(db: Session, user: User, current_password: str, new_password: str) -> bool:
+		if not verify_password(current_password, user.hashed_password):
+			raise ValueError("Incorrect current password")
+			
+		hashed_pwd = hash_password(new_password)
+		user.hashed_password = hashed_pwd
+		db.commit()
+		return True
+	
+	@staticmethod
+	def reset_forgotten_password(db: Session, username: str, old_password: str, new_password: str) -> bool:
+		user = db.query(User).filter(User.username == username).first()
+		if not user:
+			raise ValueError("Invalid username or old password")
+
+		if not verify_password(old_password, user.hashed_password):
+			raise ValueError("Invalid username or old password")
+		
+		hashed_pwd = hash_password(new_password)
+		user.hashed_password = hashed_pwd
+		db.commit()
+		return True
 	
 	@staticmethod
 	def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
