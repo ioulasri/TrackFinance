@@ -7,7 +7,8 @@ interface ProgressBarProps {
 }
 
 export function ProgressBar({ current, max, showPercentage = true }: ProgressBarProps) {
-  const percentage = Math.min((current / max) * 100, 100);
+  // Calculate true percentage, allowing > 100
+  const percentage = max > 0 ? (current / max) * 100 : 0;
 
   // Dynamic color based on percentage
   const getColor = () => {

@@ -48,7 +48,6 @@ export function Register({ onSwitchToLogin, onRegister }: RegisterProps) {
         username: formData.username,
         password: formData.password,
       });
-      localStorage.setItem('token', response.data.access_token);
       onRegister();
     } catch (err: any) {
       setErrors({

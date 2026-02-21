@@ -106,7 +106,7 @@ export default function App() {
     return (
       <Register
         onSwitchToLogin={() => setAuthState('login')}
-        onRegister={handleLogin}
+        onRegister={() => setAuthState('login')}
       />
     );
   }

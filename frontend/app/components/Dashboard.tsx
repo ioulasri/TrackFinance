@@ -82,7 +82,7 @@ export function Dashboard() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-primary/10 border border-primary/20 text-primary">
             <Lightbulb size={14} />
-            <span className="text-xs font-medium uppercase tracking-wider">Level 1 - Novice</span>
+            <span className="text-xs font-medium uppercase tracking-wider">Level {userStats.current_level}</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70 tracking-tight">This Month's Overview</h2>
         </div>

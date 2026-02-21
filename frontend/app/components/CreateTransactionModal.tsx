@@ -37,7 +37,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
         description: editingTransaction.description || '',
         date: new Date(editingTransaction.date).toISOString().split('T')[0],
       });
-      
+
       if (!isPredefinedCategory) {
         setShowCustomInput(true);
         setCustomCategory(editingTransaction.category);
@@ -70,11 +70,11 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
-    const finalCategory = showCustomInput && customCategory.trim() 
-      ? customCategory.trim() 
+
+    const finalCategory = showCustomInput && customCategory.trim()
+      ? customCategory.trim()
       : formData.category;
-    
+
     onSubmit({
       ...formData,
       category: finalCategory,
@@ -96,40 +96,38 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Amount */}
         <div>
-          <label className="block mb-2 text-gray-900">Amount (MAD)</label>
+          <label className="block mb-2 text-sm font-medium text-foreground">Amount (MAD)</label>
           <input
             type="number"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
             placeholder="0.00"
-            className="w-full px-4 py-3 text-3xl font-bold bg-purple-50 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent text-purple-600"
+            className="w-full px-4 py-3 text-3xl font-bold bg-muted/30 border-2 border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder-muted-foreground transition-all"
             required
           />
         </div>
 
         {/* Type Toggle */}
         <div>
-          <label className="block mb-2 text-gray-900">Type</label>
-          <div className="grid grid-cols-2 gap-3">
+          <label className="block mb-2 text-sm font-medium text-foreground">Type</label>
+          <div className="grid grid-cols-2 gap-3 p-1 bg-muted rounded-lg border border-border">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'income' })}
-              className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                formData.type === 'income'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${formData.type === 'income'
+                ? 'bg-green-600 text-white shadow-sm'
+                : 'text-foreground/70 hover:text-foreground hover:bg-background/50'
+                }`}
             >
               Income
             </button>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'expense' })}
-              className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                formData.type === 'expense'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${formData.type === 'expense'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-foreground/70 hover:text-foreground hover:bg-background/50'
+                }`}
             >
               Expense
             </button>
@@ -138,18 +136,18 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Category */}
         <div>
-          <label className="block mb-2 text-gray-900">Category</label>
+          <label className="block mb-2 text-sm font-medium text-foreground">Category</label>
           <select
             value={formData.category}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            className="w-full px-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all appearance-none cursor-pointer"
             required
           >
             {categories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          
+
           {/* Custom Category Input */}
           {showCustomInput && (
             <div className="mt-3">
@@ -158,7 +156,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Enter custom category name"
-                className="w-full px-4 py-2.5 bg-white border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-background border border-primary text-foreground placeholder-muted-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 required={showCustomInput}
               />
             </div>
@@ -167,27 +165,27 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Description */}
         <div>
-          <label className="block mb-2 text-gray-900">Description</label>
+          <label className="block mb-2 text-sm font-medium text-foreground">Description</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Add a note..."
             rows={3}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+            className="w-full px-4 py-2.5 bg-background border border-border text-foreground placeholder-muted-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none transition-all"
             required
           />
         </div>
 
         {/* Date */}
         <div>
-          <label className="block mb-2 text-gray-900">Date</label>
+          <label className="block mb-2 text-sm font-medium text-foreground">Date</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
             <input
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all cursor-pointer"
               required
             />
           </div>
@@ -198,7 +196,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
           <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="large" className="flex-1">
+          <Button type="submit" variant="primary" size="large" className="flex-1 text-primary-foreground">
             {editingTransaction ? 'Update Transaction' : 'Create Transaction'}
           </Button>
         </div>
