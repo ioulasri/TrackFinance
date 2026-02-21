@@ -102,12 +102,12 @@ export function AIAssistant() {
       }));
 
       const response: ChatResponse = await chatAPI.sendMessage(messageText, conversationHistory);
-      
+
       const assistantMessage: Message = {
         role: 'assistant',
         content: response.response,
       };
-      
+
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -140,33 +140,35 @@ export function AIAssistant() {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center z-50"
+          className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center z-50 ring-1 ring-border"
           aria-label="Open AI Assistant"
         >
-          <MessageCircle size={28} />
+          <Sparkles size={24} />
         </button>
       )}
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-8 right-8 w-[420px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200 max-sm:w-[calc(100vw-2rem)] max-sm:h-[calc(100vh-2rem)] max-sm:bottom-4 max-sm:right-4 max-sm:left-4">
+        <div
+          className="fixed bottom-8 right-8 w-[420px] h-[600px] bg-card rounded-2xl shadow-2xl flex flex-col z-50 border border-border overflow-hidden max-sm:w-[calc(100vw-2rem)] max-sm:h-[calc(100vh-2rem)] max-sm:bottom-4 max-sm:right-4 max-sm:left-4"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-purple-700 rounded-t-2xl">
+          <div className="flex items-center justify-between p-4 border-b border-border bg-card">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Sparkles size={20} className="text-white" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary">
+                <Sparkles size={16} className="text-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">AI Assistant</h3>
-                <p className="text-xs text-purple-100">Powered by Groq</p>
+                <h3 className="font-semibold text-sm text-foreground tracking-tight">AI Assistant</h3>
+                <p className="text-xs text-muted-foreground">Powered by Groq</p>
               </div>
             </div>
             <button
               onClick={toggleChat}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors text-white"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close chat"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
@@ -174,13 +176,13 @@ export function AIAssistant() {
           <ScrollArea className="flex-1 min-h-0 p-4" ref={scrollAreaRef}>
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <Sparkles size={32} className="text-purple-600" />
+                <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-4">
+                  <Sparkles size={24} className="text-foreground" />
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-2">
+                <h4 className="font-semibold text-foreground mb-2">
                   Hi! I'm your AI finance assistant
                 </h4>
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-muted-foreground mb-6">
                   I can help you track spending, analyze budgets, and answer questions about your finances.
                 </p>
                 {suggestions.length > 0 && (
@@ -192,7 +194,7 @@ export function AIAssistant() {
                       <button
                         key={index}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full px-4 py-3 bg-gray-50 hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-lg text-sm text-left transition-all duration-200"
+                        className="w-full px-4 py-3 bg-card hover:bg-accent border border-border hover:border-primary/50 text-foreground rounded-lg text-sm text-left transition-all duration-200"
                       >
                         {suggestion}
                       </button>
@@ -208,11 +210,10 @@ export function AIAssistant() {
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${
-                        message.role === 'user'
-                          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
+                      className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground border border-border/50'
+                        }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
@@ -234,7 +235,7 @@ export function AIAssistant() {
           </ScrollArea>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-border bg-card">
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 ref={inputRef}
@@ -243,15 +244,15 @@ export function AIAssistant() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask me anything..."
                 disabled={isLoading}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex-1 px-4 py-2.5 bg-input border border-border text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
-                className="w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                className="w-10 h-10 bg-primary text-primary-foreground rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm"
                 aria-label="Send message"
               >
-                <Send size={18} />
+                <Send size={16} className={isLoading ? "animate-pulse" : ""} />
               </button>
             </form>
           </div>

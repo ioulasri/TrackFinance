@@ -103,25 +103,25 @@ export function Analysis() {
 
   const processFinancialData = (transactions: any[], budgets: any[]): AnalysisData => {
     const now = new Date();
-    
+
     // Calculate spending trends (last 6 months)
     const spendingTrend = calculateSpendingTrend(transactions);
-    
+
     // Calculate category breakdown (current month)
     const categoryBreakdown = calculateCategoryBreakdown(transactions);
-    
+
     // Calculate monthly comparison
     const monthlyComparison = calculateMonthlyComparison(transactions);
-    
+
     // Calculate savings rate
     const savingsRate = calculateSavingsRate(transactions);
-    
+
     // Calculate top categories with trends
     const topCategories = calculateTopCategories(transactions);
-    
+
     // Calculate budget performance
     const budgetPerformance = calculateBudgetPerformance(transactions, budgets);
-    
+
     // Demo data for AI features (to be replaced with ML models)
     const demoHealthScore = calculateBasicHealthScore(savingsRate, monthlyComparison.change_percentage);
     const demoInsights = generateBasicInsights(savingsRate, monthlyComparison, topCategories);
@@ -283,7 +283,7 @@ export function Analysis() {
       .map(([category, amount]) => {
         const prevAmount = previousCategories[category] || 0;
         let trend: 'up' | 'down' | 'stable' = 'stable';
-        
+
         if (prevAmount > 0) {
           const change = ((amount - prevAmount) / prevAmount) * 100;
           if (change > 10) trend = 'up';
@@ -315,7 +315,7 @@ export function Analysis() {
     return budgets.map(budget => {
       const spent = categorySpending[budget.category] || 0;
       const percentage = Math.round((spent / budget.monthly_limit) * 100);
-      
+
       return {
         category: budget.category,
         budget: budget.monthly_limit,
@@ -328,19 +328,19 @@ export function Analysis() {
   // Demo functions for AI features (to be replaced with ML models)
   const calculateBasicHealthScore = (savingsRate: number, changePercentage: number): number => {
     let score = 50; // Base score
-    
+
     // Adjust based on savings rate
     if (savingsRate >= 20) score += 25;
     else if (savingsRate >= 10) score += 15;
     else if (savingsRate >= 0) score += 5;
     else score -= 10;
-    
+
     // Adjust based on spending trend
     if (changePercentage <= -10) score += 15; // Spending decreased
     else if (changePercentage <= 0) score += 10;
     else if (changePercentage <= 10) score += 5;
     else score -= 10; // Spending increased significantly
-    
+
     return Math.min(100, Math.max(0, score));
   };
 
@@ -410,8 +410,8 @@ export function Analysis() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Analyzing your financial data...</p>
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Analyzing your financial data...</p>
         </div>
       </div>
     );
@@ -421,11 +421,11 @@ export function Analysis() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-900 font-semibold mb-2">Failed to load analysis</p>
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <p className="text-foreground font-semibold mb-2">Failed to load analysis</p>
           <button
             onClick={loadAnalysis}
-            className="text-purple-600 hover:text-purple-700 font-medium"
+            className="text-primary hover:text-primary/80 font-medium"
           >
             Try again
           </button>
@@ -440,7 +440,7 @@ export function Analysis() {
     next_month_income: 0,
     confidence_score: 0,
   };
-  
+
   const monthlyComparison = analysisData.monthly_comparison || {
     current_month: 0,
     previous_month: 0,
@@ -456,80 +456,80 @@ export function Analysis() {
 
   const healthScoreColor =
     analysisData.financial_health_score >= 75
-      ? 'text-green-600 bg-green-50'
+      ? 'text-emerald-500 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
       : analysisData.financial_health_score >= 50
-      ? 'text-yellow-600 bg-yellow-50'
-      : 'text-red-600 bg-red-50';
+        ? 'text-yellow-500 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
+        : 'text-destructive bg-destructive/10 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Financial Analysis</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">Financial Analysis</h1>
+        <p className="text-muted-foreground">
           Real-time insights from your financial data
         </p>
         {!error && (
-          <div className="mt-3 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
-            <strong>Data sources:</strong> Transactions and budgets from your account. 
+          <div className="mt-3 px-4 py-3 bg-primary/10 border border-primary/20 rounded-xl text-sm text-primary shadow-sm">
+            <strong>Data sources:</strong> Transactions and budgets from your account.
             Health score and predictions use basic calculations (AI enhancement coming soon).
           </div>
         )}
         {error && (
-          <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mt-3 px-4 py-3 bg-destructive/10 border border-destructive/20 rounded-xl text-sm text-destructive shadow-sm">
             {error}
           </div>
         )}
       </div>
 
       {/* Financial Health Score */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Financial Health Score</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-xl font-semibold text-foreground">Financial Health Score</h2>
+            <p className="text-sm text-muted-foreground">
               Basic assessment of your financial situation
             </p>
           </div>
-          <Zap className="text-purple-600" size={28} />
+          <Zap className="text-primary" size={28} />
         </div>
         <div className="flex items-center gap-6">
           <div
-            className={`w-32 h-32 rounded-full flex items-center justify-center ${healthScoreColor}`}
+            className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 ${healthScoreColor}`}
           >
             <div className="text-center">
               <div className="text-4xl font-bold">
                 {analysisData.financial_health_score}
               </div>
-              <div className="text-xs font-medium">/ 100</div>
+              <div className="text-xs font-medium opacity-80">/ 100</div>
             </div>
           </div>
           <div className="flex-1">
             <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Savings Rate</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-muted-foreground">Savings Rate</span>
+                  <span className="font-semibold text-foreground">
                     {analysisData.savings_rate}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-purple-600 h-2 rounded-full"
+                    className="bg-primary h-2 rounded-full shadow-[0_0_8px_rgba(127,13,242,0.6)]"
                     style={{ width: `${analysisData.savings_rate}%` }}
                   />
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Prediction Confidence</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-muted-foreground">Prediction Confidence</span>
+                  <span className="font-semibold text-foreground">
                     {predictions.confidence_score}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-green-600 h-2 rounded-full"
+                    className="bg-emerald-500 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                     style={{ width: `${predictions.confidence_score}%` }}
                   />
                 </div>
@@ -542,17 +542,16 @@ export function Analysis() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Month Spending */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+        <div className="bg-card rounded-xl p-5 shadow-sm border border-border transition-all hover:border-primary/30">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="text-purple-600" size={20} />
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <DollarSign className="text-primary" size={20} />
             </div>
             <div
-              className={`flex items-center gap-1 text-sm font-medium ${
-                monthlyComparison.change_percentage > 0
-                  ? 'text-red-600'
-                  : 'text-green-600'
-              }`}
+              className={`flex items-center gap-1 text-sm font-medium ${monthlyComparison.change_percentage > 0
+                  ? 'text-destructive'
+                  : 'text-emerald-500'
+                }`}
             >
               {monthlyComparison.change_percentage > 0 ? (
                 <ArrowUpRight size={16} />
@@ -562,61 +561,60 @@ export function Analysis() {
               {Math.abs(monthlyComparison.change_percentage)}%
             </div>
           </div>
-          <h3 className="text-sm font-medium text-gray-600 mb-1">Current Month</h3>
-            <p className="text-2xl font-bold text-gray-900">
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">Current Month</h3>
+          <p className="text-2xl font-bold text-foreground tracking-tight">
             MAD {monthlyComparison.current_month.toLocaleString()}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             vs MAD {monthlyComparison.previous_month.toLocaleString()} last month
           </p>
         </div>
 
         {/* Predicted Next Month */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+        <div className="bg-card rounded-xl p-5 shadow-sm border border-border transition-all hover:border-blue-500/30">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="text-blue-600" size={20} />
+            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+              <TrendingUp className="text-blue-500" size={20} />
             </div>
-            <div className="px-2 py-1 bg-blue-100 rounded-md text-xs font-medium text-blue-700">
+            <div className="px-2 py-1 bg-blue-500/10 rounded-md text-xs font-medium text-blue-500">
               Est. Average
             </div>
           </div>
-          <h3 className="text-sm font-medium text-gray-600 mb-1">Next Month Estimate</h3>
-          <p className="text-2xl font-bold text-gray-900">
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">Next Month Estimate</h3>
+          <p className="text-2xl font-bold text-foreground tracking-tight">
             MAD {predictions.next_month_spending.toLocaleString()}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Based on 3-month average (AI prediction coming soon)
           </p>
         </div>
 
         {/* Savings Rate */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+        <div className="bg-card rounded-xl p-5 shadow-sm border border-border transition-all hover:border-emerald-500/30">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Target className="text-green-600" size={20} />
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+              <Target className="text-emerald-500" size={20} />
             </div>
             <div
-              className={`text-sm font-medium ${
-                analysisData.savings_rate >= 20 ? 'text-green-600' : 'text-yellow-600'
-              }`}
+              className={`text-sm font-medium ${analysisData.savings_rate >= 20 ? 'text-emerald-500' : 'text-yellow-500'
+                }`}
             >
               {analysisData.savings_rate >= 20 ? 'On Track' : 'Below Target'}
             </div>
           </div>
-          <h3 className="text-sm font-medium text-gray-600 mb-1">Savings Rate</h3>
-          <p className="text-2xl font-bold text-gray-900">{analysisData.savings_rate}%</p>
-          <p className="text-xs text-gray-500 mt-1">Target: 20% (industry standard)</p>
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">Savings Rate</h3>
+          <p className="text-2xl font-bold text-foreground tracking-tight">{analysisData.savings_rate}%</p>
+          <p className="text-xs text-muted-foreground mt-1">Target: 20% (industry standard)</p>
         </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending Trend Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="text-purple-600" size={24} />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <BarChart3 className="text-primary" size={24} />
+            <h2 className="text-lg font-semibold text-foreground">
               Income vs Spending Trend
             </h2>
           </div>
@@ -632,15 +630,18 @@ export function Analysis() {
                   <stop offset="95%" stopColor="#9333ea" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
-              <YAxis stroke="#9ca3af" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
+              <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `MAD${value}`} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px',
+                  color: 'var(--foreground)',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
                 }}
+                itemStyle={{ color: 'var(--foreground)' }}
               />
               <Legend />
               <Area
@@ -655,21 +656,22 @@ export function Analysis() {
               <Area
                 type="monotone"
                 dataKey="spending"
-                stroke="#9333ea"
+                stroke="var(--primary)"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorSpending)"
                 name="Spending"
+                activeDot={{ r: 6, fill: "var(--primary)", stroke: "var(--background)", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Category Breakdown Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <PieChart className="text-purple-600" size={24} />
-            <h2 className="text-lg font-semibold text-gray-900">Spending by Category</h2>
+            <PieChart className="text-primary" size={24} />
+            <h2 className="text-lg font-semibold text-foreground">Spending by Category</h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <RechartsPie>
@@ -689,10 +691,13 @@ export function Analysis() {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px',
+                  color: 'var(--foreground)',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
                 }}
+                itemStyle={{ color: 'var(--foreground)' }}
               />
             </RechartsPie>
           </ResponsiveContainer>
@@ -700,42 +705,40 @@ export function Analysis() {
       </div>
 
       {/* Budget Performance */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
         <div className="flex items-center gap-2 mb-5">
-          <Target className="text-purple-600" size={24} />
-          <h2 className="text-lg font-semibold text-gray-900">Budget Performance</h2>
+          <Target className="text-primary" size={24} />
+          <h2 className="text-lg font-semibold text-foreground">Budget Performance</h2>
         </div>
         <div className="space-y-4">
           {budgetPerformance.map((item, index) => (
-            <div key={index}>
+            <div key={index} className="group">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-900">{item.category}</span>
+                <span className="text-sm font-medium text-foreground">{item.category}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     MAD {item.spent} / MAD {item.budget}
                   </span>
                   <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${
-                      item.percentage > 100
-                        ? 'bg-red-100 text-red-700'
+                    className={`text-xs font-semibold px-2 py-1 rounded-md ${item.percentage > 100
+                        ? 'bg-destructive/10 text-destructive'
                         : item.percentage > 80
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-emerald-500/10 text-emerald-500'
+                      }`}
                   >
                     {item.percentage}%
                   </span>
                 </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                 <div
-                  className={`h-3 rounded-full ${
-                    item.percentage > 100
-                      ? 'bg-red-600'
+                  className={`h-3 rounded-full transition-all duration-500 ease-out group-hover:opacity-80 ${item.percentage > 100
+                      ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.6)]'
                       : item.percentage > 80
-                      ? 'bg-yellow-500'
-                      : 'bg-green-600'
-                  }`}
+                        ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]'
+                        : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
+                    }`}
                   style={{ width: `${Math.min(item.percentage, 100)}%` }}
                 />
               </div>
@@ -745,31 +748,30 @@ export function Analysis() {
       </div>
 
       {/* Top Spending Categories */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Spending Categories</h2>
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Top Spending Categories</h2>
         <div className="space-y-3">
           {topCategories.map((item, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+              className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-transparent hover:border-border transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center font-semibold text-purple-600">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center font-semibold text-primary">
                   #{index + 1}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{item.category}</p>
-                  <p className="text-sm text-gray-600">MAD {item.amount}</p>
+                  <p className="font-medium text-foreground">{item.category}</p>
+                  <p className="text-sm text-muted-foreground">MAD {item.amount}</p>
                 </div>
               </div>
               <div
-                className={`flex items-center gap-1 px-3 py-1 rounded-lg ${
-                  item.trend === 'up'
-                    ? 'bg-red-100 text-red-700'
+                className={`flex items-center gap-1 px-3 py-1 rounded-lg ${item.trend === 'up'
+                    ? 'bg-destructive/10 text-destructive'
                     : item.trend === 'down'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
               >
                 {item.trend === 'up' ? (
                   <TrendingUp size={16} />
@@ -786,10 +788,10 @@ export function Analysis() {
       </div>
 
       {/* Insights */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Financial Insights</h2>
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+          <h2 className="text-lg font-semibold text-foreground">Financial Insights</h2>
+          <span className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md font-medium">
             Basic Rules
           </span>
         </div>
@@ -799,14 +801,14 @@ export function Analysis() {
               insight.type === 'warning'
                 ? AlertCircle
                 : insight.type === 'success'
-                ? CheckCircle
-                : Info;
+                  ? CheckCircle
+                  : Info;
             const colorClasses =
               insight.type === 'warning'
-                ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
                 : insight.type === 'success'
-                ? 'bg-green-50 border-green-200 text-green-800'
-                : 'bg-blue-50 border-blue-200 text-blue-800';
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                  : 'bg-blue-500/10 border-blue-500/20 text-blue-500';
 
             return (
               <div
@@ -815,8 +817,8 @@ export function Analysis() {
               >
                 <Icon size={20} className="flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold mb-1">{insight.title}</h3>
-                  <p className="text-sm opacity-90">{insight.description}</p>
+                  <h3 className="font-semibold mb-1 text-foreground">{insight.title}</h3>
+                  <p className="text-sm opacity-90 text-muted-foreground">{insight.description}</p>
                 </div>
               </div>
             );
