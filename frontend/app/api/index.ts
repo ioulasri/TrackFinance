@@ -6,13 +6,13 @@ const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   // 2. In production, try to detect backend URL from current domain
   if (import.meta.env.PROD) {
     // If frontend is at app.domain.com, backend might be at api.domain.com
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
-    
+
     // For DigitalOcean App Platform, services are often at same domain with different ports
     // or as separate subdomains. Adjust this logic based on your deployment:
     if (hostname.includes('ondigitalocean.app')) {
@@ -21,11 +21,11 @@ const getApiUrl = () => {
       // You'll need to update this with your actual backend URL
       return `${protocol}//${hostname.replace('frontend', 'backend')}`;
     }
-    
+
     // Default production fallback
     return `${protocol}//${hostname}:8000`;
   }
-  
+
   // 3. Development fallback
   return 'http://localhost:8000';
 };
@@ -70,12 +70,18 @@ api.interceptors.response.use(
         message: error.message,
       });
     }
-    
+
     if (error.response?.status === 401 || error.response?.status === 403) {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+      const requestUrl = error.config?.url || '';
+      // Only force-redirect to landing if this is NOT a login/reset request.
+      // A 401 on /login just means wrong credentials — let the component handle it.
+      const isAuthEndpoint = requestUrl.includes('/login') || requestUrl.includes('/reset-password');
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      }
     }
-    
+
     // Network error - likely can't reach backend
     if (!error.response) {
       console.error('❌ Cannot connect to backend at:', API_URL);
@@ -84,7 +90,7 @@ api.interceptors.response.use(
       console.error('2. VITE_API_URL is set correctly');
       console.error('3. CORS is configured on backend');
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -92,56 +98,62 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data: { email: string; username: string; password: string }) =>
     api.post('/api/v1/users/register', data),
-  
+
   login: (data: { username: string; password: string }) =>
     api.post('/api/v1/users/login', data),
-  
+
   getCurrentUser: () => api.get('/api/v1/users/me'),
-  
+
   getUserStats: () => api.get('/api/v1/users/me/stats'),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.put('/api/v1/users/me/password', data),
+
+  resetPassword: (data: { username: string; old_password: string; new_password: string }) =>
+    api.post('/api/v1/users/reset-password', data),
 };
 
 export const transactionAPI = {
   list: (skip = 0, limit = 50) =>
     api.get(`/api/v1/transactions/?skip=${skip}&limit=${limit}`),
-  
+
   create: (data: any) => api.post('/api/v1/transactions/', data),
-  
+
   update: (id: number, data: any) =>
     api.patch(`/api/v1/transactions/${id}`, data),
-  
+
   delete: (id: number) => api.delete(`/api/v1/transactions/${id}`),
-  
+
   getTransactionsByCategory: () =>
     api.get('/api/v1/transactions/?skip=0&limit=1000'),
 };
 
 export const budgetAPI = {
   list: () => api.get('/api/v1/budgets/'),
-  
+
   create: (data: { category: string; monthly_limit: number }) =>
     api.post('/api/v1/budgets/', data),
-  
+
   update: (id: number, data: any) => api.patch(`/api/v1/budgets/${id}`, data),
-  
+
   delete: (id: number) => api.delete(`/api/v1/budgets/${id}`),
-  
+
   getStatus: () => api.get('/api/v1/budgets/status'),
-  
+
   resetMonthly: () => api.post('/api/v1/budgets/reset-monthly'),
 };
 
 export const achievementAPI = {
   list: () => api.get('/api/v1/achievements/'),
-  
+
   getUserAchievements: () => api.get('/api/v1/achievements/me'),
-  
+
   getStats: () => api.get('/api/v1/achievements/me/stats'),
 };
 
 export const goalAPI = {
   list: () => api.get('/api/v1/goals/'),
-  
+
   create: (data: {
     name: string;
     icon?: string;
@@ -151,22 +163,22 @@ export const goalAPI = {
     category?: string;
     description?: string;
   }) => api.post('/api/v1/goals/', data),
-  
+
   update: (id: number, data: any) => api.patch(`/api/v1/goals/${id}`, data),
-  
+
   delete: (id: number) => api.delete(`/api/v1/goals/${id}`),
-  
+
   getActive: () => api.get('/api/v1/goals/active'),
-  
+
   getCompleted: () => api.get('/api/v1/goals/completed'),
-  
+
   getOverdue: () => api.get('/api/v1/goals/overdue'),
-  
+
   getStats: () => api.get('/api/v1/goals/stats'),
-  
+
   updateProgress: (id: number, amount: number) =>
     api.patch(`/api/v1/goals/${id}/progress`, null, { params: { amount } }),
-  
+
   addToGoal: (id: number, amount: number) =>
     api.patch(`/api/v1/goals/${id}/add`, null, { params: { amount } }),
 };
