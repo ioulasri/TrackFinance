@@ -60,15 +60,15 @@ export function Achievements() {
   }));
 
   const filteredAchievements = enrichedAchievements.filter(achievement => {
-    const matchesFilter = 
-      filter === 'all' || 
+    const matchesFilter =
+      filter === 'all' ||
       (filter === 'unlocked' && achievement.unlocked) ||
       (filter === 'locked' && !achievement.unlocked);
-    
-    const matchesCategory = 
-      selectedCategory === 'all' || 
+
+    const matchesCategory =
+      selectedCategory === 'all' ||
       achievement.category === selectedCategory;
-    
+
     return matchesFilter && matchesCategory;
   });
 
@@ -79,95 +79,92 @@ export function Achievements() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading achievements...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading achievements...</p>
         </div>
       </div>
     );
   }
 
   const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-    orange: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
+    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20' },
+    purple: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' },
+    orange: { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' },
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-gray-900">Achievements</h1>
-        <p className="text-gray-600 mt-1">Track your financial milestones and earn rewards</p>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Achievements</h1>
+        <p className="text-muted-foreground mt-1">Track your financial milestones and earn rewards</p>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-50 rounded-xl">
-              <Trophy size={24} className="text-purple-600" />
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Trophy size={24} className="text-primary" />
             </div>
-            <p className="text-sm text-gray-600">Unlocked</p>
+            <p className="text-sm text-muted-foreground font-medium">Unlocked</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-foreground tracking-tight">
             {unlockedCount} / {enrichedAchievements.length}
           </p>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-xl">
-              <Star size={24} className="text-emerald-600" />
+            <div className="p-2 bg-emerald-500/10 rounded-xl">
+              <Star size={24} className="text-emerald-500" />
             </div>
-            <p className="text-sm text-gray-600">Total XP Earned</p>
+            <p className="text-sm text-muted-foreground font-medium">Total XP Earned</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{totalXP} XP</p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">{totalXP} XP</p>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 rounded-xl">
-              <Target size={24} className="text-blue-600" />
+            <div className="p-2 bg-blue-500/10 rounded-xl">
+              <Target size={24} className="text-blue-500" />
             </div>
-            <p className="text-sm text-gray-600">Completion Rate</p>
+            <p className="text-sm text-muted-foreground font-medium">Completion Rate</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-foreground tracking-tight">
             {((unlockedCount / enrichedAchievements.length) * 100).toFixed(0)}%
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
         <div className="flex items-center justify-between">
           {/* Status Filter */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 p-1 bg-input rounded-lg border border-border">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_10px_rgba(127,13,242,0.4)]'
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setFilter('unlocked')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === 'unlocked'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'unlocked'
+                  ? 'bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               Unlocked
             </button>
             <button
               onClick={() => setFilter('locked')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === 'locked'
-                  ? 'bg-gray-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'locked'
+                  ? 'bg-gray-600 text-white shadow-[0_0_10px_rgba(75,85,99,0.4)]'
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               Locked
             </button>
@@ -177,7 +174,7 @@ export function Achievements() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+            className="px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none min-w-[200px]"
           >
             {categories.map(cat => (
               <option key={cat} value={cat}>
@@ -197,25 +194,23 @@ export function Achievements() {
           return (
             <div
               key={achievement.id}
-              className={`rounded-2xl p-6 shadow-sm transition-all ${
-                achievement.unlocked
-                  ? `bg-white border-2 ${colors.border} hover:shadow-md`
-                  : 'bg-gray-50 border border-gray-200 opacity-60'
-              }`}
+              className={`rounded-2xl p-6 shadow-sm transition-all group ${achievement.unlocked
+                  ? `bg-card border border-border hover:border-primary/30 hover:shadow-[0_0_15px_rgba(127,13,242,0.1)]`
+                  : 'bg-card/50 border border-border/50 opacity-60'
+                }`}
             >
               {/* Icon */}
-              <div className="relative mb-4">
-                <div className={`p-4 rounded-2xl ${
-                  achievement.unlocked
-                    ? `${colors.bg} ${colors.text}`
-                    : 'bg-gray-200 text-gray-400'
-                }`}>
+              <div className="relative mb-4 inline-block">
+                <div className={`p-4 rounded-2xl transition-transform duration-300 ${achievement.unlocked ? 'group-hover:scale-110' : ''} ${achievement.unlocked
+                    ? `${colors.bg} ${colors.text} shadow-[0_0_10px_rgba(127,13,242,0.2)]`
+                    : 'bg-muted text-muted-foreground'
+                  }`}>
                   <Icon size={32} />
                 </div>
                 {!achievement.unlocked && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="p-2 bg-gray-700 rounded-full">
-                      <Lock size={20} className="text-white" />
+                    <div className="p-2 bg-background border border-border rounded-full shadow-lg">
+                      <Lock size={16} className="text-muted-foreground" />
                     </div>
                   </div>
                 )}
@@ -223,27 +218,29 @@ export function Achievements() {
 
               {/* Content */}
               <div className="space-y-2">
-                <h4 className="font-semibold text-gray-900">
+                <h4 className="font-semibold text-foreground">
                   {achievement.title}
                 </h4>
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm text-muted-foreground line-clamp-2">
                   {achievement.description}
                 </p>
 
                 {/* Category & XP Badge */}
                 <div className="flex items-center justify-between pt-2">
-                  <span className={`text-xs px-2 py-1 rounded-md ${colors.bg} ${colors.text} font-medium`}>
+                  <span className={`text-xs px-2 py-1 rounded-md ${achievement.unlocked ? `${colors.bg} ${colors.text}` : 'bg-muted text-muted-foreground'
+                    } font-medium`}>
                     {achievement.category || 'Other'}
                   </span>
-                  <span className="text-xs font-bold text-purple-600">
+                  <span className={`text-xs font-bold ${achievement.unlocked ? 'text-primary' : 'text-muted-foreground'
+                    }`}>
                     +{achievement.xp_reward} XP
                   </span>
                 </div>
 
                 {/* Unlock Date */}
                 {achievement.unlocked && achievement.unlockedDate && (
-                  <p className="text-xs text-gray-500 pt-2 border-t border-gray-100">
-                    Unlocked: {achievement.unlockedDate}
+                  <p className="text-xs text-muted-foreground pt-3 border-t border-border mt-3">
+                    Unlocked: <span className="text-foreground">{achievement.unlockedDate}</span>
                   </p>
                 )}
               </div>
@@ -254,13 +251,13 @@ export function Achievements() {
 
       {/* Empty State */}
       {filteredAchievements.length === 0 && (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center">
+        <div className="bg-card rounded-2xl p-12 shadow-sm border border-border text-center">
           <div className="max-w-md mx-auto">
-            <div className="p-4 bg-gray-100 rounded-full inline-flex mb-4">
-              <Trophy size={48} className="text-gray-400" />
+            <div className="p-4 bg-muted rounded-full inline-flex mb-4">
+              <Trophy size={48} className="text-muted-foreground/50" />
             </div>
-            <h3 className="text-gray-900 mb-2">No achievements found</h3>
-            <p className="text-gray-600">
+            <h3 className="text-lg font-semibold text-foreground mb-2">No achievements found</h3>
+            <p className="text-muted-foreground">
               Try adjusting your filters to see more achievements
             </p>
           </div>

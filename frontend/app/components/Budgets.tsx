@@ -74,10 +74,10 @@ export function Budgets() {
 
   const getBudgetStatus = (spent: number, limit: number) => {
     const percentage = (spent / limit) * 100;
-    if (percentage > 100) return { color: 'red', text: 'Over Budget', bgColor: 'bg-red-50', textColor: 'text-red-600' };
-    if (percentage >= 80) return { color: 'orange', text: 'High Usage', bgColor: 'bg-orange-50', textColor: 'text-orange-600' };
-    if (percentage >= 60) return { color: 'blue', text: 'Moderate', bgColor: 'bg-blue-50', textColor: 'text-blue-600' };
-    return { color: 'emerald', text: 'On Track', bgColor: 'bg-emerald-50', textColor: 'text-emerald-600' };
+    if (percentage > 100) return { color: 'red', text: 'Over Budget', bgColor: 'bg-destructive/10 border border-destructive/20', textColor: 'text-destructive' };
+    if (percentage >= 80) return { color: 'orange', text: 'High Usage', bgColor: 'bg-orange-500/10 border border-orange-500/20', textColor: 'text-orange-500' };
+    if (percentage >= 60) return { color: 'blue', text: 'Moderate', bgColor: 'bg-blue-500/10 border border-blue-500/20', textColor: 'text-blue-500' };
+    return { color: 'emerald', text: 'On Track', bgColor: 'bg-emerald-500/10 border border-emerald-500/20', textColor: 'text-emerald-500' };
   };
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.monthly_limit, 0);
@@ -88,8 +88,8 @@ export function Budgets() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading budgets...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading budgets...</p>
         </div>
       </div>
     );
@@ -100,10 +100,10 @@ export function Budgets() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-gray-900">Budgets</h1>
-          <p className="text-gray-600 mt-1">Manage your spending limits by category</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Budgets</h1>
+          <p className="text-muted-foreground mt-1">Manage your spending limits by category</p>
         </div>
-        <Button variant="primary" size="large" onClick={() => setIsCreateModalOpen(true)}>
+        <Button variant="primary" size="large" onClick={() => setIsCreateModalOpen(true)} className="shadow-sm hover:opacity-90">
           <Plus size={20} className="mr-2" />
           Create Budget
         </Button>
@@ -111,17 +111,17 @@ export function Budgets() {
 
       {/* Budget Summary */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-2">Total Budget</p>
-          <p className="text-3xl font-bold text-gray-900">MAD {totalBudget.toLocaleString()}</p>
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground mb-2 font-medium">Total Budget</p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">MAD {totalBudget.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-2">Total Spent</p>
-          <p className="text-3xl font-bold text-gray-900">MAD {totalSpent.toLocaleString()}</p>
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground mb-2 font-medium">Total Spent</p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">MAD {totalSpent.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-2">Remaining</p>
-          <p className="text-3xl font-bold text-emerald-600">MAD {totalRemaining.toLocaleString()}</p>
+        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+          <p className="text-sm text-muted-foreground mb-2 font-medium">Remaining</p>
+          <p className="text-3xl font-bold text-emerald-500 tracking-tight">MAD {totalRemaining.toLocaleString()}</p>
         </div>
       </div>
 
@@ -141,47 +141,42 @@ export function Budgets() {
               key={budget.id}
               onMouseEnter={() => setHoveredBudget(budget.id)}
               onMouseLeave={() => setHoveredBudget(null)}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative group"
+              className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:border-primary/30 transition-all relative group"
             >
               {/* Action Buttons */}
-              <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}>
-                <button 
+              <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'
+                }`}>
+                <button
                   onClick={() => {
                     setEditingBudget(budget);
                     setIsCreateModalOpen(true);
                   }}
-                  className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                 >
                   <Edit size={16} />
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setSelectedBudget(budget);
                     setIsDeleteModalOpen(true);
                   }}
-                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
 
               {/* Category Header */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`p-3 rounded-xl ${
-                  percentage > 100 ? 'bg-red-50 text-red-600' :
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`p-2.5 rounded-lg transition-transform duration-300 group-hover:scale-105 ${percentage > 100 ? 'bg-destructive/10 text-destructive' :
                   percentage >= 80 ? 'bg-orange-50 text-orange-600' :
-                  percentage >= 60 ? 'bg-blue-50 text-blue-600' :
-                  'bg-emerald-50 text-emerald-600'
-                }`}>
+                    percentage >= 60 ? 'bg-blue-50 text-blue-600' :
+                      'bg-emerald-50 text-emerald-600'
+                  }`}>
                   <Icon size={24} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{budget.category}</h4>
-                  <span className={`text-xs px-2 py-1 rounded-md ${status.bgColor} ${status.textColor} font-medium`}>
-                    {status.text}
-                  </span>
+                  <h4 className="font-semibold text-foreground">{budget.category}</h4>
                 </div>
               </div>
 
@@ -193,25 +188,23 @@ export function Budgets() {
               {/* Budget Details */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Spent</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-muted-foreground">Spent</span>
+                  <span className="font-semibold text-foreground">
                     MAD {spent.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Limit</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-muted-foreground">Limit</span>
+                  <span className="font-semibold text-foreground">
                     MAD {limit.toLocaleString()}
                   </span>
                 </div>
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-3 border-t border-border mt-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Remaining</span>
-                    <span className={`font-semibold ${
-                      remaining < 0 ? 'text-red-600' : 'text-emerald-600'
-                    }`}>
-                      MAD {Math.abs(remaining).toLocaleString()}
-                      {remaining < 0 && ' over'}
+                    <span className="text-muted-foreground">{status.text}</span>
+                    <span className={`font-semibold ${remaining < 0 ? 'text-destructive' : 'text-emerald-500'
+                      }`}>
+                      {remaining < 0 ? 'Over MAD ' : 'Remaining MAD '}{Math.abs(remaining).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -221,15 +214,15 @@ export function Budgets() {
         })}
 
         {/* Empty State Card */}
-        <div 
+        <div
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-gray-50 rounded-2xl p-6 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center min-h-[280px] hover:border-purple-300 hover:bg-purple-50/30 transition-all cursor-pointer"
+          className="bg-card rounded-2xl p-6 border-2 border-dashed border-border flex flex-col items-center justify-center min-h-[280px] hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
         >
-          <div className="p-4 bg-purple-100 rounded-full mb-4">
-            <Plus size={32} className="text-purple-600" />
+          <div className="p-4 bg-primary/10 rounded-full mb-4 group-hover:shadow-[0_0_15px_rgba(127,13,242,0.3)]">
+            <Plus size={32} className="text-primary" />
           </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Add New Budget</h4>
-          <p className="text-sm text-gray-600 text-center">
+          <h4 className="font-semibold text-foreground mb-2">Add New Budget</h4>
+          <p className="text-sm text-muted-foreground text-center">
             Create a budget for a new category
           </p>
         </div>
