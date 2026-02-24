@@ -111,6 +111,12 @@ export const authAPI = {
 
   resetPassword: (data: { username: string; old_password: string; new_password: string }) =>
     api.post('/api/v1/users/reset-password', data),
+
+  verifyEmail: (token: string) =>
+    api.get('/api/v1/users/verify-email', { params: { token } }),
+
+  resendVerification: (email: string) =>
+    api.post('/api/v1/users/resend-verification', { email }),
 };
 
 export const transactionAPI = {

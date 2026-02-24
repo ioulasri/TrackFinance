@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
+import { VerifyEmail } from './components/VerifyEmail';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
@@ -14,7 +15,7 @@ import { AIAssistant } from './components/AIAssistant';
 import { LandingPage } from './components/LandingPage';
 import { authAPI } from './api';
 
-type AuthState = 'landing' | 'login' | 'register' | 'authenticated';
+type AuthState = 'landing' | 'login' | 'register' | 'verify-email' | 'oauth-callback' | 'authenticated';
 
 interface User {
   id: number;
@@ -32,6 +33,32 @@ export default function App() {
 
   // Check for existing token on mount
   useEffect(() => {
+    // Check if user is landing on the /verify-email page
+    if (window.location.pathname === '/verify-email') {
+      setAuthState('verify-email');
+      setLoading(false);
+      return;
+    }
+
+    // Handle OAuth callback — extract token from URL
+    if (window.location.pathname === '/oauth-callback') {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const error = params.get('error');
+      // Clean the URL
+      window.history.replaceState({}, '', '/');
+      if (token) {
+        localStorage.setItem('token', token);
+        fetchUser(true);
+        return;
+      } else {
+        console.error('OAuth error:', error);
+        setAuthState('login');
+        setLoading(false);
+        return;
+      }
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
       fetchUser();
@@ -107,6 +134,18 @@ export default function App() {
       <Register
         onSwitchToLogin={() => setAuthState('login')}
         onRegister={() => setAuthState('login')}
+      />
+    );
+  }
+
+  if (authState === 'verify-email') {
+    return (
+      <VerifyEmail
+        onBackToLogin={() => {
+          // Clear the URL params so we don't re-trigger verify on refresh
+          window.history.replaceState({}, '', '/');
+          setAuthState('login');
+        }}
       />
     );
   }
