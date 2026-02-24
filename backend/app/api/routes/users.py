@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset
+from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest
 from app.services.user_service import UserService
+from app.services.oauth_service import OAuthService
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.security import create_access_token
 from datetime import timedelta
 from app.services.xp_service import XPService
 from app.schemas.user import UserStatsResponse
+import os
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -43,7 +48,18 @@ def reset_password(reset_data: UserPasswordReset, db: Session = Depends(get_db))
 @router.post("/login", response_model=Token)
 def login_user(credentials: UserLogin, db: Session = Depends(get_db)):
 
-	user = UserService.authenticate_user(db, credentials.username, credentials.password)
+	try:
+		user = UserService.authenticate_user(db, credentials.username, credentials.password)
+	except ValueError as e:
+		if str(e) == "EMAIL_NOT_VERIFIED":
+			raise HTTPException(
+				status_code=status.HTTP_403_FORBIDDEN,
+				detail="EMAIL_NOT_VERIFIED"
+			)
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=str(e)
+		)
 
 	if not user:
 		raise HTTPException(
@@ -58,6 +74,54 @@ def login_user(credentials: UserLogin, db: Session = Depends(get_db)):
 	)
 
 	return Token(access_token=access_token, token_type="bearer")
+
+@router.get("/verify-email", status_code=status.HTTP_200_OK)
+def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
+	"""Called when the user clicks the link in their email."""
+	try:
+		UserService.verify_email(db, token)
+		return {"message": "Email Verified successfully. You can now log in"}
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.post("/resend-verification", status_code=status.HTTP_200_OK)
+def resend_verification(payload: ResendVerificationRequest, db: Session = Depends(get_db)):
+	"""Resend the verification email. Always 200 to avoid leaking whether an email exists."""
+	try:
+		UserService.resend_verification(db, payload.email)
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+	return {"message": "If that email is registed and unverified, a new link has been sent"}
+
+# ── OAuth: Google ───────────────────────────────────────────
+@router.get("/oauth/google")
+def google_login():
+	"""Redirect user to Google's OAuth consent screen."""
+	return RedirectResponse(url=OAuthService.get_google_auth_url())
+
+@router.get("/oauth/google/callback")
+async def google_callback(code: str = Query(...), db: Session = Depends(get_db)):
+	"""Handle Google OAuth callback."""
+	try:
+		access_token = await OAuthService.handle_google_callback(code, db)
+		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?token={access_token}")
+	except ValueError as e:
+		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?error={str(e)}")
+
+# ── OAuth: Discord ──────────────────────────────────────────
+@router.get("/oauth/discord")
+def discord_login():
+	"""Redirect user to Discord's OAuth consent screen."""
+	return RedirectResponse(url=OAuthService.get_discord_auth_url())
+
+@router.get("/oauth/discord/callback")
+async def discord_callback(code: str = Query(...), db: Session = Depends(get_db)):
+	"""Handle Discord OAuth callback."""
+	try:
+		access_token = await OAuthService.handle_discord_callback(code, db)
+		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?token={access_token}")
+	except ValueError as e:
+		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?error={str(e)}")
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
