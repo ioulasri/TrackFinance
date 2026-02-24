@@ -16,3 +16,9 @@ httpx==0.26.0
 
 # AI
 groq==0.13.0
+
+# Resend
+resend
+
+# OAuth
+httpx
