@@ -64,6 +64,7 @@ def test_user(db_session):
         email="test@example.com",
         username="testuser",
         hashed_password=hash_password("password123"),
+        is_verified=True,
         total_xp=0,
         current_level=1,
         current_streak=0,

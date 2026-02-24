@@ -1,10 +1,11 @@
-from multiprocessing import Value
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User
 from app.schemas.user import UserCreate
 from app.core.security import hash_password, verify_password, create_access_token
 from typing import Optional
+from datetime import timezone, datetime
+from app.services.email_service import EmailService
 
 class UserService:
 	"""Handles user logic"""
@@ -20,11 +21,14 @@ class UserService:
 			raise ValueError("Username already taken")
 	
 		hashed_pwd = hash_password(user_data.password)
+		token, expires = EmailService.generate_verification_token()
 
 		new_user = User(
 			email=user_data.email,
 			username=user_data.username,
 			hashed_password=hashed_pwd,
+			verification_token=token,
+			verification_token_expires=expires,
 			total_xp=0,
 			current_level=0,
 			current_streak=0,
@@ -35,6 +39,9 @@ class UserService:
 			db.add(new_user)
 			db.commit()
 			db.refresh(new_user)
+
+			EmailService.send_verification_email(new_user.email, new_user.username, token)
+
 			return new_user
 		except IntegrityError:
 			db.rollback()
@@ -49,18 +56,58 @@ class UserService:
 		if not user:
 			return None
 	
+		# OAuth-only users have no password — can't log in with email/password
+		if not user.hashed_password:
+			return None
+
 		if not verify_password(password, user.hashed_password):
 			return None
 
+		if not user.is_verified:
+			raise ValueError("EMAIL_NOT_VERIFIED")
+
 		return user
+	
+	@staticmethod
+	def verify_email(db: Session, token: str) -> Optional[User]:
+		user = db.query(User).filter(User.verification_token == token).first()
+
+		if not user:
+			raise ValueError("Invalid verification link.")
+		
+		if user.verification_token_expires < datetime.now(timezone.utc):
+			raise ValueError("Verification link has expired. Please request a new one.")
+		
+		user.is_verified = True
+		user.verification_token = None
+		user.verification_token_expires = None
+		db.commit()
+		db.refresh(user)
+		return user
+	
+	@staticmethod
+	def resend_verification(db: Session, email:str) -> None:
+		user = db.query(User).filter(User.email == email).first()
+
+		if not user:
+			return
+		
+		if user.is_verified:
+			raise ValueError("This email is already verified.")
+		
+		token, expires = EmailService.generate_verification_token()
+		user.verification_token = token
+		user.verification_token_expires = expires
+		db.commit()
+
+		EmailService.send_verification_email(user.email, user.username, token)
 
 	@staticmethod
 	def change_password(db: Session, user: User, current_password: str, new_password: str) -> bool:
 		if not verify_password(current_password, user.hashed_password):
 			raise ValueError("Incorrect current password")
 			
-		hashed_pwd = hash_password(new_password)
-		user.hashed_password = hashed_pwd
+		user.hashed_password = hash_password(new_password)
 		db.commit()
 		return True
 	
