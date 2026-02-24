@@ -26,10 +26,13 @@ services:
       context: .
       dockerfile: docker/backend.dockerfile
     container_name: financetracking-backend
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/trackfinance
       SECRET_KEY: dev-secret-key-change-in-production
-      GROQ_API_KEY:
+      FRONTEND_URL: http://localhost:3000
+      BACKEND_URL: http://localhost:8000
       API_HOST: 0.0.0.0
       API_PORT: 8000
     ports:
