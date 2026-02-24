@@ -54,3 +54,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
 	username: Optional[str] = None
+
+class ResendVerificationRequest(BaseModel):
+	email: EmailStr
+
+class CycleStartDayRequest(BaseModel):
+	cycle_start_day: int
