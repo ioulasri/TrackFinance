@@ -70,7 +70,6 @@ export default function App() {
   const fetchUser = async (fromLogin = false) => {
     try {
       const response = await authAPI.getCurrentUser();
-      console.log('API Response data:', response.data);
       setUser(response.data);
       setAuthState('authenticated');
     } catch (error) {
