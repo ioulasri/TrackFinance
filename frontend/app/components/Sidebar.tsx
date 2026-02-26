@@ -5,11 +5,9 @@ import { XPBar } from './XPBar';
 
 interface SidebarProps {
   user: {
-    name: string;
-    level: number;
-    avatar: string;
-    currentXP?: number;
-    requiredXP?: number;
+    username: string;
+    current_level: number;
+    current_xp: number;
   };
   onLogout: () => void;
 }
@@ -66,13 +64,13 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       <div className="p-4 border-t border-border space-y-4">
         <div className="flex items-center gap-3 py-1">
           <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-semibold border border-border shadow-sm">
-            {user.name.substring(0, 2).toUpperCase()}
+            {(user.username ?? ' ').substring(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground text-sm truncate">{user.name}</p>
+            <p className="font-medium text-foreground text-sm truncate">{user.username}</p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="px-1.5 py-0.5 bg-secondary border border-border rounded flex items-center gap-1">
-                <span className="text-[10px] font-bold text-muted-foreground">LVL {user.level}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">LVL {user.current_level}</span>
                 <span className="text-[10px]" title="7 Day Streak">🔥</span>
               </div>
             </div>
@@ -81,7 +79,11 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
 
         {/* Sleek Sidebar XP Bar */}
         <div className="px-1 pb-2">
-          <XPBar currentXP={user.currentXP || 0} requiredXP={user.requiredXP || 100} level={user.level} />
+          <XPBar
+            currentXP={user.current_xp ?? 54}
+            requiredXP={((user.current_level + 1) ** 2) * 100}
+            level={user.current_level}
+          />
         </div>
 
         {/* Logout Button */}
