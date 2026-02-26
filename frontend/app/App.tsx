@@ -70,12 +70,11 @@ export default function App() {
   const fetchUser = async (fromLogin = false) => {
     try {
       const response = await authAPI.getCurrentUser();
+      console.log('API Response data:', response.data);
       setUser(response.data);
       setAuthState('authenticated');
     } catch (error) {
       localStorage.removeItem('token');
-      // If we came from a login attempt, stay on the login page.
-      // If we came from the initial token check on mount, go to landing.
       setAuthState(fromLogin ? 'login' : 'landing');
     } finally {
       setLoading(false);
@@ -83,8 +82,6 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    // Token is already stored in localStorage by Login.tsx.
-    // Immediately navigate to authenticated, then fetch user details.
     setAuthState('authenticated');
     fetchUser(true);
   };
@@ -142,7 +139,6 @@ export default function App() {
     return (
       <VerifyEmail
         onBackToLogin={() => {
-          // Clear the URL params so we don't re-trigger verify on refresh
           window.history.replaceState({}, '', '/');
           setAuthState('login');
         }}
@@ -157,11 +153,9 @@ export default function App() {
         {/* Sidebar */}
         <Sidebar
           user={{
-            name: user?.username || 'User',
-            level: user?.current_level || 1,
-            avatar: '',
-            currentXP: user?.current_xp || 0,
-            requiredXP: user?.total_xp || 500, // Assuming total_xp holds the required amount if xp_to_next_level isn't directly on User
+            username: user?.username ?? 'User',
+            current_level: user?.current_level ?? 0,
+            current_xp: user?.current_xp ?? 0,
           }}
           onLogout={handleLogout}
         />
