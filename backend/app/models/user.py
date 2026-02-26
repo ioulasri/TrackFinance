@@ -19,6 +19,7 @@ class User(Base):
 	avatar_url = Column(String(500), nullable=True)
 	total_xp = Column(Integer, nullable=False, server_default=text("0"))
 	current_level = Column(Integer, nullable=False, server_default=text("0"))
+	current_xp = Column(Integer, nullable=False, server_default=text("0"))
 	current_streak = Column(Integer, nullable=False, server_default=text("0"))
 	longest_streak = Column(Integer, nullable=False, server_default=text("0"))
 	last_activity_date = Column(TIMESTAMP(timezone=True))

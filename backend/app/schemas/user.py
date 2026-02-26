@@ -27,6 +27,7 @@ class UserStatsResponse(BaseModel):
 	username: str
 	total_xp: int
 	current_level: int
+	current_xp: int
 	current_streak: int
 	longest_streak: int
 
@@ -41,6 +42,7 @@ class UserResponse(UserBase):
 	id: int
 	total_xp: int = 0
 	current_level: int = 0
+	current_xp: int = 0
 	current_streak: int = 0
 	longest_streak: int = 0
 	created_at: datetime
