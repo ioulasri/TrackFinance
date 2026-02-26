@@ -25,8 +25,8 @@ class XPService:
 			return None
 		
 		user.total_xp += amount
-
 		user.current_level = XPService.calculate_level(user.total_xp)
+		user.current_xp = user.total_xp - (user.current_level ** 2) * 100
 
 		now = datetime.now(timezone.utc)
 		if user.last_activity_date:
@@ -54,4 +54,3 @@ class XPService:
 		except Exception:
 			db.rollback()
 			raise ValueError("Database constraint violation")
-	
