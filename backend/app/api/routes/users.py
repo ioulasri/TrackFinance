@@ -159,6 +159,7 @@ def get_current_user_stats(current_user: User = Depends(get_current_user)):
 		"total_xp": current_user.total_xp,
 		"current_level": current_user.current_level,
 		"current_streak": current_user.current_streak,
+		"current_xp": current_user.current_xp,
 		"longest_streak": current_user.longest_streak,
 		"xp_to_next_level": xp_needed,
 		"level_progress_percentage": progress_pct
