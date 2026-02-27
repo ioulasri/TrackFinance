@@ -47,7 +47,7 @@ async def get_financial_report(
             {
                 "category": b.category,
                 "monthly_limit": b.monthly_limit,
-                "spent_amount": b.spent_amount
+                "spent_amount": b.current_spent
             } for b in budgets
         ]
         
@@ -68,5 +68,5 @@ async def get_financial_report(
         logger.error(f"Error generating report: {error_detail}")
         raise HTTPException(
             status_code=500, 
-            detail=f"Failed to generate report: {str(e)}. Full log: {error_detail}"
+            detail=f"Failed to generate report: {str(e)}"
         )
