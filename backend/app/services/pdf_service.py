@@ -140,10 +140,11 @@ class PDFService:
                 category = str(b.get("category", "Uncategorized"))[:18]
                 pdf.cell(45, 8, category)
                 
-                limit = b.get('monthly_limit', 0)
-                spent = b.get('spent_amount', 0)
+                # Convert to float to avoid Decimal issues
+                limit = float(b.get('monthly_limit', 0) or 0)
+                spent = float(b.get('spent_amount', 0) or 0)
                 remaining = limit - spent
-                percentage = min((spent / limit * 100) if limit > 0 else 0, 100)
+                percentage = (spent / limit * 100) if limit > 0 else 0
                 
                 status_color = (PDFService.COLOR_DANGER if spent > limit 
                               else PDFService.COLOR_WARNING if percentage >= 80 
@@ -157,9 +158,11 @@ class PDFService:
                 remaining_text = f"${remaining:,.2f}" if remaining >= 0 else f"-${abs(remaining):,.2f}"
                 pdf.cell(35, 8, remaining_text, 0, 0, "R")
                 
-                # Progress bar (using regular rectangles)
-                bar_width, bar_height = 35, 6
-                bar_x, bar_y = pdf.get_x() + 2, y_pos + 3
+                # Progress bar - ALL values as float
+                bar_width = 35.0
+                bar_height = 6.0
+                bar_x = float(pdf.get_x() + 2)
+                bar_y = float(y_pos + 3)
                 
                 # Background bar
                 pdf.set_fill_color(230, 233, 236)
@@ -168,7 +171,7 @@ class PDFService:
                 # Progress fill
                 if percentage > 0:
                     pdf.set_fill_color(*status_color)
-                    fill_width = (percentage / 100) * bar_width
+                    fill_width = float((percentage / 100.0) * bar_width)
                     pdf.rect(bar_x, bar_y, fill_width, bar_height, style='F')
                 
                 pdf.ln(12)
@@ -227,7 +230,7 @@ class PDFService:
                 pdf.cell(65, 8, category)
                 pdf.cell(75, 8, description)
                 
-                amount = t.get("amount", 0)
+                amount = float(t.get("amount", 0) or 0)
                 if t.get("type") == "expense":
                     pdf.set_text_color(*PDFService.COLOR_DANGER)
                     pdf.cell(30, 8, f"-${amount:,.2f}", 0, 0, "R")
