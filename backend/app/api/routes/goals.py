@@ -6,7 +6,7 @@ from app.schemas.goal import GoalCreate, GoalUpdate, GoalResponse, GoalStats
 from app.schemas.user import UserResponse
 from app.services.goal_service import GoalService
 
-router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
+router = APIRouter(prefix="/v1/goals", tags=["goals"])
 
 
 @router.post("/", response_model=GoalResponse, status_code=status.HTTP_201_CREATED)

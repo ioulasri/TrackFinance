@@ -4,11 +4,10 @@ import axios from 'axios';
 const getApiUrl = () => {
   // 1. Use explicit environment variable if set
   if (import.meta.env.VITE_API_URL) {
-    // If VITE_API_URL ends with /api, strip it as our paths include it
-    return import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+    return import.meta.env.VITE_API_URL;
   }
 
-  // 2. In production, try to detect backend URL from current domain
+  // 2. In production, detect backend URL from current domain
   if (import.meta.env.PROD) {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
@@ -18,7 +17,7 @@ const getApiUrl = () => {
     }
 
     // Default production fallback
-    return `${protocol}//${hostname}`;
+    return `${protocol}//${hostname}:8000`;
   }
 
   // 3. Development fallback
@@ -68,8 +67,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 || error.response?.status === 403) {
       const requestUrl = error.config?.url || '';
-      // Only force-redirect to landing if this is NOT a login/reset request.
-      // A 401 on /login just means wrong credentials — let the component handle it.
+      // Only force-redirect to landing if this is NOT a login/reset request
       const isAuthEndpoint = requestUrl.includes('/login') || requestUrl.includes('/reset-password');
       if (!isAuthEndpoint) {
         localStorage.removeItem('token');
@@ -80,10 +78,6 @@ api.interceptors.response.use(
     // Network error - likely can't reach backend
     if (!error.response) {
       console.error('❌ Cannot connect to backend at:', API_URL);
-      console.error('Please check:');
-      console.error('1. Backend is running');
-      console.error('2. VITE_API_URL is set correctly');
-      console.error('3. CORS is configured on backend');
     }
 
     return Promise.reject(error);
@@ -92,73 +86,73 @@ api.interceptors.response.use(
 
 export const authAPI = {
   register: (data: { email: string; username: string; password: string }) =>
-    api.post('/api/v1/users/register', data),
+    api.post('/v1/users/register', data),
 
   login: (data: { username: string; password: string }) =>
-    api.post('/api/v1/users/login', data),
+    api.post('/v1/users/login', data),
 
-  getCurrentUser: () => api.get('/api/v1/users/me'),
+  getCurrentUser: () => api.get('/v1/users/me'),
 
-  getUserStats: () => api.get('/api/v1/users/me/stats'),
+  getUserStats: () => api.get('/v1/users/me/stats'),
 
   changePassword: (data: { current_password: string; new_password: string }) =>
-    api.put('/api/v1/users/me/password', data),
+    api.put('/v1/users/me/password', data),
 
   resetPassword: (data: { username: string; old_password: string; new_password: string }) =>
-    api.post('/api/v1/users/reset-password', data),
+    api.post('/v1/users/reset-password', data),
 
   verifyEmail: (token: string) =>
-    api.get('/api/v1/users/verify-email', { params: { token } }),
+    api.get('/v1/users/verify-email', { params: { token } }),
 
   resendVerification: (email: string) =>
-    api.post('/api/v1/users/resend-verification', { email }),
+    api.post('/v1/users/resend-verification', { email }),
 
   uploadAvatar: (formData: FormData) =>
-    api.post('/api/v1/users/me/avatar', formData, {
+    api.post('/v1/users/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
 
 export const transactionAPI = {
   list: (skip = 0, limit = 50) =>
-    api.get(`/api/v1/transactions/?skip=${skip}&limit=${limit}`),
+    api.get(`/v1/transactions/?skip=${skip}&limit=${limit}`),
 
-  create: (data: any) => api.post('/api/v1/transactions/', data),
+  create: (data: any) => api.post('/v1/transactions/', data),
 
   update: (id: number, data: any) =>
-    api.patch(`/api/v1/transactions/${id}`, data),
+    api.patch(`/v1/transactions/${id}`, data),
 
-  delete: (id: number) => api.delete(`/api/v1/transactions/${id}`),
+  delete: (id: number) => api.delete(`/v1/transactions/${id}`),
 
   getTransactionsByCategory: () =>
-    api.get('/api/v1/transactions/?skip=0&limit=1000'),
+    api.get('/v1/transactions/?skip=0&limit=1000'),
 };
 
 export const budgetAPI = {
-  list: () => api.get('/api/v1/budgets/'),
+  list: () => api.get('/v1/budgets/'),
 
   create: (data: { category: string; monthly_limit: number }) =>
-    api.post('/api/v1/budgets/', data),
+    api.post('/v1/budgets/', data),
 
-  update: (id: number, data: any) => api.patch(`/api/v1/budgets/${id}`, data),
+  update: (id: number, data: any) => api.patch(`/v1/budgets/${id}`, data),
 
-  delete: (id: number) => api.delete(`/api/v1/budgets/${id}`),
+  delete: (id: number) => api.delete(`/v1/budgets/${id}`),
 
-  getStatus: () => api.get('/api/v1/budgets/status'),
+  getStatus: () => api.get('/v1/budgets/status'),
 
-  resetMonthly: () => api.post('/api/v1/budgets/reset-monthly'),
+  resetMonthly: () => api.post('/v1/budgets/reset-monthly'),
 };
 
 export const achievementAPI = {
-  list: () => api.get('/api/v1/achievements/'),
+  list: () => api.get('/v1/achievements/'),
 
-  getUserAchievements: () => api.get('/api/v1/achievements/me'),
+  getUserAchievements: () => api.get('/v1/achievements/me'),
 
-  getStats: () => api.get('/api/v1/achievements/me/stats'),
+  getStats: () => api.get('/v1/achievements/me/stats'),
 };
 
 export const goalAPI = {
-  list: () => api.get('/api/v1/goals/'),
+  list: () => api.get('/v1/goals/'),
 
   create: (data: {
     name: string;
@@ -168,25 +162,25 @@ export const goalAPI = {
     deadline?: string;
     category?: string;
     description?: string;
-  }) => api.post('/api/v1/goals/', data),
+  }) => api.post('/v1/goals/', data),
 
-  update: (id: number, data: any) => api.patch(`/api/v1/goals/${id}`, data),
+  update: (id: number, data: any) => api.patch(`/v1/goals/${id}`, data),
 
-  delete: (id: number) => api.delete(`/api/v1/goals/${id}`),
+  delete: (id: number) => api.delete(`/v1/goals/${id}`),
 
-  getActive: () => api.get('/api/v1/goals/active'),
+  getActive: () => api.get('/v1/goals/active'),
 
-  getCompleted: () => api.get('/api/v1/goals/completed'),
+  getCompleted: () => api.get('/v1/goals/completed'),
 
-  getOverdue: () => api.get('/api/v1/goals/overdue'),
+  getOverdue: () => api.get('/v1/goals/overdue'),
 
-  getStats: () => api.get('/api/v1/goals/stats'),
+  getStats: () => api.get('/v1/goals/stats'),
 
   updateProgress: (id: number, amount: number) =>
-    api.patch(`/api/v1/goals/${id}/progress`, null, { params: { amount } }),
+    api.patch(`/v1/goals/${id}/progress`, null, { params: { amount } }),
 
   addToGoal: (id: number, amount: number) =>
-    api.patch(`/api/v1/goals/${id}/add`, null, { params: { amount } }),
+    api.patch(`/v1/goals/${id}/add`, null, { params: { amount } }),
 };
 
 // Analysis API types
@@ -233,7 +227,7 @@ export interface AnalysisData {
 
 export const analysisAPI = {
   getAnalysis: async (): Promise<AnalysisData> => {
-    const response = await api.get('/api/v1/analysis/financial-analysis');
+    const response = await api.get('/v1/analysis/financial-analysis');
     return response.data;
   },
 };
@@ -261,7 +255,7 @@ export const chatAPI = {
     message: string,
     history: { role: string; content: string }[] = []
   ): Promise<ChatResponse> => {
-    const response = await api.post('/api/v1/chat/chat', {
+    const response = await api.post('/v1/chat/chat', {
       message,
       conversation_history: history,
     });
@@ -269,7 +263,7 @@ export const chatAPI = {
   },
 
   getSuggestions: async (): Promise<SuggestionsResponse> => {
-    const response = await api.get('/api/v1/chat/chat/suggestions');
+    const response = await api.get('/v1/chat/chat/suggestions');
     return response.data;
   },
 };

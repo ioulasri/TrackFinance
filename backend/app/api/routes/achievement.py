@@ -11,7 +11,7 @@ from app.models.achievement import Achievement
 from app.models.user_achievement import UserAchievement
 from app.services.achievement_services import AchievementService
 
-router = APIRouter(prefix="/api/v1/achievements", tags=["achievements"])
+router = APIRouter(prefix="/v1/achievements", tags=["achievements"])
 
 @router.get("/", response_model=List[AchievementResponse])
 def get_all_achievements(

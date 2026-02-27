@@ -10,7 +10,7 @@ from typing import List
 from app.services.achievement_checker import AchievementChecker
 from app.services.budget_service import BudgetService
 
-router = APIRouter(prefix="/api/v1/transactions", tags=["transactions"])
+router = APIRouter(prefix="/v1/transactions", tags=["transactions"])
 
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_transaction(

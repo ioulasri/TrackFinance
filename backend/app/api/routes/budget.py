@@ -8,7 +8,7 @@ from app.models.user import User
 from typing import List
 from app.services.achievement_checker import AchievementChecker
 
-router = APIRouter(prefix="/api/v1/budgets", tags=["budgets"])
+router = APIRouter(prefix="/v1/budgets", tags=["budgets"])
 
 @router.post("/", response_model=BudgetResponse, status_code=status.HTTP_201_CREATED)
 def create_budget(

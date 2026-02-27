@@ -17,7 +17,7 @@ from fastapi import File, UploadFile
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
 
-router = APIRouter(prefix="/api/v1/users", tags=["users"])
+router = APIRouter(prefix="/v1/users", tags=["users"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
