@@ -8,6 +8,10 @@ from app.services.pdf_service import PDFService
 from app.services.transaction_service import TransactionService
 from app.services.budget_service import BudgetService
 import io
+import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/reports", tags=["reports"])
 
@@ -17,6 +21,7 @@ async def get_financial_report(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        logger.info(f"Generating financial report for user: {current_user.username}")
         # 1. Gather data
         transactions = TransactionService.get_user_transactions(db, current_user.id, skip=0, limit=100)
         budgets = BudgetService.get_user_budgets(db, current_user.id)
@@ -59,4 +64,9 @@ async def get_financial_report(
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
+        error_detail = traceback.format_exc()
+        logger.error(f"Error generating report: {error_detail}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to generate report: {str(e)}. Full log: {error_detail}"
+        )
