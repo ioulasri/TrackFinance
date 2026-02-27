@@ -25,3 +25,5 @@ httpx
 
 # Avatar uploader
 boto3
+
+python-multipart
