@@ -12,9 +12,20 @@ DO_SPACES_ENDPOINT = os.getenv("DO_SPACES_ENDPOINT", f"https://{os.getenv('DO_SP
 
 
 class AvatarService:
+    @staticmethod
+    def validate_config():
+        """Validate that all required DO Spaces environment variables are set."""
+        missing = []
+        if not DO_SPACES_KEY: missing.append("DO_SPACES_KEY")
+        if not DO_SPACES_SECRET: missing.append("DO_SPACES_SECRET")
+        if not DO_SPACES_BUCKET: missing.append("DO_SPACES_BUCKET")
+        
+        if missing:
+            raise ValueError(f"Missing required DigitalOcean Spaces configuration: {', '.join(missing)}")
 
     @staticmethod
     def get_client():
+        AvatarService.validate_config()
         return boto3.client(
             "s3",
             region_name=DO_SPACES_REGION,
@@ -35,25 +46,34 @@ class AvatarService:
         filename = f"avatars/{user_id}/{uuid.uuid4()}.{ext}"
         contents = await file.read()
 
-        client = AvatarService.get_client()
-        client.put_object(
-            Bucket=DO_SPACES_BUCKET,
-            Key=filename,
-            Body=contents,
-            ContentType=file.content_type,
-            ACL="public-read"
-        )
+        try:
+            client = AvatarService.get_client()
+            client.put_object(
+                Bucket=DO_SPACES_BUCKET,
+                Key=filename,
+                Body=contents,
+                ContentType=file.content_type,
+                ACL="public-read"
+            )
 
-        url = f"{DO_SPACES_ENDPOINT}/{DO_SPACES_BUCKET}/{filename}"
-        return url
+            # Standard DigitalOcean Spaces public URL format
+            # Using the format: https://bucket.region.digitaloceanspaces.com/filename
+            url = f"https://{DO_SPACES_BUCKET}.{DO_SPACES_REGION}.digitaloceanspaces.com/{filename}"
+            return url
+        except Exception as e:
+            # Re-raise with a more descriptive message if it's a boto3 error
+            raise Exception(f"S3/Spaces error: {str(e)}")
 
     @staticmethod
     def delete_avatar(avatar_url: str):
         """Delete old avatar from spaces when user uploads a new one."""
         try:
-            if not avatar_url or DO_SPACES_BUCKET not in avatar_url:
+            if not avatar_url or not DO_SPACES_BUCKET or DO_SPACES_BUCKET not in avatar_url:
                 return
-            key = avatar_url.split(f"{DO_SPACES_BUCKET}/")[-1]
+            key = avatar_url.split(f"{DO_SPACES_REGION}.digitaloceanspaces.com/")[-1]
+            if "/" not in key: # Fallback for old URL format if any
+                key = avatar_url.split(f"{DO_SPACES_BUCKET}/")[-1]
+                
             client = AvatarService.get_client()
             client.delete_object(Bucket=DO_SPACES_BUCKET, Key=key)
         except Exception:
