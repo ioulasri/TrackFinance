@@ -42,7 +42,7 @@ class PDFService:
         pdf.set_fill_color(250, 251, 252)
         pdf.set_draw_color(230, 233, 236)
         pdf.set_line_width(0.5)
-        pdf.rounded_rect(15, pdf.get_y(), 180, 45, 3, style='DF')
+        pdf.rect(15, pdf.get_y(), 180, 45, style='DF')
         
         pdf.set_font("helvetica", "B", 14)
         pdf.set_text_color(*PDFService.COLOR_DARK)
@@ -94,7 +94,7 @@ class PDFService:
             for label, value, color in summary_data:
                 pdf.set_draw_color(230, 233, 236)
                 pdf.set_fill_color(255, 255, 255)
-                pdf.rounded_rect(x_start, y_start, card_width, card_height, 3, style='DF')
+                pdf.rect(x_start, y_start, card_width, card_height, style='DF')
                 
                 pdf.set_font("helvetica", "B", 14)
                 pdf.set_text_color(*color)
@@ -157,17 +157,19 @@ class PDFService:
                 remaining_text = f"${remaining:,.2f}" if remaining >= 0 else f"-${abs(remaining):,.2f}"
                 pdf.cell(35, 8, remaining_text, 0, 0, "R")
                 
-                # Progress bar
+                # Progress bar (using regular rectangles)
                 bar_width, bar_height = 35, 6
                 bar_x, bar_y = pdf.get_x() + 2, y_pos + 3
                 
+                # Background bar
                 pdf.set_fill_color(230, 233, 236)
-                pdf.rounded_rect(bar_x, bar_y, bar_width, bar_height, 1.5, style='F')
+                pdf.rect(bar_x, bar_y, bar_width, bar_height, style='F')
                 
+                # Progress fill
                 if percentage > 0:
                     pdf.set_fill_color(*status_color)
                     fill_width = (percentage / 100) * bar_width
-                    pdf.rounded_rect(bar_x, bar_y, fill_width, bar_height, 1.5, style='F')
+                    pdf.rect(bar_x, bar_y, fill_width, bar_height, style='F')
                 
                 pdf.ln(12)
             
