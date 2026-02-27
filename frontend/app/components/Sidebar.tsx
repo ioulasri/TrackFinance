@@ -1,21 +1,32 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, List, Wallet, Target, Trophy, Settings, LogOut, LineChart } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Receipt,
+  Wallet, // Keeping Wallet as it's used for budgets and not explicitly removed from menuItems
+  Target,
+  Trophy,
+  Settings,
+  LogOut,
+  LineChart, // Keeping LineChart as it's used for analysis and not explicitly removed from menuItems
+  Camera
+} from 'lucide-react';
 import { XPBar } from './XPBar';
+import { authAPI } from '../api'; // Assuming '../api' is the correct path for authAPI
 
 interface SidebarProps {
   user: {
     username: string;
     current_level: number;
     current_xp: number;
+    avatar_url?: string; // Added avatar_url
   };
   onLogout: () => void;
+  onAvatarUpdate?: (url: string) => void; // Added onAvatarUpdate
 }
 
-export function Sidebar({ user, onLogout }: SidebarProps) {
+export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
   const menuItems = [
-    { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: Home },
-    { id: 'transactions', path: '/transactions', label: 'Transactions', icon: List },
     { id: 'budgets', path: '/budgets', label: 'Budgets', icon: Wallet },
     { id: 'goals', path: '/goals', label: 'Goals', icon: Target },
     { id: 'analysis', path: '/analysis', label: 'Analysis', icon: LineChart },
@@ -28,6 +39,33 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const currentXP = user?.current_xp ?? 0;
   const requiredXP = ((level + 1) ** 2) * 100;
   const initials = username.substring(0, 2).toUpperCase();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setIsUploading(true);
+      const response = await authAPI.uploadAvatar(formData);
+      if (onAvatarUpdate && response.data.avatar_url) {
+        onAvatarUpdate(response.data.avatar_url);
+      }
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      alert('Failed to upload avatar. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="w-60 h-screen bg-sidebar border-r border-border flex flex-col fixed left-0 top-0">
@@ -65,12 +103,44 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
         })}
       </nav>
 
-      {/* User Profile */}
       <div className="p-4 border-t border-border space-y-4">
         <div className="flex items-center gap-3 py-1">
-          {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold border border-border shadow-sm flex-shrink-0">
-            {initials}
+          {/* Avatar with upload functionality */}
+          <div 
+            className="relative group cursor-pointer"
+            onClick={handleAvatarClick}
+          >
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold border border-border shadow-sm flex-shrink-0 overflow-hidden">
+              {user.avatar_url ? (
+                <img 
+                  src={user.avatar_url} 
+                  alt={username} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initials
+              )}
+              
+              {/* Hover overlay with camera icon */}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                <Camera className="w-4 h-4 text-white" />
+              </div>
+
+              {/* Uploading indicator */}
+              {isUploading && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
           </div>
           <div className="flex-1 min-w-0">
             {/* Username */}

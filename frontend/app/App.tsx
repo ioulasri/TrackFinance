@@ -24,6 +24,7 @@ interface User {
   current_level: number;
   current_xp: number;
   total_xp: number;
+  avatar_url?: string;
 }
 
 export default function App() {
@@ -91,6 +92,12 @@ export default function App() {
     setAuthState('landing');
   };
 
+  const handleAvatarUpdate = (url: string) => {
+    if (user) {
+      setUser({ ...user, avatar_url: url });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -155,8 +162,10 @@ export default function App() {
             username: user?.username ?? 'User',
             current_level: user?.current_level ?? 0,
             current_xp: user?.current_xp ?? 0,
+            avatar_url: user?.avatar_url,
           }}
           onLogout={handleLogout}
+          onAvatarUpdate={handleAvatarUpdate}
         />
 
         {/* Main Content */}

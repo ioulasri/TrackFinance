@@ -12,6 +12,8 @@ from datetime import timedelta
 from app.services.xp_service import XPService
 from app.schemas.user import UserStatsResponse
 import os
+from app.services.avatar_service import AvatarService
+from fastapi import File, UploadFile
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
 
@@ -164,3 +166,31 @@ def get_current_user_stats(current_user: User = Depends(get_current_user)):
 		"xp_to_next_level": xp_needed,
 		"level_progress_percentage": progress_pct
 	}
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+	file: UploadFile = File(...),
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
+	if file.size and file.size > 5 * 1024 * 1024:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="File size must be under 5MB"
+		)
+
+	try:
+		if current_user.avatar_url:
+			AvatarService.delete_avatar(current_user.avatar_url)
+
+		url = await AvatarService.upload_avatar(file, current_user.id)
+
+		current_user.avatar_url = url
+		db.commit()
+		db.refresh(current_user)
+
+		return current_user
+
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+	except Exception as e:
+		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload avatar")

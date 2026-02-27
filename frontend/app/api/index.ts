@@ -117,6 +117,11 @@ export const authAPI = {
 
   resendVerification: (email: string) =>
     api.post('/api/v1/users/resend-verification', { email }),
+
+  uploadAvatar: (formData: FormData) =>
+    api.post('/api/v1/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export const transactionAPI = {

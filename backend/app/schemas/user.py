@@ -46,6 +46,7 @@ class UserResponse(UserBase):
 	current_streak: int = 0
 	longest_streak: int = 0
 	created_at: datetime
+	avatar_url: Optional[str] = None
 
 	class Config:
 		from_attributes = True
