@@ -9,10 +9,11 @@ import {
   Settings,
   LogOut,
   LineChart,
-  Camera
+  Camera,
+  Download
 } from 'lucide-react';
 import { XPBar } from './XPBar';
-import { authAPI } from '../api'; // Assuming '../api' is the correct path for authAPI
+import { authAPI, reportAPI } from '../api'; // Assuming '../api' is the correct path for authAPI
 
 interface SidebarProps {
   user: {
@@ -42,7 +43,21 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
   const requiredXP = ((level + 1) ** 2) * 100;
   const initials = username.substring(0, 2).toUpperCase();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [isUploading, setIsUploading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await reportAPI.downloadFinancialReport(username);
+    } catch (error) {
+      console.error('Failed to export report:', error);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -165,6 +180,20 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
             level={level}
           />
         </div>
+
+        {/* Export Report Button */}
+        <button
+          onClick={handleExport}
+          disabled={isExporting}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm bg-white group mb-2"
+        >
+          {isExporting ? (
+            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          ) : (
+            <Download size={16} className="text-primary group-hover:scale-110 transition-transform" />
+          )}
+          <span className="font-semibold text-sm">{isExporting ? 'Generating...' : 'Export Report'}</span>
+        </button>
 
         {/* Logout Button */}
         <button

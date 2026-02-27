@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import users, transactions, achievement, budget, goals, chat
+from app.api.routes import users, transactions, achievement, budget, goals, chat, reports
 from app.db.session import engine, Base
 import os
 
@@ -33,6 +33,7 @@ app.include_router(achievement.router)
 app.include_router(budget.router)
 app.include_router(goals.router)
 app.include_router(chat.router)
+app.include_router(reports.router)
 
 @app.get("/")
 def root():

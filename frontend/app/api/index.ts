@@ -268,4 +268,19 @@ export const chatAPI = {
   },
 };
 
+export const reportAPI = {
+  downloadFinancialReport: async (username: string) => {
+    const response = await api.get('/v1/reports/financial-report', {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `financial_report_${username}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+};
+
 export default api;
