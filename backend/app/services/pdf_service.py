@@ -48,6 +48,9 @@ class PDFService:
     ) -> bytes:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=20)
+        # Set consistent margins
+        pdf.set_left_margin(LEFT_MARGIN)
+        pdf.set_right_margin(LEFT_MARGIN)
         pdf.add_page()
 
         # --- Header ---
@@ -56,16 +59,16 @@ class PDFService:
 
         pdf.set_font("helvetica", "B", 28)
         pdf.set_text_color(255, 255, 255)
-        pdf.set_xy(15, 10)
+        pdf.set_xy(LEFT_MARGIN, 10)
         pdf.cell(0, 15, "Financial Quest", ln=True)
 
         pdf.set_font("helvetica", "", 12)
-        pdf.set_xy(15, 22)
+        pdf.set_xy(LEFT_MARGIN, 22)
         pdf.cell(0, 10, "Financial Report & Analytics", ln=True)
 
         pdf.set_font("helvetica", "I", 10)
-        pdf.set_xy(-70, 10)
-        pdf.cell(0, 10, f"{datetime.now().strftime('%B %d, %Y')}", ln=True)
+        pdf.set_xy(210 - LEFT_MARGIN - 60, 10)
+        pdf.cell(60, 10, f"{datetime.now().strftime('%B %d, %Y')}", ln=True, align="R")
 
         pdf.ln(25)
 
@@ -74,11 +77,11 @@ class PDFService:
         pdf.set_draw_color(230, 233, 236)
         pdf.set_line_width(0.5)
         top_y = pdf.get_y()
-        pdf.rect(LEFT_MARGIN, top_y, CONTENT_WIDTH, 45, style='DF')
+        pdf.rect(LEFT_MARGIN, top_y, CONTENT_WIDTH, 42, style='DF')
 
         pdf.set_font("helvetica", "B", 14)
         pdf.set_text_color(*PDFService.COLOR_DARK)
-        pdf.set_xy(LEFT_MARGIN + 5, top_y + 5)
+        pdf.set_xy(LEFT_MARGIN + 5, top_y + 4)
         pdf.cell(0, 10, f"User: {user_data.get('username', 'User')}", ln=True)
 
         stats = [
@@ -87,9 +90,9 @@ class PDFService:
             ("Streak", f"{user_data.get('current_streak', 0)} days", PDFService.COLOR_SUCCESS),
         ]
 
-        col_width = 55
+        col_width = 58
         x_start = LEFT_MARGIN + 5
-        y_pos = pdf.get_y()
+        y_pos = top_y + 15
 
         for label, value, color in stats:
             pdf.set_font("helvetica", "B", 18)
@@ -99,12 +102,13 @@ class PDFService:
 
             pdf.set_font("helvetica", "", 10)
             pdf.set_text_color(*PDFService.COLOR_MUTED)
-            pdf.set_xy(x_start, pdf.get_y())
+            pdf.set_xy(x_start, y_pos + 10)
             pdf.cell(col_width, 8, label, ln=True)
 
             x_start += col_width
 
-        pdf.ln(20)
+        pdf.set_y(top_y + 45)
+        pdf.ln(10)
 
         # --- Financial Summary ---
         if transactions:
@@ -137,8 +141,8 @@ class PDFService:
                  PDFService.COLOR_PRIMARY if net_balance >= 0 else PDFService.COLOR_DANGER),
             ]
 
-            card_width = 55
-            card_height = 30
+            card_width = 56
+            card_height = 28
             x_start = LEFT_MARGIN
             y_start = pdf.get_y()
 
@@ -154,12 +158,13 @@ class PDFService:
 
                 pdf.set_font("helvetica", "", 9)
                 pdf.set_text_color(*PDFService.COLOR_MUTED)
-                pdf.set_xy(x_start + 5, y_start + 19)
+                pdf.set_xy(x_start + 5, y_start + 17)
                 pdf.cell(0, 6, label, ln=True)
 
-                x_start += card_width + 7
+                x_start += card_width + 6
 
-            pdf.ln(40)
+            pdf.set_y(y_start + card_height + 10)
+            pdf.ln(5)
 
         # --- Budget Overview ---
         if budgets:
@@ -215,10 +220,12 @@ class PDFService:
                 pdf.cell(BUD_W_REMAIN, 6, remain_txt, 0, 0, "R")
 
                 # Progress bar inside last column
-                bar_width = float(BUD_W_PROGRESS - 4)   # inner padding
+                bar_width = float(BUD_W_PROGRESS - 8)   # inner padding
                 bar_height = 4.0
-                bar_x = float(pdf.get_x() + 2)
-                bar_y = float(y_pos + 3)
+                # Calculate X to center bar in the column
+                current_x = pdf.get_x()
+                bar_x = current_x + (BUD_W_PROGRESS - bar_width) / 2
+                bar_y = y_pos + 3
 
                 pdf.set_fill_color(230, 233, 236)
                 pdf.rect(bar_x, bar_y, bar_width, bar_height, style="F")
@@ -230,7 +237,7 @@ class PDFService:
 
                 pdf.ln(10)
 
-            pdf.ln(6)
+            pdf.ln(10)
 
         # --- Transactions Table ---
         if transactions:
@@ -239,27 +246,27 @@ class PDFService:
                 pdf.set_font("helvetica", "B", 16)
                 pdf.set_text_color(*PDFService.COLOR_DARK)
                 pdf.cell(0, 10, "Recent Transactions", ln=True)
-                pdf.ln(2)
+                pdf.ln(4)
 
                 pdf.set_fill_color(*PDFService.COLOR_PRIMARY)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("helvetica", "B", 10)
 
-                pdf.cell(TX_W_DATE,     8, "Date",         0, 0, "L", True)
-                pdf.cell(TX_W_CATEGORY, 8, "Category",     0, 0, "L", True)
-                pdf.cell(TX_W_DESC,     8, "Description",  0, 0, "L", True)
-                pdf.cell(TX_W_AMOUNT,   8, "Amount",       0, 1, "R", True)
+                pdf.cell(TX_W_DATE,     10, "Date",         0, 0, "L", True)
+                pdf.cell(TX_W_CATEGORY, 10, "Category",     0, 0, "L", True)
+                pdf.cell(TX_W_DESC,     10, "Description",  0, 0, "L", True)
+                pdf.cell(TX_W_AMOUNT,   10, "Amount",       0, 1, "R", True)
 
                 pdf.set_font("helvetica", "", 9)
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
 
             # First header
-            if pdf.get_y() > 200:
+            if pdf.get_y() > 220:
                 pdf.add_page()
             add_tx_header()
 
             for idx, t in enumerate(transactions[:40]):
-                if pdf.get_y() > 260:
+                if pdf.get_y() > 270:
                     pdf.add_page()
                     add_tx_header()
 
@@ -272,12 +279,12 @@ class PDFService:
 
                 date_str = str(t.get("date", ""))[:10]
                 category = str(t.get("category", "Uncategorized"))[:25]
-                description = str(t.get("description") or "-")[:40]
+                description = str(t.get("description") or "-")[:45]
 
                 pdf.set_xy(LEFT_MARGIN, y_pos + 1.5)
-                pdf.cell(TX_W_DATE, 6, date_str)
-                pdf.cell(TX_W_CATEGORY, 6, category)
-                pdf.cell(TX_W_DESC, 6, description)
+                pdf.cell(TX_W_DATE, 5, date_str)
+                pdf.cell(TX_W_CATEGORY, 5, category)
+                pdf.cell(TX_W_DESC, 5, description)
 
                 amount = PDFService._to_float(t.get("amount"))
                 if t.get("type") == "expense":
@@ -287,9 +294,9 @@ class PDFService:
                     pdf.set_text_color(*PDFService.COLOR_SUCCESS)
                     txt = f"+{PDFService._fmt_mad(amount)}"
 
-                pdf.cell(TX_W_AMOUNT, 6, txt, 0, 0, "R")
+                pdf.cell(TX_W_AMOUNT, 5, txt, 0, 1, "R")
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
-                pdf.ln(8)
+                pdf.ln(3)
 
         # --- Footer ---
         pdf.set_y(-20)
