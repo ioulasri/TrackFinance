@@ -4,26 +4,21 @@ import axios from 'axios';
 const getApiUrl = () => {
   // 1. Use explicit environment variable if set
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    // If VITE_API_URL ends with /api, strip it as our paths include it
+    return import.meta.env.VITE_API_URL.replace(/\/api$/, '');
   }
 
   // 2. In production, try to detect backend URL from current domain
   if (import.meta.env.PROD) {
-    // If frontend is at app.domain.com, backend might be at api.domain.com
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
 
-    // For DigitalOcean App Platform, services are often at same domain with different ports
-    // or as separate subdomains. Adjust this logic based on your deployment:
     if (hostname.includes('ondigitalocean.app')) {
-      // If services are deployed separately, frontend might be frontend-xxx.ondigitalocean.app
-      // and backend might be backend-xxx.ondigitalocean.app
-      // You'll need to update this with your actual backend URL
       return `${protocol}//${hostname.replace('frontend', 'backend')}`;
     }
 
     // Default production fallback
-    return `${protocol}//${hostname}:8000`;
+    return `${protocol}//${hostname}`;
   }
 
   // 3. Development fallback
