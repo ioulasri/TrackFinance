@@ -39,7 +39,8 @@ async def get_financial_report(
                 "date": tx.date.strftime("%Y-%m-%d") if tx.date else "N/A",
                 "category": tx.category,
                 "type": tx.type,
-                "amount": tx.amount
+                "amount": tx.amount,
+                "description": tx.description
             } for tx in transactions
         ]
         
