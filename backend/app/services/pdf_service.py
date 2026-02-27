@@ -2,6 +2,23 @@ from fpdf import FPDF
 from datetime import datetime
 from typing import List, Dict, Any
 
+# Layout constants
+LEFT_MARGIN = 15
+CONTENT_WIDTH = 180  # 210 - 2 * 15
+
+# Budget table column widths (sum = 180)
+BUD_W_CAT = 45
+BUD_W_LIMIT = 30
+BUD_W_SPENT = 30
+BUD_W_REMAIN = 35
+BUD_W_PROGRESS = 40
+
+# Transactions table column widths (sum = 180)
+TX_W_DATE = 30
+TX_W_CATEGORY = 55
+TX_W_DESC = 75
+TX_W_AMOUNT = 20
+
 
 class PDFService:
     # Professional color palette
@@ -17,6 +34,11 @@ class PDFService:
     def _fmt_mad(amount: float) -> str:
         """Format amount in MAD."""
         return f"{amount:,.2f} MAD"
+
+    @staticmethod
+    def _to_float(v) -> float:
+        """Safe numeric conversion (handles Decimal/None)."""
+        return float(v or 0)
 
     @staticmethod
     def generate_financial_report(
@@ -52,11 +74,11 @@ class PDFService:
         pdf.set_draw_color(230, 233, 236)
         pdf.set_line_width(0.5)
         top_y = pdf.get_y()
-        pdf.rect(15, top_y, 180, 45, style='DF')
+        pdf.rect(LEFT_MARGIN, top_y, CONTENT_WIDTH, 45, style='DF')
 
         pdf.set_font("helvetica", "B", 14)
         pdf.set_text_color(*PDFService.COLOR_DARK)
-        pdf.set_xy(20, top_y + 5)
+        pdf.set_xy(LEFT_MARGIN + 5, top_y + 5)
         pdf.cell(0, 10, f"User: {user_data.get('username', 'User')}", ln=True)
 
         stats = [
@@ -66,7 +88,7 @@ class PDFService:
         ]
 
         col_width = 55
-        x_start = 20
+        x_start = LEFT_MARGIN + 5
         y_pos = pdf.get_y()
 
         for label, value, color in stats:
@@ -84,27 +106,40 @@ class PDFService:
 
         pdf.ln(20)
 
-        # --- Financial summary ---
+        # --- Financial Summary ---
         if transactions:
             pdf.set_font("helvetica", "B", 16)
             pdf.set_text_color(*PDFService.COLOR_DARK)
             pdf.cell(0, 12, "Financial Summary", ln=True)
             pdf.ln(4)
 
-            total_income = float(sum(t.get("amount", 0) for t in transactions if t.get("type") == "income") or 0)
-            total_expense = float(sum(t.get("amount", 0) for t in transactions if t.get("type") == "expense") or 0)
+            total_income = sum(
+                PDFService._to_float(t.get("amount"))
+                for t in transactions
+                if t.get("type") == "income"
+            )
+            total_expense = sum(
+                PDFService._to_float(t.get("amount"))
+                for t in transactions
+                if t.get("type") == "expense"
+            )
             net_balance = total_income - total_expense
 
             summary_data = [
-                ("Total Income", f"+{PDFService._fmt_mad(total_income)}", PDFService.COLOR_SUCCESS),
-                ("Total Expenses", f"-{PDFService._fmt_mad(total_expense)}", PDFService.COLOR_DANGER),
-                ("Net Balance", PDFService._fmt_mad(net_balance),
+                ("Total Income",
+                 f"+{PDFService._fmt_mad(total_income)}",
+                 PDFService.COLOR_SUCCESS),
+                ("Total Expenses",
+                 f"-{PDFService._fmt_mad(total_expense)}",
+                 PDFService.COLOR_DANGER),
+                ("Net Balance",
+                 PDFService._fmt_mad(net_balance),
                  PDFService.COLOR_PRIMARY if net_balance >= 0 else PDFService.COLOR_DANGER),
             ]
 
             card_width = 55
             card_height = 30
-            x_start = 15
+            x_start = LEFT_MARGIN
             y_start = pdf.get_y()
 
             for label, value, color in summary_data:
@@ -126,22 +161,23 @@ class PDFService:
 
             pdf.ln(40)
 
-        # --- Budget overview ---
+        # --- Budget Overview ---
         if budgets:
             pdf.set_font("helvetica", "B", 16)
             pdf.set_text_color(*PDFService.COLOR_DARK)
             pdf.cell(0, 12, "Budget Overview", ln=True)
             pdf.ln(4)
 
+            # Header row
             pdf.set_fill_color(*PDFService.COLOR_PRIMARY)
             pdf.set_text_color(255, 255, 255)
             pdf.set_font("helvetica", "B", 11)
 
-            pdf.cell(45, 10, "Category", 0, 0, "L", True)
-            pdf.cell(35, 10, "Limit (MAD)", 0, 0, "R", True)
-            pdf.cell(35, 10, "Spent (MAD)", 0, 0, "R", True)
-            pdf.cell(35, 10, "Remain", 0, 0, "R", True)
-            pdf.cell(40, 10, "Progress", 0, 1, "C", True)
+            pdf.cell(BUD_W_CAT,      10, "Category",    0, 0, "L", True)
+            pdf.cell(BUD_W_LIMIT,    10, "Limit (MAD)", 0, 0, "R", True)
+            pdf.cell(BUD_W_SPENT,    10, "Spent (MAD)", 0, 0, "R", True)
+            pdf.cell(BUD_W_REMAIN,   10, "Remain",      0, 0, "R", True)
+            pdf.cell(BUD_W_PROGRESS, 10, "Progress",    0, 1, "C", True)
 
             pdf.set_font("helvetica", "", 10)
             pdf.set_text_color(*PDFService.COLOR_TEXT)
@@ -149,18 +185,19 @@ class PDFService:
             for idx, b in enumerate(budgets):
                 y_pos = pdf.get_y()
 
+                # full-width background stripe
                 if idx % 2 == 0:
                     pdf.set_fill_color(250, 251, 252)
-                    pdf.rect(15, y_pos, 180, 10, style="F")
+                    pdf.rect(LEFT_MARGIN, y_pos, CONTENT_WIDTH, 10, style="F")
 
-                pdf.set_xy(15, y_pos + 2)
+                pdf.set_xy(LEFT_MARGIN, y_pos + 2)
                 category = str(b.get("category", "Uncategorized"))[:18]
-                pdf.cell(45, 6, category)
+                pdf.cell(BUD_W_CAT, 6, category)
 
-                limit = float(b.get("monthly_limit", 0) or 0)
-                spent = float(b.get("spent_amount", 0) or 0)
+                limit = PDFService._to_float(b.get("monthly_limit"))
+                spent = PDFService._to_float(b.get("spent_amount"))
                 remaining = limit - spent
-                percentage = (spent / limit * 100) if limit > 0 else 0
+                percentage = (spent / limit * 100) if limit > 0 else 0.0
 
                 if spent > limit:
                     status_color = PDFService.COLOR_DANGER
@@ -169,16 +206,16 @@ class PDFService:
                 else:
                     status_color = PDFService.COLOR_SUCCESS
 
-                pdf.cell(35, 6, PDFService._fmt_mad(limit), 0, 0, "R")
+                pdf.cell(BUD_W_LIMIT, 6, PDFService._fmt_mad(limit), 0, 0, "R")
                 pdf.set_text_color(*status_color)
-                pdf.cell(35, 6, PDFService._fmt_mad(spent), 0, 0, "R")
+                pdf.cell(BUD_W_SPENT, 6, PDFService._fmt_mad(spent), 0, 0, "R")
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
 
                 remain_txt = PDFService._fmt_mad(remaining)
-                pdf.cell(35, 6, remain_txt, 0, 0, "R")
+                pdf.cell(BUD_W_REMAIN, 6, remain_txt, 0, 0, "R")
 
-                # Progress bar
-                bar_width = 35.0
+                # Progress bar inside last column
+                bar_width = float(BUD_W_PROGRESS - 4)   # inner padding
                 bar_height = 4.0
                 bar_x = float(pdf.get_x() + 2)
                 bar_y = float(y_pos + 3)
@@ -188,15 +225,16 @@ class PDFService:
 
                 if percentage > 0:
                     pdf.set_fill_color(*status_color)
-                    fill_width = float((min(percentage, 100) / 100.0) * bar_width)
+                    fill_width = float((min(percentage, 100.0) / 100.0) * bar_width)
                     pdf.rect(bar_x, bar_y, fill_width, bar_height, style="F")
 
                 pdf.ln(10)
 
             pdf.ln(6)
 
-        # --- Transactions table ---
+        # --- Transactions Table ---
         if transactions:
+
             def add_tx_header():
                 pdf.set_font("helvetica", "B", 16)
                 pdf.set_text_color(*PDFService.COLOR_DARK)
@@ -207,40 +245,41 @@ class PDFService:
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("helvetica", "B", 10)
 
-                pdf.cell(30, 9, "Date", 0, 0, "L", True)
-                pdf.cell(60, 9, "Category", 0, 0, "L", True)
-                pdf.cell(70, 9, "Description", 0, 0, "L", True)
-                pdf.cell(30, 9, "Amount (MAD)", 0, 1, "R", True)
+                pdf.cell(TX_W_DATE,     8, "Date",         0, 0, "L", True)
+                pdf.cell(TX_W_CATEGORY, 8, "Category",     0, 0, "L", True)
+                pdf.cell(TX_W_DESC,     8, "Description",  0, 0, "L", True)
+                pdf.cell(TX_W_AMOUNT,   8, "Amount",       0, 1, "R", True)
 
                 pdf.set_font("helvetica", "", 9)
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
 
-            # first header
+            # First header
             if pdf.get_y() > 200:
                 pdf.add_page()
             add_tx_header()
 
-            for idx, t in enumerate(transactions[:40]):  # a bit more rows
+            for idx, t in enumerate(transactions[:40]):
                 if pdf.get_y() > 260:
                     pdf.add_page()
                     add_tx_header()
 
                 y_pos = pdf.get_y()
 
+                # full-width background band
                 if idx % 2 == 0:
                     pdf.set_fill_color(250, 251, 252)
-                    pdf.rect(15, y_pos, 180, 8, style="F")
+                    pdf.rect(LEFT_MARGIN, y_pos, CONTENT_WIDTH, 8, style="F")
 
                 date_str = str(t.get("date", ""))[:10]
                 category = str(t.get("category", "Uncategorized"))[:25]
                 description = str(t.get("description") or "-")[:40]
 
-                pdf.set_xy(15, y_pos + 1.5)
-                pdf.cell(30, 6, date_str)
-                pdf.cell(60, 6, category)
-                pdf.cell(70, 6, description)
+                pdf.set_xy(LEFT_MARGIN, y_pos + 1.5)
+                pdf.cell(TX_W_DATE, 6, date_str)
+                pdf.cell(TX_W_CATEGORY, 6, category)
+                pdf.cell(TX_W_DESC, 6, description)
 
-                amount = float(t.get("amount", 0) or 0)
+                amount = PDFService._to_float(t.get("amount"))
                 if t.get("type") == "expense":
                     pdf.set_text_color(*PDFService.COLOR_DANGER)
                     txt = f"-{PDFService._fmt_mad(amount)}"
@@ -248,7 +287,7 @@ class PDFService:
                     pdf.set_text_color(*PDFService.COLOR_SUCCESS)
                     txt = f"+{PDFService._fmt_mad(amount)}"
 
-                pdf.cell(30, 6, txt, 0, 0, "R")
+                pdf.cell(TX_W_AMOUNT, 6, txt, 0, 0, "R")
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
                 pdf.ln(8)
 
