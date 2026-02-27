@@ -3,12 +3,12 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Receipt,
-  Wallet, // Keeping Wallet as it's used for budgets and not explicitly removed from menuItems
+  Wallet, 
   Target,
   Trophy,
   Settings,
   LogOut,
-  LineChart, // Keeping LineChart as it's used for analysis and not explicitly removed from menuItems
+  LineChart,
   Camera
 } from 'lucide-react';
 import { XPBar } from './XPBar';
@@ -27,6 +27,8 @@ interface SidebarProps {
 
 export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
   const menuItems = [
+    { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'transactions', path: '/transactions', label: 'Transactions', icon: Receipt },
     { id: 'budgets', path: '/budgets', label: 'Budgets', icon: Wallet },
     { id: 'goals', path: '/goals', label: 'Goals', icon: Target },
     { id: 'analysis', path: '/analysis', label: 'Analysis', icon: LineChart },
