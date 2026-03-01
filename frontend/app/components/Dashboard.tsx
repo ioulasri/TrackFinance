@@ -113,29 +113,23 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Widescreen Main Area - 3 Column Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 relative z-10 w-full mb-8">
-
-        {/* --- ROW 1 --- */}
-        {/* Left (Spans 2): Balance Chart */}
-        <div className="xl:col-span-2 flex flex-col gap-8">
+      {/* Widescreen Main Area */}
+      <div className="flex flex-col xl:flex-row gap-8 relative z-10 w-full mb-8">
+        
+        {/* Left Column (Main Content) - max width 2/3 */}
+        <div className="flex-1 w-full xl:w-2/3 flex flex-col gap-8">
+          {/* Balance Chart spanning full width of left column */}
           <BalanceChart />
-        </div>
-
-        {/* Right (Spans 1): Cost Analysis */}
-        <div className="xl:col-span-1 flex flex-col gap-8">
-          <CostAnalysis />
-        </div>
-
-        {/* --- ROW 2 --- */}
-        {/* Left (Spans 2): Recent Transactions & Goals Tracker */}
-        <div className="xl:col-span-2 flex flex-col gap-8">
+          
           <RecentTransactions />
           <GoalsTracker />
         </div>
 
-        {/* Right (Spans 1): Spending Progress & AI Insights */}
-        <div className="xl:col-span-1 flex flex-col gap-8">
+        {/* Right Column (Side Panel) - width 1/3 */}
+        <div className="w-full xl:w-1/3 flex flex-col gap-8">
+          {/* Cost Analysis limited to side panel */}
+          <CostAnalysis />
+
           {/* Monthly Spending Progress */}
           <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
             <h3 className="text-xl text-foreground mb-8 font-bold">Monthly Spending Progress</h3>
