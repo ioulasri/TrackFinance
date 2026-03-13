@@ -1,5 +1,6 @@
 import pytest
 from fastapi import status
+from app.services.oauth_service import OAuthService
 
 
 @pytest.mark.auth
@@ -116,3 +117,23 @@ class TestUserProfile:
         assert "current_streak" in data
         assert "xp_to_next_level" in data
         assert "level_progress_percentage" in data
+
+
+@pytest.mark.auth
+class TestOAuthRoutes:
+    """Test OAuth redirect endpoints."""
+
+    def test_google_oauth_route_exists(self, client):
+        """Google sign-in should redirect to Google's consent screen."""
+        response = client.get("/v1/users/oauth/google", follow_redirects=False)
+
+        assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+        assert response.headers["location"].startswith("https://accounts.google.com/")
+
+    def test_google_oauth_redirect_uses_live_callback_route(self):
+        """OAuth config should point back to the actual FastAPI callback route."""
+        auth_url = OAuthService.get_google_auth_url()
+
+        assert "redirect_uri=" in auth_url
+        assert "%2Fv1%2Fusers%2Foauth%2Fgoogle%2Fcallback" in auth_url
+        assert "%2Fapi%2Fv1%2Fusers%2Foauth%2Fgoogle%2Fcallback" not in auth_url

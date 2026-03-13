@@ -9,18 +9,18 @@ from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
-BACKEND_URL = os.getenv("BACKEND_URL", "https://expensehub.site")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site").rstrip("/")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://expensehub.site").rstrip("/")
 
 # Google OAuth Config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = f"{BACKEND_URL}/api/v1/users/oauth/google/callback"
+GOOGLE_REDIRECT_URI = f"{BACKEND_URL}/v1/users/oauth/google/callback"
 
 # Discord OAuth Config
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "")
-DISCORD_REDIRECT_URI = f"{BACKEND_URL}/api/v1/users/oauth/discord/callback"
+DISCORD_REDIRECT_URI = f"{BACKEND_URL}/v1/users/oauth/discord/callback"
 
 
 class OAuthService:

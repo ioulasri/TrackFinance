@@ -18,6 +18,7 @@ const getApiUrl = () => {
   return 'http://localhost:8000';
 };
 const API_URL = getApiUrl();
+const OAUTH_BASE_URL = API_URL.replace(/\/$/, '');
 
 interface LoginProps {
   onSwitchToRegister: () => void;
@@ -105,11 +106,11 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${API_URL}/api/v1/users/oauth/google`;
+    window.location.href = `${OAUTH_BASE_URL}/v1/users/oauth/google`;
   };
 
   const handleDiscordLogin = () => {
-    window.location.href = `${API_URL}/api/v1/users/oauth/discord`;
+    window.location.href = `${OAUTH_BASE_URL}/v1/users/oauth/discord`;
   };
 
   return (
