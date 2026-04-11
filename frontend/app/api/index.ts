@@ -71,7 +71,6 @@ api.interceptors.response.use(
       const isAuthEndpoint = requestUrl.includes('/login') || requestUrl.includes('/reset-password');
       if (!isAuthEndpoint) {
         localStorage.removeItem('token');
-        window.location.href = '/';
       }
     }
 

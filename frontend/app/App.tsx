@@ -46,14 +46,15 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
       const error = params.get('error');
-      // Clean the URL
-      window.history.replaceState({}, '', '/');
       if (token) {
         localStorage.setItem('token', token);
+        // Clean the URL only after the token is safely persisted
+        window.history.replaceState({}, '', '/');
         fetchUser(true);
         return;
       } else {
         console.error('OAuth error:', error);
+        window.history.replaceState({}, '', '/');
         setAuthState('login');
         setLoading(false);
         return;
