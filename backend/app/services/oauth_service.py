@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 logger = logging.getLogger(__name__)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site").rstrip("/")
-BACKEND_URL = os.getenv("BACKEND_URL", "https://expensehub.site").rstrip("/")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://expensehub.site/api").rstrip("/")
 
 # Google OAuth Config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
