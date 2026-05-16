@@ -63,3 +63,6 @@ class ResendVerificationRequest(BaseModel):
 
 class CycleStartDayRequest(BaseModel):
 	cycle_start_day: int
+
+class UserUpdate(BaseModel):
+	username: Optional[str] = Field(None, min_length=3, max_length=50)

@@ -132,3 +132,18 @@ class UserService:
 	@staticmethod
 	def get_user_by_username(db: Session, username: str) -> Optional[User]:
 		return db.query(User).filter(User.username == username).first()
+
+	@staticmethod
+	def update_user(db: Session, user: User, username: Optional[str] = None) -> User:
+		if username is not None and username != user.username:
+			conflict = db.query(User).filter(User.username == username).first()
+			if conflict:
+				raise ValueError("Username already taken")
+			user.username = username
+		try:
+			db.commit()
+			db.refresh(user)
+			return user
+		except IntegrityError:
+			db.rollback()
+			raise ValueError("Username already taken")

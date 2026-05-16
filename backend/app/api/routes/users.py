@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest
+from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest, UserUpdate
 from app.services.user_service import UserService
 from app.services.oauth_service import OAuthService
 from app.api.dependencies import get_current_user
@@ -128,6 +128,17 @@ async def discord_callback(code: str = Query(...), db: Session = Depends(get_db)
 @router.get("/me", response_model=UserResponse)
 def get_current_user_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 	return current_user
+
+@router.patch("/me", response_model=UserResponse)
+def update_current_user(
+	update_data: UserUpdate,
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
+	try:
+		return UserService.update_user(db, current_user, username=update_data.username)
+	except ValueError as e:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.put("/me/password", status_code=status.HTTP_200_OK)
 def change_password(

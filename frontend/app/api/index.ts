@@ -110,6 +110,9 @@ export const authAPI = {
     api.post('/v1/users/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+
+  updateProfile: (data: { username?: string }) =>
+    api.patch('/v1/users/me', data),
 };
 
 export const transactionAPI = {
