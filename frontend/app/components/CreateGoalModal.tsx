@@ -1,13 +1,14 @@
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Trophy, Gift, Plus } from 'lucide-react';
+import { Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Trophy, Gift, Plus, Loader2 } from 'lucide-react';
 
 interface CreateGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (goal: any) => void;
   editingGoal?: any;
+  isLoading?: boolean;
 }
 
 const goalCategories = [
@@ -21,7 +22,7 @@ const goalCategories = [
   { name: 'Celebration', icon: '🎁', iconComponent: Gift, color: 'pink' },
 ];
 
-export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal }: CreateGoalModalProps) {
+export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoading = false }: CreateGoalModalProps) {
   const [name, setName] = useState(editingGoal?.name || '');
   const [selectedCategory, setSelectedCategory] = useState(
     editingGoal?.category || goalCategories[0].name
@@ -68,15 +69,16 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal }: Crea
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+    if (isLoading) return;
+
     const finalCategory = isCustom ? customCategory.trim() : selectedCategory;
     const selectedCat = goalCategories.find(cat => cat.name === finalCategory);
     const icon = isCustom ? '🎯' : (selectedCat?.icon || '🎯');
-    
+
     if (!name.trim() || !finalCategory) {
       return;
     }
-    
+
     onSubmit({
       name: name.trim(),
       icon,
@@ -86,9 +88,6 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal }: Crea
       deadline: deadline || null,
       description: description.trim() || null,
     });
-    
-    onClose();
-    resetForm();
   };
 
   const handleCategorySelect = (categoryName: string) => {
@@ -237,11 +236,18 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal }: Crea
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1" disabled={isLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" className="flex-1">
-            {editingGoal ? 'Update Goal' : 'Create Goal'}
+          <Button type="submit" variant="primary" className="flex-1" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                {editingGoal ? 'Updating…' : 'Creating…'}
+              </>
+            ) : (
+              editingGoal ? 'Update Goal' : 'Create Goal'
+            )}
           </Button>
         </div>
       </form>

@@ -269,7 +269,7 @@ class FinanceChatService:
 		if not api_key:
 			raise ValueError("GROQ_API_KEY environment variable is not set.")
 		self.groq_client = Groq(api_key=api_key)
-		self.model = "llama-3.1-8b-instant"
+		self.model = "llama-3.3-70b-versatile"
 
 	# ============================================================
 	# Main chat entry point
@@ -282,6 +282,10 @@ class FinanceChatService:
 		db: Session,
 		conversation_history: Optional[List[Dict[str, str]]] = None
 	) -> Dict:
+		# Trim history to last 20 entries (10 exchanges) to avoid Groq token overflow.
+		if conversation_history and len(conversation_history) > 20:
+			conversation_history = conversation_history[-20:]
+
 		messages = self._to_llm_messages(
 			user_message=user_message,
 			conversation_history=conversation_history,
@@ -543,6 +547,9 @@ class FinanceChatService:
 	# ============================================================
 
 	def _add_transaction(self, user_id, db, amount, type, category, description=None, date=None) -> Dict:
+		err = self._validate_positive_amount(amount, "Transaction amount")
+		if err:
+			return {"success": False, "error": err}
 		try:
 			transaction_date = (
 				datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
@@ -590,6 +597,9 @@ class FinanceChatService:
 	# ============================================================
 
 	def _add_budget(self, user_id, db, category, monthly_limit) -> Dict:
+		err = self._validate_positive_amount(monthly_limit, "Monthly limit")
+		if err:
+			return {"success": False, "error": err}
 		try:
 			b = BudgetService.create_budget(db, user_id, BudgetCreate(
 				category=category,
@@ -640,6 +650,9 @@ class FinanceChatService:
 	# ============================================================
 
 	def _add_goal(self, user_id, db, name, target_amount, icon="🎯", category=None, description=None, deadline=None) -> Dict:
+		err = self._validate_positive_amount(target_amount, "Target amount")
+		if err:
+			return {"success": False, "error": err}
 		try:
 			g = GoalService.create_goal(db, GoalCreate(
 				name=name,
@@ -655,12 +668,15 @@ class FinanceChatService:
 			return {"success": False, "error": str(e)}
 
 	def _update_goal(self, user_id, db, goal_name, name=None, icon=None, target_amount=None, category=None, description=None, deadline=None) -> Dict:
+		if target_amount is not None:
+			err = self._validate_positive_amount(target_amount, "Target amount")
+			if err:
+				return {"success": False, "error": err}
 		try:
-			# Find goal by name
 			goals = GoalService.get_user_goals(db, user_id)
-			goal = next((g for g in goals if goal_name.lower() in g.name.lower()), None)
-			if not goal:
-				return {"success": False, "error": f"No goal found matching '{goal_name}'."}
+			goal, err = self._find_goal(goals, goal_name)
+			if err:
+				return {"success": False, "error": err}
 
 			# Build update with only provided fields
 			update_kwargs = {}
@@ -690,11 +706,14 @@ class FinanceChatService:
 			return {"success": False, "error": str(e)}
 
 	def _add_goal_contribution(self, user_id, db, goal_name, amount) -> Dict:
+		err = self._validate_positive_amount(amount, "Contribution amount")
+		if err:
+			return {"success": False, "error": err}
 		try:
 			goals = GoalService.get_user_goals(db, user_id)
-			goal = next((g for g in goals if goal_name.lower() in g.name.lower()), None)
-			if not goal:
-				return {"success": False, "error": f"No goal found matching '{goal_name}'."}
+			goal, err = self._find_goal(goals, goal_name)
+			if err:
+				return {"success": False, "error": err}
 
 			updated = GoalService.add_to_goal(db, goal.id, user_id, amount)
 			progress = round(float(updated.current_amount) / float(updated.target_amount) * 100, 1)
@@ -714,9 +733,9 @@ class FinanceChatService:
 	def _delete_goal(self, user_id, db, goal_name) -> Dict:
 		try:
 			goals = GoalService.get_user_goals(db, user_id)
-			goal = next((g for g in goals if goal_name.lower() in g.name.lower()), None)
-			if not goal:
-				return {"success": False, "error": f"No goal found matching '{goal_name}'."}
+			goal, err = self._find_goal(goals, goal_name)
+			if err:
+				return {"success": False, "error": err}
 
 			deleted = GoalService.delete_goal(db, goal.id, user_id)
 			if not deleted:
@@ -729,6 +748,44 @@ class FinanceChatService:
 	# ============================================================
 	# Helpers
 	# ============================================================
+
+	def _find_goal(self, goals, goal_name: str):
+		"""
+		Resolve a goal by name. Returns (goal, error_message).
+		Exact match (case-insensitive) wins; otherwise unique substring;
+		otherwise returns an error so the assistant can ask the user to disambiguate.
+		"""
+		target = (goal_name or "").strip().lower()
+		if not target:
+			return None, "Goal name is required."
+
+		exact = [g for g in goals if g.name.lower() == target]
+		if len(exact) == 1:
+			return exact[0], None
+		if len(exact) > 1:
+			names = ", ".join(f"'{g.name}'" for g in exact)
+			return None, f"Multiple goals share the name '{goal_name}': {names}."
+
+		partial = [g for g in goals if target in g.name.lower()]
+		if len(partial) == 1:
+			return partial[0], None
+		if len(partial) > 1:
+			names = ", ".join(f"'{g.name}'" for g in partial)
+			return None, f"Multiple goals match '{goal_name}': {names}. Please be more specific."
+
+		return None, f"No goal found matching '{goal_name}'."
+
+	def _validate_positive_amount(self, amount, label: str = "Amount"):
+		"""Return an error string if amount is invalid; otherwise None."""
+		try:
+			value = float(amount)
+		except (TypeError, ValueError):
+			return f"{label} must be a number."
+		if value <= 0:
+			return f"{label} must be a positive number. Got: {value}"
+		if value > 10_000_000:
+			return f"{label} seems unrealistically large ({value} MAD). Please confirm with the user."
+		return None
 
 	def _parse_inline_tool_call(self, text: str):
 		"""Fallback for when Groq leaks function calls as plain text."""
@@ -757,26 +814,41 @@ class FinanceChatService:
 		return {"balance": 0.0, "monthly_income": 0.0, "monthly_spending": 0.0, "level": 1, "total_xp": 0, "username": "User"}
 
 	def _build_system_prompt(self) -> str:
-		return """You are a helpful AI financial assistant for TrackFinance. All amounts are in MAD (Moroccan Dirham).
+		return """You are the AI financial assistant inside TrackFinance, a gamified personal finance app.
+All monetary amounts are in MAD (Moroccan Dirham). Never use other currencies or symbols.
 
-RULES YOU MUST ALWAYS FOLLOW:
-- Always use tools to fetch real data before answering — never guess or invent numbers.
-- For ANY write action (add/update/delete): confirm details with the user first.
-- When updating or deleting a transaction: call get_recent_transactions first to get the integer ID.
-- When updating or deleting a budget: call get_budgets first to get the integer ID.
-- When updating, only pass the fields the user explicitly asked to change. Never invent values.
-- If the user asks about anything unrelated to finance (weather, news, etc.), politely decline — do NOT call any tools.
-- Never output raw function call syntax in your responses.
+# Tone
+Concise, friendly, encouraging. Keep replies under 5 sentences unless the user asks for detail.
+Celebrate progress when relevant (mention level, XP, or streak only when it adds value — not in every reply).
+Never lecture; never moralize about spending.
 
-YOUR CAPABILITIES:
-  Transactions : add, update (specific fields only), delete
-  Budgets      : add, update (limit or category), delete
-  Goals        : add, update, contribute to, delete
-  Read         : balance overview, budgets, goals, recent transactions, spending by category
+# Capabilities — these are the ONLY tools you can use
+Read tools:
+  - get_user_context         → balance, monthly income/spending, level, XP
+  - get_budgets              → all budgets with status
+  - get_goals                → all goals with progress
+  - get_recent_transactions  → last 10 transactions (each with integer id)
+  - get_spending_by_category → current-month expenses grouped by category
 
-This app was built by Imad OULASRI — github.com/ioulasri — imad.oulasri01@gmail.com
+Write tools (transactions / budgets / goals): add, update, delete, contribute.
 
-Be concise, friendly, and encouraging. Use the user's level and XP to motivate good habits.
+# Hard rules
+1. ALWAYS call a read tool before quoting any number. Never guess balances, totals, or category amounts.
+2. For ANY write (add / update / delete / contribute): summarize the action and ask the user to confirm before calling the write tool. One-line confirmations are fine.
+3. To update or delete a transaction or budget, first call the matching list/read tool to get the integer id.
+4. When updating, pass ONLY the fields the user explicitly asked to change. Never invent values for unmentioned fields.
+5. If a tool returns {"success": false}, tell the user plainly what went wrong and what to try next. Do not retry the same call silently.
+6. If amount validation fails (negative, zero, or absurdly large), surface the error and ask the user to confirm a sensible value.
+7. If a goal name is ambiguous (the tool reports multiple matches), ask the user to pick one before retrying.
+8. If the question is not about personal finance (weather, news, trivia, code, etc.), politely decline in one sentence — do NOT call any tools.
+9. Never output raw function call syntax, XML tags, or tool-call markup in your reply. Speak in plain English.
+10. If the conversation history is missing context, ask a short clarifying question instead of guessing.
+
+# Date handling
+- "today" means the current date. "this month" means current calendar month.
+- All date arguments must be YYYY-MM-DD.
+
+# Built by Imad OULASRI — github.com/ioulasri — imad.oulasri01@gmail.com
 """
 
 	def _to_llm_messages(self, user_message, conversation_history, system_prompt) -> List[Dict]:

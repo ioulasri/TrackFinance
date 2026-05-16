@@ -1,13 +1,14 @@
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { ShoppingCart, Car, Utensils, Film, Home, Heart, Smartphone, GraduationCap, Plus } from 'lucide-react';
+import { ShoppingCart, Car, Utensils, Film, Home, Heart, Smartphone, GraduationCap, Plus, Loader2 } from 'lucide-react';
 
 interface CreateBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (budget: any) => void;
   editingBudget?: any;
+  isLoading?: boolean;
 }
 
 const categories = [
@@ -21,7 +22,7 @@ const categories = [
   { name: 'Education', icon: GraduationCap },
 ];
 
-export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget }: CreateBudgetModalProps) {
+export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget, isLoading = false }: CreateBudgetModalProps) {
   const [selectedCategory, setSelectedCategory] = useState(editingBudget?.category || 'Food & Dining');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustom, setIsCustom] = useState(false);
@@ -50,21 +51,17 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget }: 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     const finalCategory = isCustom ? customCategory.trim() : selectedCategory;
-    
+
     if (!finalCategory) {
       return; // Don't submit if custom category is empty
     }
-    
+
     onSubmit({
       category: finalCategory,
       limit: parseFloat(monthlyLimit),
     });
-    onClose();
-    setSelectedCategory('Food & Dining');
-    setIsCustom(false);
-    setCustomCategory('');
-    setMonthlyLimit('');
   };
 
   const handleCategorySelect = (categoryName: string) => {
@@ -176,11 +173,18 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget }: 
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose}>
+          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="large" className="flex-1">
-            {editingBudget ? 'Update Budget' : 'Create Budget'}
+          <Button type="submit" variant="primary" size="large" className="flex-1" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                {editingBudget ? 'Updating…' : 'Creating…'}
+              </>
+            ) : (
+              editingBudget ? 'Update Budget' : 'Create Budget'
+            )}
           </Button>
         </div>
       </form>

@@ -24,6 +24,7 @@ export function Budgets() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<any>(null);
   const [editingBudget, setEditingBudget] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchBudgets();
@@ -42,6 +43,7 @@ export function Budgets() {
   };
 
   const handleCreateBudget = async (data: any) => {
+    setIsSubmitting(true);
     try {
       if (editingBudget) {
         await budgetAPI.update(editingBudget.id, {
@@ -55,8 +57,11 @@ export function Budgets() {
       }
       await fetchBudgets();
       setEditingBudget(null);
+      setIsCreateModalOpen(false);
     } catch (error) {
       console.error('Failed to create/update budget:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -232,11 +237,13 @@ export function Budgets() {
       <CreateBudgetModal
         isOpen={isCreateModalOpen}
         onClose={() => {
+          if (isSubmitting) return;
           setIsCreateModalOpen(false);
           setEditingBudget(null);
         }}
         onSubmit={handleCreateBudget}
         editingBudget={editingBudget}
+        isLoading={isSubmitting}
       />
 
       <DeleteConfirmationModal

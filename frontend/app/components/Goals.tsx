@@ -26,6 +26,7 @@ export function Goals() {
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
   const [editingGoal, setEditingGoal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'all'>('active');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchGoals();
@@ -51,6 +52,7 @@ export function Goals() {
   };
 
   const handleCreateGoal = async (data: any) => {
+    setIsSubmitting(true);
     try {
       if (editingGoal) {
         await goalAPI.update(editingGoal.id, data);
@@ -63,6 +65,8 @@ export function Goals() {
     } catch (error) {
       console.error('Failed to create/update goal:', error);
       alert('Failed to save goal. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -331,11 +335,13 @@ export function Goals() {
       <CreateGoalModal
         isOpen={isCreateModalOpen}
         onClose={() => {
+          if (isSubmitting) return;
           setIsCreateModalOpen(false);
           setEditingGoal(null);
         }}
         onSubmit={handleCreateGoal}
         editingGoal={editingGoal}
+        isLoading={isSubmitting}
       />
 
       <DeleteConfirmationModal

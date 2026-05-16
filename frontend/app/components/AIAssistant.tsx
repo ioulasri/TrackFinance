@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Sparkles, Trash2 } from 'lucide-react';
 import { chatAPI, ChatResponse } from '../api';
 import { ScrollArea } from './ui/scroll-area';
+
+const CHAT_STORAGE_KEY = 'ai_chat_history';
+const MAX_INPUT_CHARS = 2000;
 
 /**
  * AIAssistant Component
@@ -25,16 +28,56 @@ import { ScrollArea } from './ui/scroll-area';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  timestamp: Date;
 }
+
+interface StoredMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+const loadStoredMessages = (): Message[] => {
+  try {
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: StoredMessage[] = JSON.parse(raw);
+    return parsed.map((m) => ({
+      role: m.role,
+      content: m.content,
+      timestamp: new Date(m.timestamp),
+    }));
+  } catch {
+    return [];
+  }
+};
 
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages());
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    try {
+      if (messages.length === 0) {
+        localStorage.removeItem(CHAT_STORAGE_KEY);
+      } else {
+        const serialized: StoredMessage[] = messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp.toISOString(),
+        }));
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(serialized));
+      }
+    } catch (error) {
+      console.error('Failed to persist chat history:', error);
+    }
+  }, [messages]);
 
   // Load suggestions when chat opens
   useEffect(() => {
@@ -90,7 +133,11 @@ export function AIAssistant() {
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: messageText };
+    const userMessage: Message = {
+      role: 'user',
+      content: messageText,
+      timestamp: new Date(),
+    };
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
@@ -106,18 +153,32 @@ export function AIAssistant() {
       const assistantMessage: Message = {
         role: 'assistant',
         content: response.response,
+        timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error);
+      const isNetwork = !error?.response;
       const errorMessage: Message = {
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+        content: isNetwork
+          ? "I can't reach the server. Check your connection and try again."
+          : "Something went wrong on my end. Please try again in a moment.",
+        timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const clearConversation = () => {
+    setMessages([]);
+    try {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch {
+      // ignore
     }
   };
 
@@ -163,13 +224,25 @@ export function AIAssistant() {
                 <p className="text-xs text-muted-foreground">Powered by Groq</p>
               </div>
             </div>
-            <button
-              onClick={toggleChat}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close chat"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              {messages.length > 0 && (
+                <button
+                  onClick={clearConversation}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Clear conversation"
+                  title="Clear conversation"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+              <button
+                onClick={toggleChat}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close chat"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}
@@ -187,7 +260,7 @@ export function AIAssistant() {
                 </p>
                 {suggestions.length > 0 && (
                   <div className="space-y-2 w-full">
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-3">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">
                       Try asking:
                     </p>
                     {suggestions.map((suggestion, index) => (
@@ -207,7 +280,7 @@ export function AIAssistant() {
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
                   >
                     <div
                       className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${message.role === 'user'
@@ -215,17 +288,20 @@ export function AIAssistant() {
                         : 'bg-secondary text-secondary-foreground border border-border/50'
                         }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-1 px-1">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 ))}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 px-4 py-3 rounded-2xl">
+                    <div className="bg-secondary border border-border/50 px-4 py-3 rounded-2xl">
                       <div className="flex gap-1.5">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </div>
@@ -244,6 +320,7 @@ export function AIAssistant() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask me anything..."
                 disabled={isLoading}
+                maxLength={MAX_INPUT_CHARS}
                 className="flex-1 px-4 py-2.5 bg-input border border-border text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               />
               <button
@@ -255,6 +332,11 @@ export function AIAssistant() {
                 <Send size={16} className={isLoading ? "animate-pulse" : ""} />
               </button>
             </form>
+            {inputValue.length > 1500 && (
+              <p className={`text-xs mt-1 text-right ${inputValue.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {inputValue.length} / {MAX_INPUT_CHARS}
+              </p>
+            )}
           </div>
         </div>
       )}

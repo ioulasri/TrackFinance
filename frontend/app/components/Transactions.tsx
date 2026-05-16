@@ -23,12 +23,14 @@ export function Transactions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -48,9 +50,9 @@ export function Transactions() {
   };
 
   const handleCreateTransaction = async (data: any) => {
+    setIsSubmitting(true);
     try {
       if (editingTransaction) {
-        // Only include changed fields in the update
         const updatePayload: any = {
           amount: parseFloat(data.amount),
           category: data.category,
@@ -58,7 +60,6 @@ export function Transactions() {
           description: data.description,
         };
 
-        // Only include date if it changed
         const originalDate = new Date(editingTransaction.date).toISOString().split('T')[0];
         if (data.date !== originalDate) {
           updatePayload.date = data.date;
@@ -76,8 +77,11 @@ export function Transactions() {
       }
       await fetchTransactions();
       setEditingTransaction(null);
+      setIsCreateModalOpen(false);
     } catch (error) {
       console.error('Failed to create/update transaction:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,8 +102,10 @@ export function Transactions() {
       transaction.category?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || transaction.category === selectedCategory;
     const matchesType = selectedType === 'all' || transaction.type === selectedType;
+    const matchesDate = !dateFilter ||
+      new Date(transaction.date).toLocaleDateString('en-CA') === dateFilter;
 
-    return matchesSearch && matchesCategory && matchesType;
+    return matchesSearch && matchesCategory && matchesType && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -196,18 +202,25 @@ export function Transactions() {
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" size={18} />
             <input
               type="date"
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-11 pr-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-sm cursor-pointer"
             />
           </div>
         </div>
 
         {/* Clear Filters */}
-        {(searchQuery || selectedCategory !== 'all' || selectedType !== 'all') && (
+        {(searchQuery || selectedCategory !== 'all' || selectedType !== 'all' || dateFilter) && (
           <button
             onClick={() => {
               setSearchQuery('');
               setSelectedCategory('all');
               setSelectedType('all');
+              setDateFilter('');
+              setCurrentPage(1);
             }}
             className="mt-4 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
           >
@@ -287,7 +300,7 @@ export function Transactions() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => {
                               setEditingTransaction(transaction);
@@ -363,11 +376,13 @@ export function Transactions() {
       <CreateTransactionModal
         isOpen={isCreateModalOpen}
         onClose={() => {
+          if (isSubmitting) return;
           setIsCreateModalOpen(false);
           setEditingTransaction(null);
         }}
         onSubmit={handleCreateTransaction}
         editingTransaction={editingTransaction}
+        isLoading={isSubmitting}
       />
 
       <DeleteConfirmationModal

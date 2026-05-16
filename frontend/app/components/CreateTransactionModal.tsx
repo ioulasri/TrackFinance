@@ -2,16 +2,17 @@ import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
-import { Calendar } from 'lucide-react';
+import { Calendar, Loader2 } from 'lucide-react';
 
 interface CreateTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (transaction: any) => void;
   editingTransaction?: any;
+  isLoading?: boolean;
 }
 
-export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTransaction }: CreateTransactionModalProps) {
+export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTransaction, isLoading = false }: CreateTransactionModalProps) {
   const [formData, setFormData] = useState({
     amount: editingTransaction?.amount?.toString() || '',
     category: editingTransaction?.category || 'Food',
@@ -70,6 +71,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
 
     const finalCategory = showCustomInput && customCategory.trim()
       ? customCategory.trim()
@@ -79,16 +81,6 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
       ...formData,
       category: finalCategory,
     });
-    onClose();
-    setFormData({
-      amount: '',
-      category: 'Food & Dining',
-      type: 'expense',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-    });
-    setShowCustomInput(false);
-    setCustomCategory('');
   };
 
   return (
@@ -193,11 +185,18 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose}>
+          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="large" className="flex-1 text-primary-foreground">
-            {editingTransaction ? 'Update Transaction' : 'Create Transaction'}
+          <Button type="submit" variant="primary" size="large" className="flex-1 text-primary-foreground" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                {editingTransaction ? 'Updating…' : 'Creating…'}
+              </>
+            ) : (
+              editingTransaction ? 'Update Transaction' : 'Create Transaction'
+            )}
           </Button>
         </div>
       </form>
