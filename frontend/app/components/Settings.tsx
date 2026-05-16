@@ -31,7 +31,11 @@ function loadLocalJSON<T>(key: string, fallback: T): T {
 type Status = { loading: boolean; error: string; success: string };
 const idle: Status = { loading: false, error: '', success: '' };
 
-export function Settings() {
+interface SettingsProps {
+  onProfileUpdate?: (updates: Record<string, any>) => void;
+}
+
+export function Settings({ onProfileUpdate }: SettingsProps) {
   // ── Real user data ───────────────────────────────────────────────
   const [user, setUser] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -85,8 +89,17 @@ export function Settings() {
     setProfileStatus({ loading: true, error: '', success: '' });
     try {
       const res = await authAPI.updateProfile({ username: username.trim() });
-      setUser(res.data);
-      setUsername(res.data.username);
+      const data = res.data;
+
+      // If the username changed the backend issues a fresh JWT — store it so
+      // subsequent requests (and page refresh) don't 401.
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      }
+
+      setUser(data);
+      setUsername(data.username);
+      onProfileUpdate?.({ username: data.username, avatar_url: data.avatar_url });
       setProfileStatus({ loading: false, error: '', success: 'Username updated!' });
       setTimeout(() => setProfileStatus(idle), 3000);
     } catch (err: any) {
@@ -114,6 +127,7 @@ export function Settings() {
     try {
       const res = await authAPI.uploadAvatar(formData);
       setUser(res.data);
+      onProfileUpdate?.({ avatar_url: res.data.avatar_url });
       setAvatarStatus({ loading: false, error: '', success: 'Avatar updated!' });
       setTimeout(() => setAvatarStatus(idle), 3000);
     } catch (err: any) {

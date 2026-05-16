@@ -99,6 +99,12 @@ export default function App() {
     }
   };
 
+  const handleProfileUpdate = (updates: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...updates });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -180,7 +186,7 @@ export default function App() {
               <Route path="/goals" element={<Goals />} />
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/achievements" element={<Achievements />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={<Settings onProfileUpdate={handleProfileUpdate} />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </div>

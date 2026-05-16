@@ -66,3 +66,8 @@ class CycleStartDayRequest(BaseModel):
 
 class UserUpdate(BaseModel):
 	username: Optional[str] = Field(None, min_length=3, max_length=50)
+
+class UserUpdateResponse(UserResponse):
+	"""Extended response for profile updates — carries a fresh token when the username changes."""
+	access_token: Optional[str] = None
+	token_type: str = "bearer"

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest, UserUpdate
+from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest, UserUpdate, UserUpdateResponse
 from app.services.user_service import UserService
 from app.services.oauth_service import OAuthService
 from app.api.dependencies import get_current_user
@@ -129,16 +129,40 @@ async def discord_callback(code: str = Query(...), db: Session = Depends(get_db)
 def get_current_user_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 	return current_user
 
-@router.patch("/me", response_model=UserResponse)
+@router.patch("/me", response_model=UserUpdateResponse)
 def update_current_user(
 	update_data: UserUpdate,
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user)
 ):
+	old_username = current_user.username
 	try:
-		return UserService.update_user(db, current_user, username=update_data.username)
+		updated = UserService.update_user(db, current_user, username=update_data.username)
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+	# If the username changed the existing JWT is now invalid (sub no longer matches).
+	# Issue a fresh token so the client can continue without being logged out.
+	new_token = None
+	if updated.username != old_username:
+		new_token = create_access_token(
+			data={"sub": updated.username},
+			expires_delta=timedelta(minutes=30)
+		)
+
+	return UserUpdateResponse(
+		id=updated.id,
+		username=updated.username,
+		email=updated.email,
+		total_xp=updated.total_xp,
+		current_level=updated.current_level,
+		current_xp=updated.current_xp,
+		current_streak=updated.current_streak,
+		longest_streak=updated.longest_streak,
+		created_at=updated.created_at,
+		avatar_url=updated.avatar_url,
+		access_token=new_token,
+	)
 
 @router.put("/me/password", status_code=status.HTTP_200_OK)
 def change_password(
