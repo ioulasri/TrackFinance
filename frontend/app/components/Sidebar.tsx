@@ -12,12 +12,12 @@ import {
   Camera,
   Download,
   RotateCw,
-  PinIcon,
-  PinOff,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { XPBar } from './XPBar';
 import { authAPI, reportAPI } from '../api';
-import { Logo, LogoMark } from './Logo';
+import { LogoMark } from './Logo';
 
 interface SidebarProps {
   user: {
@@ -44,27 +44,27 @@ const menuItems = [
 ];
 
 export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
-  const [pinned, setPinned] = useState<boolean>(() => {
+  // The sidebar has exactly two states — collapsed (64px) and expanded (240px).
+  // The "expanded" state is fully sticky (no hover-peek) so that content always
+  // knows where the sidebar's right edge is. The toggle is on the user.
+  const [expanded, setExpanded] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PIN_KEY) === '1';
     } catch {
       return false;
     }
   });
-  const [hovered, setHovered] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const expanded = pinned || hovered;
-
   useEffect(() => {
     try {
-      localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
+      localStorage.setItem(PIN_KEY, expanded ? '1' : '0');
     } catch { /* ignore */ }
-    // Notify App.tsx so the main content can shift when the sidebar is pinned open.
-    window.dispatchEvent(new CustomEvent('tf:sidebar-pin-change', { detail: { pinned } }));
-  }, [pinned]);
+    // Tell App.tsx so it can shift the main column to match.
+    window.dispatchEvent(new CustomEvent('tf:sidebar-pin-change', { detail: { pinned: expanded } }));
+  }, [expanded]);
 
   const username = user?.username || 'User';
   const level = user?.current_level ?? 0;
@@ -107,39 +107,42 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
 
   return (
     <aside
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{ width: expanded ? 240 : 64 }}
-      className={`group/sidebar fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border z-30
-        flex flex-col transition-[width] duration-200 ease-out
-        ${!pinned && hovered ? 'shadow-[6px_0_24px_-12px_rgba(5,150,105,0.15)]' : ''}`}
+      className="fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border z-30
+        flex flex-col transition-[width] duration-200 ease-out"
     >
-      {/* Logo header */}
-      <div
-        className={`h-14 flex items-center border-b border-sidebar-border shrink-0
-          ${expanded ? 'px-3 gap-2.5' : 'justify-center'}`}
-      >
-        <LogoMark size={28} className="text-primary shrink-0" />
-        {expanded && (
-          <>
-            <span
-              className="font-bold text-foreground text-lg tracking-tight whitespace-nowrap"
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              TrackFinance
-            </span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setPinned(p => !p); }}
-              className="ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
-              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-              aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-            >
-              {pinned ? <PinOff size={14} /> : <PinIcon size={14} />}
-            </button>
-          </>
-        )}
-      </div>
+      {/* Logo header — toggles expand/collapse */}
+      {expanded ? (
+        <div className="h-14 flex items-center px-3 gap-2.5 border-b border-sidebar-border shrink-0">
+          <LogoMark size={28} className="shrink-0" />
+          <span
+            className="font-bold text-foreground text-lg tracking-tight whitespace-nowrap"
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            TrackFinance
+          </span>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+          >
+            <PanelLeftClose size={16} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="h-14 w-full flex items-center justify-center border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent transition-colors group"
+          title="Expand sidebar"
+          aria-label="Expand sidebar"
+        >
+          <LogoMark size={28} className="shrink-0 group-hover:hidden" />
+          <PanelLeftOpen size={20} className="hidden group-hover:block text-muted-foreground" />
+        </button>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
