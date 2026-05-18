@@ -112,29 +112,31 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
         flex flex-col transition-[width] duration-200 ease-out
         ${!pinned && hovered ? 'shadow-[6px_0_24px_-12px_rgba(5,150,105,0.15)]' : ''}`}
     >
-      {/* Logo */}
-      <div className="h-14 flex items-center px-3 border-b border-sidebar-border shrink-0">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <LogoMark size={32} className="text-primary shrink-0" />
-          <span
-            className={`font-bold text-foreground text-lg tracking-tight whitespace-nowrap transition-opacity duration-150
-              ${expanded ? 'opacity-100' : 'opacity-0'}`}
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            TrackFinance
-          </span>
-        </div>
-        {/* Pin toggle — only visible when expanded */}
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setPinned(p => !p); }}
-          className={`ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-all
-            ${expanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-          aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-        >
-          {pinned ? <PinOff size={14} /> : <PinIcon size={14} />}
-        </button>
+      {/* Logo header */}
+      <div
+        className={`h-14 flex items-center border-b border-sidebar-border shrink-0
+          ${expanded ? 'px-3 gap-2.5' : 'justify-center'}`}
+      >
+        <LogoMark size={28} className="text-primary shrink-0" />
+        {expanded && (
+          <>
+            <span
+              className="font-bold text-foreground text-lg tracking-tight whitespace-nowrap"
+              style={{ letterSpacing: '-0.02em' }}
+            >
+              TrackFinance
+            </span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setPinned(p => !p); }}
+              className="ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+            >
+              {pinned ? <PinOff size={14} /> : <PinIcon size={14} />}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Nav */}
