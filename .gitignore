@@ -21,6 +21,9 @@ env/
 .env
 .env.local
 
+# Local AI assistant instructions
+CLAUDE.md
+
 # Database
 *.db
 *.sqlite3
