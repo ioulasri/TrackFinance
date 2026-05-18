@@ -1,8 +1,11 @@
 /**
  * TrackFinance logo.
  *
- * A rounded "coin" tile with a stylized line that rises diagonally to a small
- * filled tracking marker at the apex. Reads as tracking + growth + money.
+ * A rounded emerald "coin" tile holding a bold white chart-line mark
+ * that rises into a dot at the apex. Reads as: money + tracking + growth.
+ *
+ * Colors are hardcoded (not `currentColor`) so the mark is always emerald
+ * regardless of where it's mounted.
  *
  * Usage:
  *   <Logo />                       // 32px mark + wordmark
@@ -13,22 +16,12 @@
 import React from 'react';
 
 interface LogoProps {
-  /** Mark size; wordmark scales with it. */
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Render the "TrackFinance" wordmark beside the mark. Default true. */
   showWordmark?: boolean;
-  /** Override the mark color (defaults to the theme's primary). */
-  tone?: 'primary' | 'white' | 'foreground';
   className?: string;
 }
 
-const MARK_SIZES = {
-  sm: 24,
-  md: 32,
-  lg: 48,
-  xl: 64,
-} as const;
-
+const MARK_SIZES = { sm: 24, md: 32, lg: 48, xl: 64 } as const;
 const WORDMARK_SIZES = {
   sm: 'text-base',
   md: 'text-lg',
@@ -39,20 +32,11 @@ const WORDMARK_SIZES = {
 export function Logo({
   size = 'md',
   showWordmark = true,
-  tone = 'primary',
   className = '',
 }: LogoProps) {
-  const px = MARK_SIZES[size];
-  const toneClass =
-    tone === 'white'
-      ? 'text-white'
-      : tone === 'foreground'
-      ? 'text-foreground'
-      : 'text-primary';
-
   return (
     <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      <LogoMark size={px} className={toneClass} />
+      <LogoMark size={MARK_SIZES[size]} />
       {showWordmark && (
         <span
           className={`font-bold tracking-tight text-foreground ${WORDMARK_SIZES[size]}`}
@@ -67,55 +51,52 @@ export function Logo({
 
 interface LogoMarkProps {
   size?: number;
+  /** Override the tile color (default: emerald-600). */
+  color?: string;
   className?: string;
 }
 
 /**
- * Just the mark (no wordmark). Inline SVG, currentColor-aware so it tints
- * with text utilities. 32x32 viewBox; stroke-based so it scales crisply.
+ * Just the mark, no wordmark. Colors are hardcoded so it renders correctly
+ * even inside dark sidebars or anywhere else.
  */
-export function LogoMark({ size = 32, className = '' }: LogoMarkProps) {
+export function LogoMark({
+  size = 32,
+  color = '#059669',
+  className = '',
+}: LogoMarkProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 32 32"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="TrackFinance"
       role="img"
+      aria-label="TrackFinance"
     >
-      {/* Coin tile — filled rounded square in currentColor */}
-      <rect x="0" y="0" width="32" height="32" rx="8" fill="currentColor" />
+      {/* Emerald coin tile */}
+      <rect x="0" y="0" width="32" height="32" rx="9" fill={color} />
 
-      {/* Inner highlight (very subtle, for depth) */}
-      <rect
-        x="0"
-        y="0"
-        width="32"
-        height="32"
-        rx="8"
-        fill="url(#logo-highlight)"
-        opacity="0.18"
-      />
+      {/* Subtle diagonal highlight for depth */}
+      <rect x="0" y="0" width="32" height="32" rx="9" fill="url(#tf-logo-highlight)" opacity="0.22" />
 
-      {/* Rising tracking line */}
+      {/* Bold rising chart line: low-left → high-right */}
       <path
-        d="M7 22 L13 16 L17 19 L24 10"
+        d="M8 22 L14 16 L18 19 L23 12"
         stroke="white"
-        strokeWidth="2.4"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
 
-      {/* Apex marker — small white dot ringed by emerald */}
-      <circle cx="24" cy="10" r="2.6" fill="white" />
-      <circle cx="24" cy="10" r="1.2" fill="currentColor" />
+      {/* Apex marker: white halo + colored center dot */}
+      <circle cx="23" cy="12" r="3.4" fill="white" />
+      <circle cx="23" cy="12" r="1.6" fill={color} />
 
       <defs>
-        <linearGradient id="logo-highlight" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+        <linearGradient id="tf-logo-highlight" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="white" />
           <stop offset="1" stopColor="white" stopOpacity="0" />
         </linearGradient>

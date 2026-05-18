@@ -35,6 +35,19 @@ export default function App() {
   const [authState, setAuthState] = useState<AuthState>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
+    try { return localStorage.getItem('tf_sidebar_pinned') === '1'; } catch { return false; }
+  });
+
+  // Sidebar notifies us when the pin toggles so we can shift main content.
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ pinned: boolean }>).detail;
+      setSidebarPinned(!!detail?.pinned);
+    };
+    window.addEventListener('tf:sidebar-pin-change', onChange);
+    return () => window.removeEventListener('tf:sidebar-pin-change', onChange);
+  }, []);
 
   // Check for existing token on mount
   useEffect(() => {
@@ -177,8 +190,8 @@ export default function App() {
           onAvatarUpdate={handleAvatarUpdate}
         />
 
-        {/* Main column — offset by collapsed sidebar width */}
-        <div className="pl-16 min-h-screen flex flex-col">
+        {/* Main column — offset by sidebar (64px collapsed, 240px when pinned) */}
+        <div className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`}>
           <TopBar user={user} />
           <main className="flex-1 px-6 sm:px-8 py-6">
             <div className="max-w-[1600px] mx-auto">

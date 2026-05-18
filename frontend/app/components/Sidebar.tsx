@@ -62,6 +62,8 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
     try {
       localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
     } catch { /* ignore */ }
+    // Notify App.tsx so the main content can shift when the sidebar is pinned open.
+    window.dispatchEvent(new CustomEvent('tf:sidebar-pin-change', { detail: { pinned } }));
   }, [pinned]);
 
   const username = user?.username || 'User';
@@ -147,7 +149,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
             <NavLink
               key={item.id}
               to={item.path}
-              title={item.label}
+              title={expanded ? undefined : item.label}
               className={({ isActive }) =>
                 `relative flex items-center gap-3 h-10 px-3 rounded-lg transition-colors group
                 ${isActive
@@ -218,7 +220,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
           <button
             onClick={handleExport}
             disabled={isExporting}
-            title="Export report"
+            title={expanded ? undefined : 'Export report'}
             className={`w-full flex items-center gap-2 h-9 rounded-lg text-foreground hover:bg-sidebar-accent transition-colors
               ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
           >
@@ -233,7 +235,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
           </button>
           <button
             onClick={onLogout}
-            title="Logout"
+            title={expanded ? undefined : 'Logout'}
             className={`w-full flex items-center gap-2 h-9 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors
               ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
           >
