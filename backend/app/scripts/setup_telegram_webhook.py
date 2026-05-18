@@ -19,6 +19,7 @@ Pass --delete to clear the registered webhook instead.
 import os
 import sys
 
+from app.api.routes.telegram import BOT_COMMANDS
 from app.services.telegram_service import TelegramService
 
 
@@ -54,7 +55,13 @@ def main() -> int:
 	print("setWebhook →", result)
 	info = TelegramService.get_webhook_info()
 	print("getWebhookInfo →", info)
-	return 0 if result.get("ok") else 1
+
+	# Register the slash-command menu (shown in Telegram's left-of-input ☰ icon).
+	print(f"Registering {len(BOT_COMMANDS)} bot commands...")
+	cmd_result = TelegramService.set_my_commands(BOT_COMMANDS)
+	print("setMyCommands →", cmd_result)
+
+	return 0 if result.get("ok") and cmd_result.get("ok") else 1
 
 
 if __name__ == "__main__":

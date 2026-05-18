@@ -1,14 +1,20 @@
 """
 Finance Chat Service
 
-Provides AI-powered chat assistance for financial queries using Groq with function calling.
-Uses existing service classes for all read/write operations.
+AI-powered chat for TrackFinance using Groq + tool calling. Reused by both the
+in-app AIAssistant (HTTP) and the Telegram bot adapter.
 
-Tools available:
-  Read:    get_user_context, get_budgets, get_goals, get_recent_transactions, get_spending_by_category
-  Trans:   add_transaction, update_transaction, delete_transaction
-  Budget:  add_budget, update_budget, delete_budget
-  Goals:   add_goal, update_goal, add_goal_contribution, delete_goal
+Key behaviors:
+- The user's current snapshot (balance, monthly income/spending, level, streak)
+  is injected into the system prompt every call, so summary questions answer
+  without a get_user_context round-trip.
+- Tool descriptions are intentionally short — rules live in the system prompt.
+- On Groq rate-limit / connection / timeout / 5xx, returns AI_BUSY_MESSAGE
+  pointing the user at /menu (Telegram) or to retry shortly.
+
+Tools: get_user_context, get_budgets, get_goals, get_recent_transactions,
+get_spending_by_category, add/update/delete_transaction, add/update/delete_budget,
+add/update/delete_goal, add_goal_contribution.
 """
 
 from sqlalchemy.orm import Session
@@ -26,235 +32,182 @@ from typing import Optional, Dict, List
 import os
 import re
 import json
-from groq import Groq
+from groq import Groq, RateLimitError, APIStatusError, APIConnectionError, APITimeoutError
+
+
+AI_BUSY_MESSAGE = (
+	"🤖 AI is busy right now. Try /menu for the button interface, "
+	"or send your message again in a minute."
+)
 
 
 # ============================================================
 # Tool Definitions
 # ============================================================
 
+# Tool descriptions are intentionally terse — load-bearing rules live in the
+# system prompt, not duplicated per tool. Amounts are MAD. Dates YYYY-MM-DD.
 TOOLS = [
+	# Reads
+	{"type": "function", "function": {
+		"name": "get_user_context",
+		"description": "Refresh balance / monthly income+spending / level / streak. The system prompt already contains a fresh snapshot; only call if you need updated numbers after a write.",
+		"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "get_budgets",
+		"description": "List budgets with id, category, limit, spent, remaining, over-budget flag.",
+		"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "get_goals",
+		"description": "List goals with id, name, target, current, progress%, deadline.",
+		"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "get_recent_transactions",
+		"description": "Last 10 transactions with integer id, amount, type, category, description, date. Call before update_transaction / delete_transaction.",
+		"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "get_spending_by_category",
+		"description": "Current-month expenses grouped by category.",
+		"parameters": {"type": "object", "properties": {}}
+	}},
 
-	# ── Read ──────────────────────────────────────────────────
+	# Transactions
+	{"type": "function", "function": {
+		"name": "add_transaction",
+		"description": "Record an income or expense.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"amount":      {"description": "Positive number"},
+				"type":        {"description": "'income' or 'expense'"},
+				"category":    {"description": "Category name"},
+				"description": {"description": "Optional note"},
+				"date":        {"description": "YYYY-MM-DD; default today"}
+			},
+			"required": ["amount", "type", "category"]
+		}
+	}},
+	{"type": "function", "function": {
+		"name": "update_transaction",
+		"description": "Update a transaction. Pass only fields the user asked to change.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"transaction_id": {"description": "Integer id"},
+				"amount":         {},
+				"type":           {"description": "'income' | 'expense'"},
+				"category":       {},
+				"description":    {},
+				"date":           {"description": "YYYY-MM-DD"}
+			},
+			"required": ["transaction_id"]
+		}
+	}},
+	{"type": "function", "function": {
+		"name": "delete_transaction",
+		"description": "Soft-delete a transaction. Reverts budget tracking for expenses.",
+		"parameters": {
+			"type": "object",
+			"properties": {"transaction_id": {"description": "Integer id"}},
+			"required": ["transaction_id"]
+		}
+	}},
 
-	{
-		"type": "function",
-		"function": {
-			"name": "get_user_context",
-			"description": "Get the user's current balance, monthly income, monthly spending, level, and XP. Call this for financial summaries or overview questions.",
-			"parameters": {"type": "object", "properties": {}}
+	# Budgets
+	{"type": "function", "function": {
+		"name": "add_budget",
+		"description": "Create a monthly budget for a category.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"category":      {},
+				"monthly_limit": {"description": "Positive number"}
+			},
+			"required": ["category", "monthly_limit"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "get_budgets",
-			"description": "Get all the user's budgets: monthly limit, amount spent, remaining, and over-budget status for each category.",
-			"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "update_budget",
+		"description": "Update a budget. Pass only fields the user asked to change.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"budget_id":     {"description": "Integer id"},
+				"monthly_limit": {},
+				"category":      {}
+			},
+			"required": ["budget_id"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "get_goals",
-			"description": "Get all the user's financial goals with target, current amount, progress percentage, and deadline.",
-			"parameters": {"type": "object", "properties": {}}
+	}},
+	{"type": "function", "function": {
+		"name": "delete_budget",
+		"description": "Delete a budget.",
+		"parameters": {
+			"type": "object",
+			"properties": {"budget_id": {"description": "Integer id"}},
+			"required": ["budget_id"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "get_recent_transactions",
-			"description": "Get the user's 10 most recent transactions. Each has a numeric 'id', amount, type, category, description, and date. Always call this before update_transaction or delete_transaction to find the correct integer ID.",
-			"parameters": {"type": "object", "properties": {}}
-		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "get_spending_by_category",
-			"description": "Get the user's expense spending grouped by category for the current month.",
-			"parameters": {"type": "object", "properties": {}}
-		}
-	},
+	}},
 
-	# ── Transactions ───────────────────────────────────────────
-
-	{
-		"type": "function",
-		"function": {
-			"name": "add_transaction",
-			"description": "Add a new income or expense transaction. Automatically updates budget tracking for expenses and awards XP. Confirm all details with the user before calling.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"amount":      {"description": "Positive number e.g. 50.0"},
-					"type":        {"description": "Exactly 'income' or 'expense'"},
-					"category":    {"description": "Category e.g. Food, Salary, Transport"},
-					"description": {"description": "Optional note"},
-					"date":        {"description": "YYYY-MM-DD — use today if not specified"}
-				},
-				"required": ["amount", "type", "category"]
-			}
+	# Goals
+	{"type": "function", "function": {
+		"name": "add_goal",
+		"description": "Create a savings goal.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"name":          {},
+				"target_amount": {"description": "Positive number"},
+				"icon":          {"description": "Emoji, e.g. 🎯 💰 ✈️ 🏠"},
+				"category":      {},
+				"description":   {},
+				"deadline":      {"description": "YYYY-MM-DD"}
+			},
+			"required": ["name", "target_amount"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "update_transaction",
-			"description": (
-				"Update specific fields of an existing transaction. "
-				"RULES: (1) Call get_recent_transactions first and use the integer 'id'. "
-				"(2) Only pass fields the user explicitly asked to change. "
-				"(3) Never invent or assume values for fields not mentioned."
-			),
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"transaction_id": {"description": "Integer ID from get_recent_transactions — never a description"},
-					"amount":         {"description": "New amount — only if user asked to change it"},
-					"type":           {"description": "'income' or 'expense' — only if user asked to change it"},
-					"category":       {"description": "New category — only if user asked to change it"},
-					"description":    {"description": "New description — only if user asked to change it"},
-					"date":           {"description": "New date YYYY-MM-DD — only if user asked to change it"}
-				},
-				"required": ["transaction_id"]
-			}
+	}},
+	{"type": "function", "function": {
+		"name": "update_goal",
+		"description": "Update a goal. Pass only fields the user asked to change.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"goal_name":     {"description": "Current name"},
+				"name":          {},
+				"icon":          {},
+				"target_amount": {},
+				"category":      {},
+				"description":   {},
+				"deadline":      {"description": "YYYY-MM-DD"}
+			},
+			"required": ["goal_name"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "delete_transaction",
-			"description": "Soft-delete a transaction. Also reverts budget tracking for expense transactions. Call get_recent_transactions first to get the correct integer ID. Always confirm with the user before deleting.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"transaction_id": {"description": "Integer ID from get_recent_transactions"}
-				},
-				"required": ["transaction_id"]
-			}
+	}},
+	{"type": "function", "function": {
+		"name": "add_goal_contribution",
+		"description": "Add to a goal's current savings.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"goal_name": {},
+				"amount":    {"description": "Positive number"}
+			},
+			"required": ["goal_name", "amount"]
 		}
-	},
-
-	# ── Budgets ────────────────────────────────────────────────
-
-	{
-		"type": "function",
-		"function": {
-			"name": "add_budget",
-			"description": "Create a new monthly budget for a spending category. Auto-calculates current spending. Confirm category and limit with user first.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"category":      {"description": "Category e.g. Food, Transport, Entertainment"},
-					"monthly_limit": {"description": "Monthly limit as a positive number in MAD e.g. 500.0"}
-				},
-				"required": ["category", "monthly_limit"]
-			}
+	}},
+	{"type": "function", "function": {
+		"name": "delete_goal",
+		"description": "Delete a goal.",
+		"parameters": {
+			"type": "object",
+			"properties": {"goal_name": {}},
+			"required": ["goal_name"]
 		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "update_budget",
-			"description": "Update a budget's monthly limit or category name. Call get_budgets first to get the correct integer budget ID. Only pass fields the user asked to change.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"budget_id":     {"description": "Integer ID from get_budgets"},
-					"monthly_limit": {"description": "New monthly limit in MAD — only if user asked to change it"},
-					"category":      {"description": "New category name — only if user asked to change it"}
-				},
-				"required": ["budget_id"]
-			}
-		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "delete_budget",
-			"description": "Delete a budget. Call get_budgets first to get the correct integer budget ID. Always confirm with the user before deleting.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"budget_id": {"description": "Integer ID from get_budgets"}
-				},
-				"required": ["budget_id"]
-			}
-		}
-	},
-
-	# ── Goals ──────────────────────────────────────────────────
-
-	{
-		"type": "function",
-		"function": {
-			"name": "add_goal",
-			"description": "Create a new financial savings goal. Confirm name and target with user first.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"name":          {"description": "Goal name e.g. Emergency Fund, Vacation"},
-					"target_amount": {"description": "Target amount as a positive number in MAD e.g. 5000.0"},
-					"icon":          {"description": "Emoji representing the goal e.g. 🎯 💰 ✈️ 🏠"},
-					"category":      {"description": "Optional category e.g. Travel, Investment, Emergency"},
-					"description":   {"description": "Optional description"},
-					"deadline":      {"description": "Optional deadline in YYYY-MM-DD format"}
-				},
-				"required": ["name", "target_amount"]
-			}
-		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "update_goal",
-			"description": "Update a goal's name, icon, target amount, deadline, category, or description. Call get_goals first to find the correct goal name. Only pass fields the user asked to change.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"goal_name":     {"description": "Current name of the goal to identify it"},
-					"name":          {"description": "New name — only if user asked to change it"},
-					"icon":          {"description": "New emoji icon — only if user asked to change it"},
-					"target_amount": {"description": "New target amount in MAD — only if user asked to change it"},
-					"category":      {"description": "New category — only if user asked to change it"},
-					"description":   {"description": "New description — only if user asked to change it"},
-					"deadline":      {"description": "New deadline YYYY-MM-DD — only if user asked to change it"}
-				},
-				"required": ["goal_name"]
-			}
-		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "add_goal_contribution",
-			"description": "Add an amount to an existing goal's current savings.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"goal_name": {"description": "Name of the goal to contribute to"},
-					"amount":    {"description": "Amount to add as a positive number in MAD e.g. 200.0"}
-				},
-				"required": ["goal_name", "amount"]
-			}
-		}
-	},
-	{
-		"type": "function",
-		"function": {
-			"name": "delete_goal",
-			"description": "Delete a financial goal permanently. Call get_goals first to confirm the goal name. Always confirm with the user before deleting.",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"goal_name": {"description": "Name of the goal to delete"}
-				},
-				"required": ["goal_name"]
-			}
-		}
-	},
+	}},
 ]
 
 
@@ -286,10 +239,15 @@ class FinanceChatService:
 		if conversation_history and len(conversation_history) > 20:
 			conversation_history = conversation_history[-20:]
 
+		# Pre-inject the user's current snapshot so common summary questions
+		# don't need a get_user_context round-trip.
+		snapshot = self._get_user_context(user_id, db)
+		system_prompt = self._build_system_prompt() + "\n\n" + self._render_snapshot(snapshot)
+
 		messages = self._to_llm_messages(
 			user_message=user_message,
 			conversation_history=conversation_history,
-			system_prompt=self._build_system_prompt()
+			system_prompt=system_prompt
 		)
 
 		function_called = None
@@ -308,7 +266,6 @@ class FinanceChatService:
 			response = completion.choices[0].message
 
 			if response.tool_calls:
-				# Happy path: Groq used the proper tool_calls API
 				tool_call = response.tool_calls[0]
 				function_called = tool_call.function.name
 				function_args = json.loads(tool_call.function.arguments or "{}") or {}
@@ -344,9 +301,8 @@ class FinanceChatService:
 					messages.append({
 						"role": "user",
 						"content": (
-							f"The function '{inline_name}' was called and returned: {json.dumps(result)}. "
-							"Give the user a friendly, concise response. "
-							"Do not include any function call syntax in your reply."
+							f"Function '{inline_name}' returned: {json.dumps(result)}. "
+							"Reply to the user in plain English; no function-call syntax."
 						)
 					})
 
@@ -360,9 +316,12 @@ class FinanceChatService:
 
 			assistant_reply = self._clean_reply(assistant_reply)
 
+		except (RateLimitError, APIStatusError, APIConnectionError, APITimeoutError) as e:
+			print(f"Groq API error ({type(e).__name__}): {str(e)}")
+			assistant_reply = AI_BUSY_MESSAGE
 		except Exception as e:
-			print(f"Groq API error: {str(e)}")
-			assistant_reply = "I'm sorry, I'm having trouble connecting to the AI service right now. Please try again later."
+			print(f"Chat service error: {str(e)}")
+			assistant_reply = AI_BUSY_MESSAGE
 
 		updated_history = conversation_history.copy() if conversation_history else []
 		updated_history.append({"role": "user", "content": user_message})
@@ -375,6 +334,17 @@ class FinanceChatService:
 			"data": None,
 			"conversation_history": updated_history
 		}
+
+	def _render_snapshot(self, ctx: Dict) -> str:
+		return (
+			"Current snapshot (use this directly; do not call get_user_context unless you need fresh numbers after a write):\n"
+			f"- balance: {ctx.get('balance', 0):.2f} MAD\n"
+			f"- monthly income: {ctx.get('monthly_income', 0):.2f} MAD\n"
+			f"- monthly spending: {ctx.get('monthly_spending', 0):.2f} MAD\n"
+			f"- level: {ctx.get('level', 0)} · streak: {ctx.get('current_streak', 0)} days · XP: {ctx.get('total_xp', 0)}\n"
+			f"- username: {ctx.get('username', 'User')}\n"
+			f"- today: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+		)
 
 	# ============================================================
 	# Tool call router
@@ -474,6 +444,7 @@ class FinanceChatService:
 			"username": user.username,
 			"level": user.current_level,
 			"total_xp": user.total_xp,
+			"current_streak": user.current_streak,
 			"balance": sum_transactions("income") - sum_transactions("expense"),
 			"monthly_income": sum_transactions("income", month_start),
 			"monthly_spending": sum_transactions("expense", month_start),
@@ -811,45 +782,27 @@ class FinanceChatService:
 		return text.strip()
 
 	def _empty_context(self) -> Dict:
-		return {"balance": 0.0, "monthly_income": 0.0, "monthly_spending": 0.0, "level": 1, "total_xp": 0, "username": "User"}
+		return {
+			"balance": 0.0, "monthly_income": 0.0, "monthly_spending": 0.0,
+			"level": 0, "total_xp": 0, "current_streak": 0, "username": "User",
+		}
 
 	def _build_system_prompt(self) -> str:
-		return """You are the AI financial assistant inside TrackFinance, a gamified personal finance app.
-All monetary amounts are in MAD (Moroccan Dirham). Never use other currencies or symbols.
-
-# Tone
-Concise, friendly, encouraging. Keep replies under 5 sentences unless the user asks for detail.
-Celebrate progress when relevant (mention level, XP, or streak only when it adds value — not in every reply).
-Never lecture; never moralize about spending.
-
-# Capabilities — these are the ONLY tools you can use
-Read tools:
-  - get_user_context         → balance, monthly income/spending, level, XP
-  - get_budgets              → all budgets with status
-  - get_goals                → all goals with progress
-  - get_recent_transactions  → last 10 transactions (each with integer id)
-  - get_spending_by_category → current-month expenses grouped by category
-
-Write tools (transactions / budgets / goals): add, update, delete, contribute.
-
-# Hard rules
-1. ALWAYS call a read tool before quoting any number. Never guess balances, totals, or category amounts.
-2. For ANY write (add / update / delete / contribute): summarize the action and ask the user to confirm before calling the write tool. One-line confirmations are fine.
-3. To update or delete a transaction or budget, first call the matching list/read tool to get the integer id.
-4. When updating, pass ONLY the fields the user explicitly asked to change. Never invent values for unmentioned fields.
-5. If a tool returns {"success": false}, tell the user plainly what went wrong and what to try next. Do not retry the same call silently.
-6. If amount validation fails (negative, zero, or absurdly large), surface the error and ask the user to confirm a sensible value.
-7. If a goal name is ambiguous (the tool reports multiple matches), ask the user to pick one before retrying.
-8. If the question is not about personal finance (weather, news, trivia, code, etc.), politely decline in one sentence — do NOT call any tools.
-9. Never output raw function call syntax, XML tags, or tool-call markup in your reply. Speak in plain English.
-10. If the conversation history is missing context, ask a short clarifying question instead of guessing.
-
-# Date handling
-- "today" means the current date. "this month" means current calendar month.
-- All date arguments must be YYYY-MM-DD.
-
-# Built by Imad OULASRI — github.com/ioulasri — imad.oulasri01@gmail.com
-"""
+		return (
+			"You are the TrackFinance AI assistant. Personal finance only. All amounts in MAD. "
+			"Be concise (≤ 5 sentences). Reply in plain English; never output function-call markup.\n"
+			"\n"
+			"Rules:\n"
+			"1. Confirm any write (add/update/delete/contribute) with a one-line summary before calling its tool.\n"
+			"2. To update or delete by id, call the matching read tool first (get_recent_transactions / get_budgets / get_goals).\n"
+			"3. When updating, pass only fields the user asked to change.\n"
+			"4. The 'Current snapshot' below has fresh balance / income / spending / level / streak — answer summary questions directly without calling get_user_context.\n"
+			"5. For per-category, per-budget, per-goal, or per-transaction questions, call the matching read tool first.\n"
+			"6. On a tool failure ({\"success\": false}), state the problem plainly; don't silently retry.\n"
+			"7. For non-finance questions, decline in one sentence with no tool call.\n"
+			"\n"
+			"Dates: 'today' is the date in the snapshot. Date args must be YYYY-MM-DD."
+		)
 
 	def _to_llm_messages(self, user_message, conversation_history, system_prompt) -> List[Dict]:
 		messages = [{"role": "system", "content": system_prompt}]

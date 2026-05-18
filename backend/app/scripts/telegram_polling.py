@@ -66,18 +66,13 @@ def main() -> int:
 				offset = update["update_id"] + 1
 				db = SessionLocal()
 				try:
-					reply = _handle_update(update, db)
+					# _handle_update sends its own Telegram replies; returns nothing.
+					_handle_update(update, db)
 				except Exception as e:
 					print(f"[poll] handler error: {e}")
 					db.rollback()
-					reply = None
 				finally:
 					db.close()
-				if reply:
-					message = update.get("message") or update.get("edited_message") or {}
-					chat_id = (message.get("chat") or {}).get("id")
-					if chat_id is not None:
-						TelegramService.send_message(chat_id, reply)
 	finally:
 		_restore_webhook()
 
