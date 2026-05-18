@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, TrendingUp, Shield, Sparkles, ChevronRight, Activity, CreditCard, DollarSign, Wallet, PieChart, Home, Settings, LogOut } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -18,26 +19,21 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             {/* Dynamic Background */}
             <div className="fixed inset-0 z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDuration: '10s' }} />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDuration: '10s' }} />
                 <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-emerald-500/10 rounded-full blur-[100px] mix-blend-screen animate-pulse" style={{ animationDuration: '12s' }} />
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIj48L2NpcmNsZT4KPC9zdmc+')] opacity-50 block dark:opacity-10" />
             </div>
 
             {/* Navigation */}
             <nav className="relative z-10 w-full px-6 py-6 md:px-12 lg:px-24 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center shadow-[0_0_20px_rgba(127,13,242,0.4)]">
-                        <TrendingUp size={24} className="text-white" />
-                    </div>
-                    <span className="text-2xl font-bold tracking-tight text-foreground hidden sm:block">TrackFinance</span>
-                </div>
+                <Logo size="md" showWordmark />
                 <div className="flex items-center gap-6">
                     <button onClick={onLoginClick} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block cursor-pointer">
                         Log In
                     </button>
                     <button
                         onClick={onRegisterClick}
-                        className="group relative inline-flex items-center gap-2 px-6 py-2.5 bg-primary overflow-hidden rounded-full transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(127,13,242,0.4)] cursor-pointer"
+                        className="group relative inline-flex items-center gap-2 px-6 py-2.5 bg-primary overflow-hidden rounded-full transition-all hover:scale-105 hover:shadow-[0_4px_20px_rgba(5,150,105,0.35)] cursor-pointer"
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                         <span className="relative text-sm font-medium text-white">Get Started</span>
@@ -61,7 +57,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         }`}
                 >
                     Master your money, <br className="hidden md:block" />
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400">play the game.</span>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-teal-500">play the game.</span>
                 </h1>
 
                 <p
@@ -77,7 +73,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 >
                     <button
                         onClick={onRegisterClick}
-                        className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary overflow-hidden rounded-full transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(127,13,242,0.5)] w-full sm:w-auto cursor-pointer"
+                        className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary overflow-hidden rounded-full transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(5,150,105,0.45)] w-full sm:w-auto cursor-pointer"
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                         <span className="relative text-base font-semibold text-white">Start Your Journey</span>
@@ -97,7 +93,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     className={`relative w-full max-w-6xl mt-24 rounded-3xl p-2 bg-gradient-to-b from-border/50 to-transparent transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-95'
                         }`}
                 >
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-[2rem] blur opacity-20" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary to-teal-600 rounded-[2rem] blur opacity-20" />
                     <div className="relative bg-card rounded-[1.5rem] border border-border shadow-2xl overflow-hidden aspect-video flex items-center justify-center">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
                         {/* Realistic Dashboard Mockup */}
@@ -106,7 +102,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                             <div className="w-56 h-full bg-card rounded-2xl border border-border p-5 flex flex-col gap-6 shadow-sm">
                                 {/* Logo / Title */}
                                 <div className="flex items-center gap-3 px-2">
-                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md">
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center shadow-md">
                                         <Activity size={16} className="text-white" />
                                     </div>
                                     <span className="font-bold text-foreground tracking-tight">TrackFinance</span>
@@ -221,7 +217,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                                         <div className="flex flex-col gap-6">
                                             <div className="flex items-center justify-between group p-2 hover:bg-muted/30 rounded-xl transition-colors -mx-2">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+                                                    <div className="w-12 h-12 rounded-full bg-teal-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
                                                         <CreditCard size={20} />
                                                     </div>
                                                     <div className="flex flex-col">
@@ -274,7 +270,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="bg-card p-8 rounded-3xl border border-border hover:border-primary/50 transition-colors group">
-                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(127,13,242,0.2)]">
+                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(5,150,105,0.18)]">
                                 <Sparkles size={28} className="text-primary" />
                             </div>
                             <h3 className="text-xl font-bold text-foreground mb-3">Earn XP & Level Up</h3>
@@ -282,7 +278,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         </div>
 
                         <div className="bg-card p-8 rounded-3xl border border-border hover:border-blue-500/50 transition-colors group">
-                            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                            <div className="w-14 h-14 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                                 <Shield size={28} className="text-blue-500" />
                             </div>
                             <h3 className="text-xl font-bold text-foreground mb-3">Unlock Achievements</h3>

@@ -86,6 +86,13 @@ export function AIAssistant() {
     }
   }, [isOpen]);
 
+  // Open from anywhere via a global event (TopBar dispatches this).
+  useEffect(() => {
+    const onOpen = () => setIsOpen(true);
+    window.addEventListener('tf:open-ai', onOpen);
+    return () => window.removeEventListener('tf:open-ai', onOpen);
+  }, []);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {

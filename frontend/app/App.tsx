@@ -14,6 +14,8 @@ import { Recurring } from './components/Recurring';
 import { Settings } from './components/Settings';
 import { AIAssistant } from './components/AIAssistant';
 import { LandingPage } from './components/LandingPage';
+import { TopBar } from './components/TopBar';
+import { LogoMark } from './components/Logo';
 import { authAPI } from './api';
 
 type AuthState = 'landing' | 'login' | 'register' | 'verify-email' | 'oauth-callback' | 'authenticated';
@@ -25,6 +27,7 @@ interface User {
   current_level: number;
   current_xp: number;
   total_xp: number;
+  current_streak?: number;
   avatar_url?: string;
 }
 
@@ -110,12 +113,10 @@ export default function App() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl mb-4 shadow-[0_0_20px_rgba(127,13,242,0.4)]">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
+          <div className="inline-flex mb-4 animate-pulse">
+            <LogoMark size={56} className="text-primary" />
           </div>
-          <h2 className="text-foreground font-semibold">Loading...</h2>
+          <h2 className="text-foreground font-semibold">Loading…</h2>
         </div>
       </div>
     );
@@ -163,8 +164,8 @@ export default function App() {
   // Main App Layout with Routing
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className="flex min-h-screen bg-background text-foreground transition-colors duration-200">
-        {/* Sidebar */}
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Sidebar — fixed left, collapses to 64px */}
         <Sidebar
           user={{
             username: user?.username ?? 'User',
@@ -176,25 +177,28 @@ export default function App() {
           onAvatarUpdate={handleAvatarUpdate}
         />
 
-        {/* Main Content */}
-        <main className="flex-1 ml-60 p-8">
-          <div className="max-w-[1600px] mx-auto">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="/budgets" element={<Budgets />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/recurring" element={<Recurring />} />
-              <Route path="/analysis" element={<Analysis />} />
-              <Route path="/achievements" element={<Achievements />} />
-              <Route path="/settings" element={<Settings onProfileUpdate={handleProfileUpdate} />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </div>
-        </main>
+        {/* Main column — offset by collapsed sidebar width */}
+        <div className="pl-16 min-h-screen flex flex-col">
+          <TopBar user={user} />
+          <main className="flex-1 px-6 sm:px-8 py-6">
+            <div className="max-w-[1600px] mx-auto">
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/budgets" element={<Budgets />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/recurring" element={<Recurring />} />
+                <Route path="/analysis" element={<Analysis />} />
+                <Route path="/achievements" element={<Achievements />} />
+                <Route path="/settings" element={<Settings onProfileUpdate={handleProfileUpdate} />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </div>
+          </main>
+        </div>
 
-        {/* AI Assistant - Available on all pages */}
+        {/* AI Assistant - listens for tf:open-ai event from TopBar */}
         <AIAssistant />
       </div>
     </BrowserRouter>

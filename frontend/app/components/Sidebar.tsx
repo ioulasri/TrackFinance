@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,43 +11,64 @@ import {
   LineChart,
   Camera,
   Download,
-  RotateCw
+  RotateCw,
+  PinIcon,
+  PinOff,
 } from 'lucide-react';
 import { XPBar } from './XPBar';
-import { authAPI, reportAPI } from '../api'; // Assuming '../api' is the correct path for authAPI
+import { authAPI, reportAPI } from '../api';
+import { Logo, LogoMark } from './Logo';
 
 interface SidebarProps {
   user: {
     username: string;
     current_level: number;
     current_xp: number;
-    avatar_url?: string; // Added avatar_url
+    avatar_url?: string;
   };
   onLogout: () => void;
-  onAvatarUpdate?: (url: string) => void; // Added onAvatarUpdate
+  onAvatarUpdate?: (url: string) => void;
 }
 
+const PIN_KEY = 'tf_sidebar_pinned';
+
+const menuItems = [
+  { id: 'dashboard',    path: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { id: 'transactions', path: '/transactions', label: 'Transactions', icon: Receipt },
+  { id: 'budgets',      path: '/budgets',      label: 'Budgets',      icon: Wallet },
+  { id: 'goals',        path: '/goals',        label: 'Goals',        icon: Target },
+  { id: 'recurring',    path: '/recurring',    label: 'Recurring',    icon: RotateCw },
+  { id: 'analysis',     path: '/analysis',     label: 'Analysis',     icon: LineChart },
+  { id: 'achievements', path: '/achievements', label: 'Achievements', icon: Trophy },
+  { id: 'settings',     path: '/settings',     label: 'Settings',     icon: Settings },
+];
+
 export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
-  const menuItems = [
-    { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'transactions', path: '/transactions', label: 'Transactions', icon: Receipt },
-    { id: 'budgets', path: '/budgets', label: 'Budgets', icon: Wallet },
-    { id: 'goals', path: '/goals', label: 'Goals', icon: Target },
-    { id: 'recurring', path: '/recurring', label: 'Recurring', icon: RotateCw },
-    { id: 'analysis', path: '/analysis', label: 'Analysis', icon: LineChart },
-    { id: 'achievements', path: '/achievements', label: 'Achievements', icon: Trophy },
-    { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
-  ];
+  const [pinned, setPinned] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PIN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [hovered, setHovered] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const expanded = pinned || hovered;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
+    } catch { /* ignore */ }
+  }, [pinned]);
 
   const username = user?.username || 'User';
   const level = user?.current_level ?? 0;
   const currentXP = user?.current_xp ?? 0;
   const requiredXP = ((level + 1) ** 2) * 100;
   const initials = username.substring(0, 2).toUpperCase();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [isUploading, setIsUploading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
     try {
@@ -61,17 +82,13 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
     }
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleAvatarClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('file', file);
-
     try {
       setIsUploading(true);
       const response = await authAPI.uploadAvatar(formData);
@@ -87,125 +104,144 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
   };
 
   return (
-    <div className="w-60 h-screen bg-sidebar border-r border-border flex flex-col fixed left-0 top-0">
+    <aside
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ width: expanded ? 240 : 64 }}
+      className={`group/sidebar fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border z-30
+        flex flex-col transition-[width] duration-200 ease-out
+        ${!pinned && hovered ? 'shadow-[6px_0_24px_-12px_rgba(5,150,105,0.15)]' : ''}`}
+    >
       {/* Logo */}
-      <div className="p-6 border-b border-border bg-sidebar">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 bg-primary rounded-xl shadow-sm">
-            <svg className="w-5 h-5 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <span className="font-bold text-foreground text-lg tracking-tight">TrackFinance</span>
+      <div className="h-14 flex items-center px-3 border-b border-sidebar-border shrink-0">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <LogoMark size={32} className="text-primary shrink-0" />
+          <span
+            className={`font-bold text-foreground text-lg tracking-tight whitespace-nowrap transition-opacity duration-150
+              ${expanded ? 'opacity-100' : 'opacity-0'}`}
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            TrackFinance
+          </span>
         </div>
+        {/* Pin toggle — only visible when expanded */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setPinned(p => !p); }}
+          className={`ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-all
+            ${expanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+          aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+        >
+          {pinned ? <PinOff size={14} /> : <PinIcon size={14} />}
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Nav */}
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
               key={item.id}
               to={item.path}
+              title={item.label}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive
-                  ? 'bg-secondary text-foreground font-semibold shadow-sm border border-border/50'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-                }`
+                `relative flex items-center gap-3 h-10 px-3 rounded-lg transition-colors group
+                ${isActive
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground'}`
               }
             >
-              <Icon size={18} />
-              <span className="text-sm">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  {/* Left accent strip on active item */}
+                  {isActive && (
+                    <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-primary" />
+                  )}
+                  <Icon size={18} className="shrink-0" />
+                  <span
+                    className={`text-sm whitespace-nowrap transition-opacity duration-150
+                      ${expanded ? 'opacity-100' : 'opacity-0'}`}
+                  >
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-border space-y-4">
-        <div className="flex items-center gap-3 py-1">
-          {/* Avatar with upload functionality */}
-          <div 
-            className="relative group cursor-pointer"
-            onClick={handleAvatarClick}
-          >
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold border border-border shadow-sm flex-shrink-0 overflow-hidden">
+      {/* Bottom */}
+      <div className="border-t border-sidebar-border p-2 space-y-2 shrink-0">
+        {/* Avatar + identity */}
+        <div className={`flex items-center gap-2.5 ${expanded ? 'p-2' : 'justify-center p-1'}`}>
+          <div className="relative cursor-pointer shrink-0" onClick={handleAvatarClick}>
+            <div className="relative w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold border border-border shadow-sm overflow-hidden group">
               {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt={username} 
-                  className="w-full h-full object-cover"
-                />
+                <img src={user.avatar_url} alt={username} className="w-full h-full object-cover" />
               ) : (
-                initials
+                <span className="text-xs">{initials}</span>
               )}
-              
-              {/* Hover overlay with camera icon */}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                <Camera className="w-4 h-4 text-white" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-3.5 h-3.5 text-white" />
               </div>
-
-              {/* Uploading indicator */}
               {isUploading && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 </div>
               )}
             </div>
-            
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
+            {/* Tiny level chip overlay (always visible) */}
+            <span className="absolute -bottom-1 -right-1 px-1 py-0.5 bg-foreground text-background text-[9px] font-bold rounded-md leading-none shadow-sm border border-background">
+              {level}
+            </span>
+            <input ref={fileInputRef} type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
           </div>
-          <div className="flex-1 min-w-0">
-            {/* Username */}
+
+          <div
+            className={`flex-1 min-w-0 transition-opacity duration-150 overflow-hidden
+              ${expanded ? 'opacity-100' : 'opacity-0 w-0'}`}
+          >
             <p className="font-medium text-foreground text-sm truncate">{username}</p>
-            {/* Level Badge */}
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className="px-1.5 py-0.5 bg-secondary border border-border rounded flex items-center gap-1">
-                <span className="text-[10px] font-bold text-muted-foreground">LVL {level}</span>
-                <span className="text-[10px]">🔥</span>
-              </div>
+            <div className="mt-1">
+              <XPBar currentXP={currentXP} requiredXP={requiredXP} level={level} />
             </div>
           </div>
         </div>
 
-        {/* XP Bar */}
-        <div className="px-1 pb-2">
-          <XPBar
-            currentXP={currentXP}
-            requiredXP={requiredXP}
-            level={level}
-          />
+        {/* Action buttons */}
+        <div className={expanded ? 'space-y-1' : 'space-y-1'}>
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            title="Export report"
+            className={`w-full flex items-center gap-2 h-9 rounded-lg text-foreground hover:bg-sidebar-accent transition-colors
+              ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
+          >
+            {isExporting ? (
+              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin shrink-0" />
+            ) : (
+              <Download size={16} className="text-primary shrink-0" />
+            )}
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity ${expanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
+              {isExporting ? 'Generating…' : 'Export Report'}
+            </span>
+          </button>
+          <button
+            onClick={onLogout}
+            title="Logout"
+            className={`w-full flex items-center gap-2 h-9 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors
+              ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
+          >
+            <LogOut size={16} className="shrink-0" />
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity ${expanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
+              Logout
+            </span>
+          </button>
         </div>
-
-        {/* Export Report Button */}
-        <button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm bg-white group mb-2"
-        >
-          {isExporting ? (
-            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-          ) : (
-            <Download size={16} className="text-primary group-hover:scale-110 transition-transform" />
-          )}
-          <span className="font-semibold text-sm">{isExporting ? 'Generating...' : 'Export Report'}</span>
-        </button>
-
-        {/* Logout Button */}
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-all shadow-sm bg-white"
-        >
-          <LogOut size={16} />
-          <span className="font-medium text-sm">Logout</span>
-        </button>
       </div>
-    </div>
+    </aside>
   );
 }

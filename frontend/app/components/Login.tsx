@@ -2,6 +2,7 @@ import React, { useState, type FormEvent } from 'react';
 import { Mail, Lock, User } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
+import { Logo } from './Logo';
 import { authAPI } from '../api';
 
 // Get the API base URL for OAuth redirects
@@ -114,22 +115,18 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fafafa] px-4 relative overflow-hidden">
-      {/* Subtle decorative elements */}
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      {/* Soft mint wash */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-30%] right-[-20%] w-[60%] h-[60%] bg-gradient-to-br from-violet-100 to-indigo-50 rounded-full blur-[100px] opacity-60" />
-        <div className="absolute bottom-[-30%] left-[-20%] w-[50%] h-[50%] bg-gradient-to-tr from-blue-50 to-purple-50 rounded-full blur-[100px] opacity-50" />
+        <div className="absolute top-[-30%] right-[-20%] w-[60%] h-[60%] bg-gradient-to-br from-emerald-100 to-teal-50 rounded-full blur-[100px] opacity-60" />
+        <div className="absolute bottom-[-30%] left-[-20%] w-[50%] h-[50%] bg-gradient-to-tr from-teal-50 to-emerald-50 rounded-full blur-[100px] opacity-50" />
       </div>
 
       <div className="w-full max-w-[420px] relative z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl mb-4 shadow-lg shadow-violet-200">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Welcome back</h1>
+        <div className="flex flex-col items-center mb-8">
+          <div className="mb-3"><Logo size="lg" showWordmark={false} /></div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h1>
           <p className="text-gray-500 mt-1 text-sm">
             {isForgotPassword
               ? 'Reset your password to regain access'
@@ -251,11 +248,11 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 bg-white border-gray-300 rounded text-violet-600 focus:ring-violet-500 focus:ring-offset-0 transition-all cursor-pointer"
+                    className="w-4 h-4 bg-white border-gray-300 rounded text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 transition-all cursor-pointer"
                   />
                   <span className="ml-2 text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Remember me</span>
                 </label>
-                <button type="button" onClick={() => { setIsForgotPassword(true); setError(''); setSuccess(''); setShowResendVerification(false); }} className="text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors">
+                <button type="button" onClick={() => { setIsForgotPassword(true); setError(''); setSuccess(''); setShowResendVerification(false); }} className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
                   Forgot password?
                 </button>
               </div>
@@ -263,7 +260,7 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-200"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200"
               >
                 {loading ? 'Logging in...' : 'Log in'}
               </button>
@@ -303,7 +300,7 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-200"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200"
               >
                 {loading ? 'Resetting...' : 'Reset Password'}
               </button>
@@ -318,7 +315,7 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
               Remember your password?{' '}
               <button
                 onClick={() => { setIsForgotPassword(false); setError(''); setSuccess(''); setShowResendVerification(false); }}
-                className="text-violet-600 hover:text-violet-700 font-semibold transition-colors"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
               >
                 Log in
               </button>
@@ -328,7 +325,7 @@ export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
               Don't have an account?{' '}
               <button
                 onClick={onSwitchToRegister}
-                className="text-violet-600 hover:text-violet-700 font-semibold transition-colors"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
               >
                 Sign up
               </button>

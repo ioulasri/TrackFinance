@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Lightbulb, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { TrendingUp, TrendingDown, Wallet, Lightbulb, Sparkles, Flame } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { BalanceChart } from './BalanceChart';
 import { ProgressBar } from './ProgressBar';
@@ -36,175 +36,264 @@ export function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate totals from transactions (not from userStats which doesn't have these fields)
-  const totalIncome = transactions
-    .filter((t: any) => t.type === 'income')
-    .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
-
-  const totalExpenses = transactions
-    .filter((t: any) => t.type === 'expense')
-    .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
-
+  // Aggregate totals
+  const totalIncome = useMemo(
+    () => transactions.filter((t: any) => t.type === 'income')
+      .reduce((s: number, t: any) => s + parseFloat(t.amount || 0), 0),
+    [transactions]
+  );
+  const totalExpenses = useMemo(
+    () => transactions.filter((t: any) => t.type === 'expense')
+      .reduce((s: number, t: any) => s + parseFloat(t.amount || 0), 0),
+    [transactions]
+  );
   const balance = totalIncome - totalExpenses;
   const totalBudget = budgetStatus?.total_monthly_limit || 0;
   const totalSpent = budgetStatus?.total_spent || 0;
   const remaining = totalBudget - totalSpent;
 
+  // 7-day rolling balance series for the hero sparkline
+  const sparkline = useMemo(() => buildSparkline(transactions), [transactions]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary/20 border-t-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground text-sm">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!userStats) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-gray-600">Failed to load user stats</p>
+        <p className="text-muted-foreground">Failed to load user stats</p>
       </div>
     );
   }
 
   return (
-    <div className="relative space-y-8 min-h-full">
-      {/* Deep Atmospheric Background for Desktop Widescreen */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-30%] right-[-20%] w-[70vw] h-[70vw] bg-primary/10 rounded-full blur-[180px] mix-blend-screen opacity-40 animate-pulse" style={{ animationDuration: '12s' }} />
-        <div className="absolute bottom-[-30%] left-[-20%] w-[70vw] h-[70vw] bg-blue-900/10 rounded-full blur-[180px] mix-blend-screen opacity-40 animate-pulse" style={{ animationDuration: '15s' }} />
+    <div className="space-y-6 min-h-full">
+      {/* ── Hero: greeting + net balance card spanning + two small stats ── */}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">
+          Welcome back{userStats?.username ? `, ${userStats.username}` : ''}.
+        </p>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+          Your money, today.
+        </h2>
       </div>
 
-      {/* Hero Stats Row (This Month's Overview) */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-primary/10 border border-primary/20 text-primary">
-            <Lightbulb size={14} />
-            <span className="text-xs font-medium uppercase tracking-wider">Level {userStats.current_level}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Big net balance card — spans 2 cols on large screens */}
+        <div className="lg:col-span-2 relative bg-card rounded-2xl border border-border overflow-hidden
+                        shadow-[0_1px_2px_rgba(15,30,26,0.04),0_8px_24px_rgba(5,150,105,0.08)]">
+          {/* Decorative emerald wash */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-card to-card pointer-events-none" />
+          <div className="relative p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                  Net balance
+                </p>
+                <p className="text-4xl md:text-5xl font-bold text-foreground tabular-nums tracking-tight">
+                  {formatMAD(balance)}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tabular-nums border
+                                bg-emerald-50 text-emerald-700 border-emerald-200">
+                  <TrendingUp size={12} /> {formatMAD(totalIncome - totalExpenses)} net
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-muted-foreground bg-muted">
+                  <Flame size={12} className="text-amber-500" /> {userStats?.current_streak ?? 0}-day streak
+                </div>
+              </div>
+            </div>
+
+            <Sparkline points={sparkline} />
+
+            <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
+              <span>Level <strong className="text-foreground tabular-nums">{userStats.current_level}</strong></span>
+              <span className="h-3 w-px bg-border" />
+              <span>{userStats.total_xp ?? 0} XP total</span>
+            </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70 tracking-tight">This Month's Overview</h2>
+        </div>
+
+        {/* Two small stacked stat cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+          <StatCard
+            title="Income"
+            value={formatMAD(totalIncome)}
+            trend={{ value: 12.5, isPositive: true }}
+            icon={<TrendingUp size={20} />}
+            accentColor="emerald"
+          />
+          <StatCard
+            title="Expenses"
+            value={formatMAD(totalExpenses)}
+            trend={{ value: 8.3, isPositive: false }}
+            icon={<TrendingDown size={20} />}
+            accentColor="amber"
+          />
         </div>
       </div>
 
-      {/* Hero Stats Row */}
-      <div className="grid grid-cols-3 gap-6">
-        <StatCard
-          title="Total Income"
-          value={`MAD ${totalIncome.toLocaleString()}`}
-          trend={{ value: 12.5, isPositive: true }}
-          icon={<TrendingUp size={24} />}
-          accentColor="emerald"
-        />
-        <StatCard
-          title="Total Expenses"
-          value={`MAD ${totalExpenses.toLocaleString()}`}
-          trend={{ value: 8.3, isPositive: false }}
-          icon={<TrendingDown size={24} />}
-          accentColor="blue"
-        />
-        <StatCard
-          title="Balance / Saved"
-          value={`MAD ${balance.toLocaleString()}`}
-          trend={{ value: 15.2, isPositive: true }}
-          icon={<Wallet size={24} />}
-          accentColor="purple"
-        />
-      </div>
-
-      {/* Widescreen Main Area */}
-      <div className="flex flex-col xl:flex-row gap-8 relative z-10 w-full mb-8">
-        
-        {/* Left Column (Main Content) - max width 2/3 */}
-        <div className="flex-1 w-full xl:w-2/3 flex flex-col gap-8">
-          {/* Balance Chart spanning full width of left column */}
+      {/* ── Main grid: charts left, side panel right ────────────────── */}
+      <div className="flex flex-col xl:flex-row gap-6 w-full">
+        <div className="flex-1 w-full xl:w-2/3 flex flex-col gap-6">
           <BalanceChart />
-          
           <RecentTransactions />
           <GoalsTracker />
         </div>
 
-        {/* Right Column (Side Panel) - width 1/3 */}
-        <div className="w-full xl:w-1/3 flex flex-col gap-8">
-          {/* Cost Analysis limited to side panel */}
+        <div className="w-full xl:w-1/3 flex flex-col gap-6">
           <CostAnalysis />
 
           {/* Monthly Spending Progress */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
-            <h3 className="text-xl text-foreground mb-8 font-bold">Monthly Spending Progress</h3>
+          <div className="bg-card rounded-2xl p-6 border border-border
+                          shadow-[0_1px_2px_rgba(15,30,26,0.04),0_4px_12px_rgba(15,30,26,0.04)]">
+            <h3 className="text-lg text-foreground mb-6 font-bold">Monthly Spending</h3>
             {totalBudget > 0 ? (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <ProgressBar current={totalSpent} max={totalBudget} />
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center justify-between pt-2">
                   <div>
-                    <p className="text-sm text-muted-foreground font-medium">Spent this month</p>
-                    <p className="text-3xl font-bold text-foreground mt-1">MAD {totalSpent.toLocaleString()}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Spent</p>
+                    <p className="text-2xl font-bold text-foreground mt-1 tabular-nums">{formatMAD(totalSpent)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground font-medium">Budget limit</p>
-                    <p className="text-3xl font-bold text-foreground mt-1">MAD {totalBudget.toLocaleString()}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Limit</p>
+                    <p className="text-2xl font-bold text-foreground mt-1 tabular-nums">{formatMAD(totalBudget)}</p>
                   </div>
                 </div>
-                <div className="pt-6 border-t border-border/50">
-                  <p className="text-sm text-muted-foreground font-medium flex justify-between items-center">
-                    <span>Remaining Balance:</span>
-                    <span className={`text-lg px-3 py-1 rounded-lg ${remaining >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>MAD {remaining.toLocaleString()}</span>
-                  </p>
+                <div className="pt-4 border-t border-border/50 flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground font-medium">Remaining</span>
+                  <span
+                    className={`text-sm font-semibold px-2.5 py-1 rounded-full tabular-nums ${
+                      remaining >= 0
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    }`}
+                  >
+                    {formatMAD(remaining)}
+                  </span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(127,13,242,0.2)]">
-                  <Wallet size={36} className="text-primary" />
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Wallet size={26} className="text-primary" />
                 </div>
-                <p className="text-xl text-foreground font-bold mb-2">No budgets set</p>
-                <p className="text-sm text-muted-foreground max-w-[250px]">Create a budget to track your monthly spending and earn points.</p>
+                <p className="text-base text-foreground font-bold mb-1">No budgets yet</p>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  Create a budget to track your monthly spending and unlock the alert system.
+                </p>
               </div>
             )}
           </div>
 
-          {/* Quick Budget Tips */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border transition-colors">
-            <h3 className="text-xl text-foreground mb-6 font-bold flex items-center gap-2">
-              <Sparkles size={20} className="text-primary" />
-              AI Insights
+          {/* AI Insights */}
+          <div className="bg-card rounded-2xl p-6 border border-border
+                          shadow-[0_1px_2px_rgba(15,30,26,0.04),0_4px_12px_rgba(15,30,26,0.04)]">
+            <h3 className="text-lg text-foreground mb-5 font-bold flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" /> AI Insights
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[
-                {
-                  tip: 'You\'re spending 32% more on dining out this month.',
-                  color: 'orange',
-                },
-                {
-                  tip: 'Great job! Your entertainment budget is under control.',
-                  color: 'emerald',
-                },
-                {
-                  tip: 'Consider setting aside MAD 500 more for savings.',
-                  color: 'blue',
-                },
+                { tip: "You're spending 32% more on dining out this month.", tone: 'amber' as const },
+                { tip: 'Entertainment budget is well under control. Nice.',  tone: 'emerald' as const },
+                { tip: 'Consider setting aside 500 MAD more for savings.',   tone: 'teal' as const },
               ].map((item, index) => (
-                <div
-                  key={index}
-                  className={`group flex items-start gap-4 p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg ${item.color === 'orange' ? 'bg-orange-500/5 border-orange-500/20 hover:shadow-orange-500/10' :
-                    item.color === 'emerald' ? 'bg-emerald-500/5 border-emerald-500/20 hover:shadow-emerald-500/10' :
-                      'bg-blue-500/5 border-blue-500/20 hover:shadow-blue-500/10'
-                    }`}
-                >
-                  <div className={`p-2.5 rounded-xl transition-transform group-hover:scale-110 ${item.color === 'orange' ? 'bg-orange-500/20 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' :
-                    item.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
-                      'bg-blue-500/20 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                    }`}>
-                    <Lightbulb size={18} />
-                  </div>
-                  <p className="text-sm text-foreground flex-1 font-medium leading-relaxed">{item.tip}</p>
-                </div>
+                <InsightRow key={index} tone={item.tone}>{item.tip}</InsightRow>
               ))}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── helpers ─────────────────────────────────────────────────────
+
+function formatMAD(n: number): string {
+  return `${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} MAD`;
+}
+
+function buildSparkline(transactions: any[]): number[] {
+  // Build a 7-day cumulative net (income − expense) ending today.
+  const days = 7;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const buckets = new Array(days).fill(0);
+
+  for (const t of transactions) {
+    const d = new Date(t.date);
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff < 0 || diff >= days) continue;
+    const delta = parseFloat(t.amount || 0) * (t.type === 'income' ? 1 : -1);
+    buckets[days - 1 - diff] += delta;
+  }
+  // Convert to running cumulative
+  let running = 0;
+  return buckets.map((v) => { running += v; return running; });
+}
+
+interface SparklineProps { points: number[] }
+
+function Sparkline({ points }: SparklineProps) {
+  if (!points.length) return null;
+  const width = 480;
+  const height = 56;
+  const min = Math.min(...points, 0);
+  const max = Math.max(...points, 0);
+  const range = max - min || 1;
+
+  const path = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1 || 1)) * width;
+      const y = height - ((p - min) / range) * height;
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  const areaPath = `${path} L${width},${height} L0,${height} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-14 mt-2" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#059669" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#059669" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#spark-fill)" />
+      <path d={path} fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+interface InsightRowProps {
+  tone: 'emerald' | 'amber' | 'teal' | 'rose';
+  children: React.ReactNode;
+}
+
+function InsightRow({ tone, children }: InsightRowProps) {
+  const tones = {
+    emerald: 'bg-emerald-50/60 border-emerald-200 text-emerald-700',
+    amber:   'bg-amber-50/60   border-amber-200   text-amber-700',
+    teal:    'bg-teal-50/60    border-teal-200    text-teal-700',
+    rose:    'bg-rose-50/60    border-rose-200    text-rose-700',
+  };
+  return (
+    <div className={`flex items-start gap-3 p-3 rounded-xl border ${tones[tone]}`}>
+      <Lightbulb size={16} className="shrink-0 mt-0.5" />
+      <p className="text-sm text-foreground leading-snug">{children}</p>
     </div>
   );
 }

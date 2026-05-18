@@ -1,41 +1,62 @@
+/* ===================================================================
+   TrackFinance — Emerald Fintech theme
+   ------------------------------------------------------------------
+   Light-only palette. Mint-tinted canvas, deep slate-green ink,
+   emerald-600 signature. Chart ramp goes emerald → teal → amber →
+   coral so existing recharts components feel branded without edits.
+   =================================================================== */
+
 :root {
-  --background: #fafafa;
-  --foreground: #09090b;
+  /* ── Surfaces ─────────────────────────────────────────────────── */
+  --background: #f6f9f7;          /* mint-tinted near-white canvas */
+  --foreground: #0f1e1a;          /* deep slate-green ink */
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #0f1e1a;
   --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #09090b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #09090b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #09090b;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
+  --popover-foreground: #0f1e1a;
+
+  /* ── Brand ────────────────────────────────────────────────────── */
+  --primary: #059669;             /* emerald-600 — signature */
+  --primary-foreground: #ffffff;
+  --secondary: #eef3ef;
+  --secondary-foreground: #0f1e1a;
+  --accent: #0d9488;              /* teal-600 — secondary brand */
+  --accent-foreground: #ffffff;
+
+  /* ── States ───────────────────────────────────────────────────── */
+  --muted: #eef3ef;
+  --muted-foreground: #5a6b65;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --success: #059669;
+  --warning: #f59e0b;
+
+  /* ── Form fields & borders ────────────────────────────────────── */
+  --border: #d9e3dd;
+  --input: #d9e3dd;
   --input-background: #ffffff;
-  --switch-background: #e4e4e7;
-  --ring: #09090b;
+  --switch-background: #d9e3dd;
+  --ring: #059669;
 
-  --chart-1: #09090b;
-  --chart-2: #3f3f46;
-  --chart-3: #71717a;
-  --chart-4: #c0c0c5;
-  --chart-5: #e4e4e7;
+  /* ── Charts (emerald → teal → amber → coral → slate) ─────────── */
+  --chart-1: #059669;             /* emerald-600 */
+  --chart-2: #0d9488;             /* teal-600 */
+  --chart-3: #f59e0b;             /* amber-500 */
+  --chart-4: #fb7185;             /* rose-400 — coral */
+  --chart-5: #64748b;             /* slate-500 */
 
-  --radius: 0.5rem;
+  /* ── Layout / radius ──────────────────────────────────────────── */
+  --radius: 0.625rem;             /* slightly larger base */
+
+  /* ── Sidebar (matches canvas with a hint cooler accent) ───────── */
   --sidebar-background: #ffffff;
-  --sidebar-foreground: #09090b;
-  --sidebar-primary: #09090b;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #f4f4f5;
-  --sidebar-accent-foreground: #09090b;
-  --sidebar-border: #e4e4e7;
-  --sidebar-ring: #09090b;
+  --sidebar-foreground: #0f1e1a;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecf3ef;
+  --sidebar-accent-foreground: #0f1e1a;
+  --sidebar-border: #d9e3dd;
+  --sidebar-ring: #059669;
 }
 
 @theme {
@@ -55,6 +76,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
@@ -70,7 +93,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --color-sidebar: var(--sidebar);
+  --color-sidebar: var(--sidebar-background);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
@@ -87,75 +110,51 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif,
+      'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Tabular numbers for any number that uses .tabular-nums; selectively applied. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes automatically override them.
-  */
 
   html {
     font-size: var(--font-size);
   }
 
-  h1 {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-weight-bold);
-    line-height: 1.2;
-    color: var(--gray-900);
+  /* Headings get tighter tracking + bolder weight for a more confident feel. */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.015em;
+    color: var(--foreground);
   }
 
-  h2 {
-    font-size: var(--text-3xl);
-    font-weight: var(--font-weight-bold);
-    line-height: 1.27;
-    color: var(--gray-900);
-  }
+  h1 { font-size: var(--text-4xl); font-weight: 700; line-height: 1.15; }
+  h2 { font-size: var(--text-3xl); font-weight: 700; line-height: 1.22; }
+  h3 { font-size: var(--text-2xl); font-weight: 700; line-height: 1.3; }
+  h4 { font-size: var(--text-xl);  font-weight: 600; line-height: 1.4; }
 
-  h3 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-semibold);
-    line-height: 1.33;
-    color: var(--gray-900);
-  }
-
-  h4 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-semibold);
-    line-height: 1.4;
-    color: var(--gray-900);
-  }
-
-  p {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
-    line-height: 1.5;
-  }
+  p { font-size: var(--text-base); line-height: 1.5; }
 
   label {
     font-size: var(--text-sm);
-    font-weight: var(--font-weight-medium);
+    font-weight: 500;
     line-height: 1.43;
-    color: var(--gray-900);
+    color: var(--foreground);
   }
 
   button {
     font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-weight: 500;
     line-height: 1.5;
   }
 
-  input,
-  textarea,
-  select {
+  input, textarea, select {
     font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
 
-  body {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-      'Segoe UI Symbol', 'Noto Color Emoji';
+  /* Tabular numerals utility — money / stats columns align cleanly. */
+  .tnum, .font-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
   }
 }

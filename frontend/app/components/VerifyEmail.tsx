@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Loader2, Mail, ArrowLeft } from 'lucide-react';
 import { Input } from './Input';
+import { Logo } from './Logo';
 import { authAPI } from '../api';
 
 interface VerifyEmailProps {
@@ -60,26 +61,21 @@ export function VerifyEmail({ onBackToLogin }: VerifyEmailProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fafafa] px-4 relative overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-30%] right-[-20%] w-[60%] h-[60%] bg-gradient-to-br from-violet-50 to-indigo-50 rounded-full blur-[100px] opacity-60" />
+        <div className="absolute top-[-30%] right-[-20%] w-[60%] h-[60%] bg-gradient-to-br from-emerald-50 to-teal-50 rounded-full blur-[100px] opacity-60" />
         <div className="absolute bottom-[-30%] left-[-20%] w-[50%] h-[50%] bg-gradient-to-tr from-emerald-50 to-green-50 rounded-full blur-[100px] opacity-50" />
       </div>
 
       <div className="w-full max-w-[420px] relative z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl mb-4 shadow-lg shadow-violet-200">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">TrackFinance</h1>
+        <div className="flex flex-col items-center mb-8">
+          <Logo size="lg" showWordmark />
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-7">
           {status === 'loading' && (
             <div className="text-center py-6">
-              <Loader2 className="w-10 h-10 text-violet-600 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-gray-900 mb-1">Verifying your email...</h2>
               <p className="text-gray-500 text-sm">Please wait while we confirm your email address.</p>
             </div>
@@ -94,7 +90,7 @@ export function VerifyEmail({ onBackToLogin }: VerifyEmailProps) {
               <p className="text-gray-500 text-sm mb-5">{message}</p>
               <button
                 onClick={onBackToLogin}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 active:scale-[0.98] shadow-lg shadow-violet-200"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-200"
               >
                 Continue to Login
               </button>
@@ -124,7 +120,7 @@ export function VerifyEmail({ onBackToLogin }: VerifyEmailProps) {
                   <button
                     onClick={handleResend}
                     disabled={resendLoading || !resendEmail}
-                    className="w-full py-2.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-200"
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200"
                   >
                     {resendLoading ? 'Sending...' : 'Resend Verification Email'}
                   </button>
