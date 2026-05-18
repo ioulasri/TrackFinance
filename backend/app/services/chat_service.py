@@ -252,67 +252,68 @@ class FinanceChatService:
 
 		function_called = None
 		function_args = None
+		assistant_reply = ""
+
+		# Multi-iteration tool loop so batch requests like "delete all my goals" work:
+		#   1. AI may return several tool_calls in one response (parallel).
+		#   2. AI may then need another round (e.g. get_goals → multiple delete_goal).
+		# We loop until the AI returns a plain text reply or we hit the cap.
+		MAX_TOOL_ITERATIONS = 6
 
 		try:
-			completion = self.groq_client.chat.completions.create(
-				model=self.model,
-				messages=messages,
-				tools=TOOLS,
-				tool_choice="auto",
-				temperature=0.5,
-				max_tokens=1024,
-			)
-
-			response = completion.choices[0].message
-
-			if response.tool_calls:
-				tool_call = response.tool_calls[0]
-				function_called = tool_call.function.name
-				function_args = json.loads(tool_call.function.arguments or "{}") or {}
-
-				result = self._handle_tool_call(function_called, function_args, user_id, db)
-
-				messages.append(response)
-				messages.append({
-					"role": "tool",
-					"tool_call_id": tool_call.id,
-					"content": json.dumps(result)
-				})
-
-				final = self.groq_client.chat.completions.create(
+			for _iteration in range(MAX_TOOL_ITERATIONS):
+				completion = self.groq_client.chat.completions.create(
 					model=self.model,
 					messages=messages,
+					tools=TOOLS,
+					tool_choice="auto",
 					temperature=0.5,
 					max_tokens=1024,
 				)
-				assistant_reply = final.choices[0].message.content or ""
+				response = completion.choices[0].message
 
-			else:
-				# Fallback: Groq leaked the function call as plain text
-				assistant_reply = response.content or ""
-				inline_name, inline_args = self._parse_inline_tool_call(assistant_reply)
+				if not response.tool_calls:
+					# Final answer (or a leaked inline tool call we handle below).
+					assistant_reply = response.content or ""
+					inline_name, inline_args = self._parse_inline_tool_call(assistant_reply)
+					if inline_name:
+						function_called = inline_name
+						function_args = inline_args
+						result = self._handle_tool_call(inline_name, inline_args, user_id, db)
+						messages.append({"role": "assistant", "content": assistant_reply})
+						messages.append({
+							"role": "user",
+							"content": (
+								f"Function '{inline_name}' returned: {json.dumps(result)}. "
+								"Reply to the user in plain English; no function-call syntax."
+							),
+						})
+						# Loop again to get the final natural-language reply.
+						continue
+					break
 
-				if inline_name:
-					function_called = inline_name
-					function_args = inline_args
-					result = self._handle_tool_call(inline_name, inline_args, user_id, db)
-
-					messages.append({"role": "assistant", "content": assistant_reply})
+				# Append the assistant message with its tool_calls, then run each call.
+				messages.append(response)
+				for tool_call in response.tool_calls:
+					name = tool_call.function.name
+					try:
+						args = json.loads(tool_call.function.arguments or "{}") or {}
+					except json.JSONDecodeError:
+						args = {}
+					function_called = name
+					function_args = args
+					result = self._handle_tool_call(name, args, user_id, db)
 					messages.append({
-						"role": "user",
-						"content": (
-							f"Function '{inline_name}' returned: {json.dumps(result)}. "
-							"Reply to the user in plain English; no function-call syntax."
-						)
+						"role": "tool",
+						"tool_call_id": tool_call.id,
+						"content": json.dumps(result),
 					})
-
-					final = self.groq_client.chat.completions.create(
-						model=self.model,
-						messages=messages,
-						temperature=0.5,
-						max_tokens=1024,
-					)
-					assistant_reply = final.choices[0].message.content or ""
+			else:
+				# Loop fell through without a text reply.
+				assistant_reply = (
+					assistant_reply
+					or "I made several updates but ran out of steps before summarizing. Check /menu for the latest state."
+				)
 
 			assistant_reply = self._clean_reply(assistant_reply)
 
@@ -793,12 +794,17 @@ class FinanceChatService:
 			"Be concise (≤ 5 sentences). Reply in plain English; never output function-call markup.\n"
 			"\n"
 			"Rules:\n"
-			"1. Confirm any write (add/update/delete/contribute) with a one-line summary before calling its tool.\n"
-			"2. To update or delete by id, call the matching read tool first (get_recent_transactions / get_budgets / get_goals).\n"
+			"1. Confirm any write (add/update/delete/contribute) with a one-line summary before calling its tool. "
+			"For batch requests (\"add these 4 transactions\", \"delete all my goals\"), confirm the full list ONCE, "
+			"then issue all the tool calls — you can return multiple tool_calls in one response, or chain them across turns.\n"
+			"2. To update or delete by id, call the matching read tool first (get_recent_transactions / get_budgets / get_goals) "
+			"so you have real integer ids. For \"delete all X\", call the list tool, then call delete_X for every returned id.\n"
 			"3. When updating, pass only fields the user asked to change.\n"
-			"4. The 'Current snapshot' below has fresh balance / income / spending / level / streak — answer summary questions directly without calling get_user_context.\n"
+			"4. The 'Current snapshot' below has fresh balance / income / spending / level / streak — answer summary questions "
+			"directly without calling get_user_context.\n"
 			"5. For per-category, per-budget, per-goal, or per-transaction questions, call the matching read tool first.\n"
-			"6. On a tool failure ({\"success\": false}), state the problem plainly; don't silently retry.\n"
+			"6. On a tool failure ({\"success\": false}), state the problem plainly; don't silently retry. "
+			"If some calls in a batch succeed and others fail, summarize both groups in your final reply.\n"
 			"7. For non-finance questions, decline in one sentence with no tool call.\n"
 			"\n"
 			"Dates: 'today' is the date in the snapshot. Date args must be YYYY-MM-DD."
