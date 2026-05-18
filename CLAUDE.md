@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TrackFinance is a gamified personal finance tracker. Users earn XP, level up, and unlock achievements by recording transactions, setting budgets, and hitting savings goals. The currency throughout is **MAD (Moroccan Dirham)**. The production domain is `expensehub.site`.
 
+Users can also interact with the AI assistant from Telegram by linking their account in Settings → Telegram. The Telegram adapter (`backend/app/api/routes/telegram.py`) reuses `FinanceChatService` — no duplicated AI logic.
+
 ## Commands
 
 ### Docker (recommended for full-stack dev)
@@ -32,6 +34,12 @@ alembic revision --autogenerate -m "description"
 
 # Seed achievements (run once after a fresh DB)
 python -m app.scripts.seed_achievements
+
+# Register the Telegram bot webhook (run once per deploy, requires TELEGRAM_* env vars + BACKEND_URL)
+python -m app.scripts.setup_telegram_webhook
+
+# Local Telegram debugging via long-polling (deletes webhook on start, restores on exit)
+python -m app.scripts.telegram_polling
 
 # Tests
 pytest                        # run all
@@ -111,9 +119,12 @@ Key model relationships:
 | `SECRET_KEY` | Backend | JWT signing |
 | `FRONTEND_URL` | Backend | OAuth redirect target |
 | `BACKEND_URL` | Backend | Used in OAuth redirect construction |
-| `GROQ_API_KEY` | Backend | AI chat feature |
+| `GROQ_API_KEY` | Backend | AI chat feature (shared by in-app AIAssistant + Telegram bot) |
 | `GOOGLE_CLIENT_ID/SECRET` | Backend | Google OAuth |
 | `DISCORD_CLIENT_ID/SECRET` | Backend | Discord OAuth |
+| `TELEGRAM_BOT_TOKEN` | Backend | Token from @BotFather; powers the Telegram chatbot |
+| `TELEGRAM_BOT_USERNAME` | Backend | Bot's @ handle (no @); used to build `t.me/<bot>?start=` deep links |
+| `TELEGRAM_WEBHOOK_SECRET` | Backend | Random string; validates `X-Telegram-Bot-Api-Secret-Token` on incoming webhook requests |
 | `VITE_API_URL` | Frontend | Override API base URL |
 | `ALLOWED_ORIGINS` | Backend | CORS; `*` when `ENVIRONMENT=production` |
 

@@ -270,6 +270,35 @@ export const chatAPI = {
   },
 };
 
+export interface TelegramStatus {
+  linked: boolean;
+  chat_id_masked: string | null;
+}
+
+export interface TelegramLinkCode {
+  code: string;
+  expires_at: string;
+  deeplink: string;
+  bot_username: string | null;
+}
+
+export const telegramAPI = {
+  status: async (): Promise<TelegramStatus> => {
+    const response = await api.get('/v1/telegram/status');
+    return response.data;
+  },
+
+  generateLinkCode: async (): Promise<TelegramLinkCode> => {
+    const response = await api.post('/v1/telegram/link-code');
+    return response.data;
+  },
+
+  unlink: async (): Promise<{ ok: boolean; message?: string }> => {
+    const response = await api.delete('/v1/telegram/link');
+    return response.data;
+  },
+};
+
 export const reportAPI = {
   downloadFinancialReport: async (username: string) => {
     const response = await api.get('/v1/reports/financial-report', {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Bell, Globe, Camera, Loader2, Check, AlertCircle } from 'lucide-react';
+import { User, Lock, Bell, Globe, Camera, Loader2, Check, AlertCircle, MessageCircle, Send, Copy, Unlink } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
-import { authAPI } from '../api';
+import { authAPI, telegramAPI, type TelegramStatus, type TelegramLinkCode } from '../api';
 
 const PREFS_KEY = 'tf_preferences';
 const NOTIF_KEY = 'tf_notifications';
@@ -62,6 +62,12 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
     loadLocalJSON(PREFS_KEY, defaultPreferences)
   );
 
+  // ── Telegram linking ──────────────────────────────────────────────
+  const [telegram, setTelegram] = useState<TelegramStatus | null>(null);
+  const [linkCode, setLinkCode] = useState<TelegramLinkCode | null>(null);
+  const [telegramStatus, setTelegramStatus] = useState<Status>(idle);
+  const [codeCopied, setCodeCopied] = useState(false);
+
   // ── Load user on mount ────────────────────────────────────────────
   useEffect(() => {
     authAPI.getCurrentUser()
@@ -71,6 +77,13 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
       })
       .catch(() => {/* token will have expired — App handles redirect */})
       .finally(() => setUserLoading(false));
+  }, []);
+
+  // ── Load Telegram link status on mount ────────────────────────────
+  useEffect(() => {
+    telegramAPI.status()
+      .then((s) => setTelegram(s))
+      .catch(() => {/* endpoint may not be deployed yet — silently ignore */});
   }, []);
 
   // ── Persist prefs to localStorage ────────────────────────────────
@@ -174,6 +187,50 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
         error: err.response?.data?.detail || 'Failed to update password.',
         success: '',
       });
+    }
+  };
+
+  const handleGenerateLinkCode = async () => {
+    setTelegramStatus({ loading: true, error: '', success: '' });
+    setCodeCopied(false);
+    try {
+      const code = await telegramAPI.generateLinkCode();
+      setLinkCode(code);
+      setTelegramStatus(idle);
+    } catch (err: any) {
+      setTelegramStatus({
+        loading: false,
+        error: err.response?.data?.detail || 'Failed to generate code.',
+        success: '',
+      });
+    }
+  };
+
+  const handleUnlinkTelegram = async () => {
+    setTelegramStatus({ loading: true, error: '', success: '' });
+    try {
+      await telegramAPI.unlink();
+      setTelegram({ linked: false, chat_id_masked: null });
+      setLinkCode(null);
+      setTelegramStatus({ loading: false, error: '', success: 'Telegram unlinked.' });
+      setTimeout(() => setTelegramStatus(idle), 3000);
+    } catch (err: any) {
+      setTelegramStatus({
+        loading: false,
+        error: err.response?.data?.detail || 'Failed to unlink.',
+        success: '',
+      });
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!linkCode) return;
+    try {
+      await navigator.clipboard.writeText(`/start ${linkCode.code}`);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* clipboard API blocked — user can still copy manually */
     }
   };
 
@@ -448,6 +505,105 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                 </select>
               </div>
               <p className="text-xs text-muted-foreground">Display preferences are saved locally.</p>
+            </div>
+          </div>
+
+          {/* Telegram */}
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-sky-500/10 rounded-xl">
+                <MessageCircle size={20} className="text-sky-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Telegram</h3>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Message TrackFinance on Telegram to log spending or ask questions, e.g.{' '}
+                <span className="text-foreground">“I spent 50 MAD on lunch”</span>.
+              </p>
+
+              {telegramStatus.error && (
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
+                  <AlertCircle size={15} className="shrink-0" />
+                  {telegramStatus.error}
+                </div>
+              )}
+              {telegramStatus.success && (
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm rounded-lg">
+                  <Check size={15} className="shrink-0" />
+                  {telegramStatus.success}
+                </div>
+              )}
+
+              {telegram?.linked ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="flex items-center gap-2 text-sm text-emerald-600">
+                      <Check size={15} />
+                      <span>Connected{telegram.chat_id_masked ? ` (${telegram.chat_id_masked})` : ''}</span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="medium"
+                    className="w-full"
+                    onClick={handleUnlinkTelegram}
+                    disabled={telegramStatus.loading}
+                  >
+                    {telegramStatus.loading
+                      ? <><Loader2 className="animate-spin" size={16} /> Unlinking…</>
+                      : <><Unlink size={16} /> Unlink Telegram</>}
+                  </Button>
+                </div>
+              ) : linkCode ? (
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-border bg-muted/30 p-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-2">Your one-time code (expires in 10 minutes)</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <code className="text-xl font-mono font-semibold tracking-widest text-foreground select-all">
+                        {linkCode.code}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="p-2 rounded-md hover:bg-muted transition-colors"
+                        title="Copy /start command"
+                        aria-label="Copy"
+                      >
+                        {codeCopied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} className="text-muted-foreground" />}
+                      </button>
+                    </div>
+                  </div>
+                  <a
+                    href={linkCode.deeplink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+                  >
+                    <Send size={16} /> Open in Telegram
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    Telegram will open with{' '}
+                    <code className="px-1 py-0.5 rounded bg-muted text-foreground">/start {linkCode.code}</code>{' '}
+                    pre-filled. Just tap send.
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="medium"
+                  className="w-full"
+                  onClick={handleGenerateLinkCode}
+                  disabled={telegramStatus.loading}
+                >
+                  {telegramStatus.loading
+                    ? <><Loader2 className="animate-spin" size={16} /> Generating…</>
+                    : <><Send size={16} /> Connect Telegram</>}
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -23,13 +23,18 @@ class User(Base):
 	current_streak = Column(Integer, nullable=False, server_default=text("0"))
 	longest_streak = Column(Integer, nullable=False, server_default=text("0"))
 	last_activity_date = Column(TIMESTAMP(timezone=True))
+	telegram_chat_id = Column(String(64), unique=True, nullable=True)
+	telegram_link_code = Column(String(16), nullable=True)
+	telegram_link_code_expires = Column(TIMESTAMP(timezone=True), nullable=True)
 	created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 	updated_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 	__table_args__ = (
 		CheckConstraint("total_xp >= 0", name="ck_users_total_xp_non_negative"),
 		Index("idx_users_email", "email"),
-		Index("idx_users_username", "username")
+		Index("idx_users_username", "username"),
+		Index("idx_users_telegram_chat_id", "telegram_chat_id"),
+		Index("idx_users_telegram_link_code", "telegram_link_code"),
 	)
 
 	transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
