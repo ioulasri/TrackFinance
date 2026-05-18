@@ -544,6 +544,39 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                       <span>Connected{telegram.chat_id_masked ? ` (${telegram.chat_id_masked})` : ''}</span>
                     </div>
                   </div>
+
+                  {/* Notifications toggle */}
+                  <label className="flex items-center justify-between cursor-pointer p-3 rounded-lg bg-muted/30 border border-border">
+                    <div>
+                      <div className="text-sm font-medium text-foreground">DM notifications</div>
+                      <div className="text-xs text-muted-foreground">
+                        Budget alerts, achievements, weekly digest, auto-posted recurring transactions.
+                      </div>
+                    </div>
+                    <div className="relative ml-3 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={user?.telegram_notifications_enabled !== false}
+                        onChange={async (e) => {
+                          const next = e.target.checked;
+                          // Optimistic update
+                          setUser((u: any) => ({ ...(u || {}), telegram_notifications_enabled: next }));
+                          try {
+                            const res = await authAPI.updateProfile({ telegram_notifications_enabled: next });
+                            setUser(res.data);
+                          } catch {
+                            // Revert on failure
+                            setUser((u: any) => ({ ...(u || {}), telegram_notifications_enabled: !next }));
+                          }
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/50 transition-all">
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow-sm" />
+                      </div>
+                    </div>
+                  </label>
+
                   <Button
                     type="button"
                     variant="secondary"

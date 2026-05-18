@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram
+from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram, recurring
 from app.db.session import engine, Base
+from app.services import scheduler_service
 import os
 
 app = FastAPI(
@@ -35,6 +36,18 @@ app.include_router(goals.router)
 app.include_router(chat.router)
 app.include_router(reports.router)
 app.include_router(telegram.router)
+app.include_router(recurring.router)
+
+
+@app.on_event("startup")
+def _start_background_scheduler() -> None:
+    scheduler_service.start_scheduler()
+
+
+@app.on_event("shutdown")
+def _stop_background_scheduler() -> None:
+    scheduler_service.stop_scheduler()
+
 
 @app.get("/")
 def root():

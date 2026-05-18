@@ -26,6 +26,8 @@ class User(Base):
 	telegram_chat_id = Column(String(64), unique=True, nullable=True)
 	telegram_link_code = Column(String(16), nullable=True)
 	telegram_link_code_expires = Column(TIMESTAMP(timezone=True), nullable=True)
+	telegram_notifications_enabled = Column(Boolean, nullable=False, server_default=text("TRUE"))
+	last_weekly_digest_at = Column(TIMESTAMP(timezone=True), nullable=True)
 	created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 	updated_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

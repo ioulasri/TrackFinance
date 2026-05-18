@@ -134,12 +134,19 @@ class UserService:
 		return db.query(User).filter(User.username == username).first()
 
 	@staticmethod
-	def update_user(db: Session, user: User, username: Optional[str] = None) -> User:
+	def update_user(
+		db: Session,
+		user: User,
+		username: Optional[str] = None,
+		telegram_notifications_enabled: Optional[bool] = None,
+	) -> User:
 		if username is not None and username != user.username:
 			conflict = db.query(User).filter(User.username == username).first()
 			if conflict:
 				raise ValueError("Username already taken")
 			user.username = username
+		if telegram_notifications_enabled is not None:
+			user.telegram_notifications_enabled = telegram_notifications_enabled
 		try:
 			db.commit()
 			db.refresh(user)

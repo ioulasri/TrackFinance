@@ -47,6 +47,7 @@ class UserResponse(UserBase):
 	longest_streak: int = 0
 	created_at: datetime
 	avatar_url: Optional[str] = None
+	telegram_notifications_enabled: bool = True
 
 	class Config:
 		from_attributes = True
@@ -66,6 +67,7 @@ class CycleStartDayRequest(BaseModel):
 
 class UserUpdate(BaseModel):
 	username: Optional[str] = Field(None, min_length=3, max_length=50)
+	telegram_notifications_enabled: Optional[bool] = None
 
 class UserUpdateResponse(UserResponse):
 	"""Extended response for profile updates — carries a fresh token when the username changes."""

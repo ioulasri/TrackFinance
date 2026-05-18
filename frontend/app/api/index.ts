@@ -111,7 +111,7 @@ export const authAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  updateProfile: (data: { username?: string }) =>
+  updateProfile: (data: { username?: string; telegram_notifications_enabled?: boolean }) =>
     api.patch('/v1/users/me', data),
 };
 
@@ -268,6 +268,38 @@ export const chatAPI = {
     const response = await api.get('/v1/chat/chat/suggestions');
     return response.data;
   },
+};
+
+export interface RecurringTransaction {
+  id: number;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  description: string | null;
+  day_of_month: number;
+  frequency: string;
+  is_active: boolean;
+  next_run_date: string;
+  last_run_at: string | null;
+  created_at: string;
+}
+
+export const recurringAPI = {
+  list: async (): Promise<RecurringTransaction[]> => {
+    const res = await api.get('/v1/recurring/');
+    return res.data;
+  },
+  create: (data: {
+    amount: number;
+    type: 'income' | 'expense';
+    category: string;
+    description?: string | null;
+    day_of_month: number;
+  }) => api.post('/v1/recurring/', data),
+  update: (id: number, data: Partial<Omit<RecurringTransaction, 'id' | 'next_run_date' | 'last_run_at' | 'created_at' | 'frequency'>>) =>
+    api.patch(`/v1/recurring/${id}`, data),
+  delete: (id: number) => api.delete(`/v1/recurring/${id}`),
+  runNow: (id: number) => api.post(`/v1/recurring/${id}/run`),
 };
 
 export interface TelegramStatus {

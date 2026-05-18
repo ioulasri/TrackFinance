@@ -34,10 +34,11 @@ from app.models.transaction import TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app.schemas.budget import BudgetCreate, BudgetUpdate
 from app.schemas.goal import GoalCreate
-from app.services import telegram_service
+from app.services import telegram_service, vision_service
 from app.services.budget_service import BudgetService
 from app.services.chat_service import FinanceChatService
 from app.services.goal_service import GoalService
+from app.services.recurring_service import RecurringTransactionService, notify_recurring_applied
 from app.services.telegram_service import TelegramService
 from app.services.transaction_service import TransactionService
 
@@ -65,19 +66,22 @@ BOT_COMMANDS: List[Dict[str, str]] = [
 	{"command": "budgets",      "description": "Budget status"},
 	{"command": "goals",        "description": "Goals progress"},
 	{"command": "spending",     "description": "Spending by category"},
+	{"command": "recurring",    "description": "List recurring transactions"},
+	{"command": "digest",       "description": "Get this week's summary now"},
 	{"command": "ai",           "description": "Ask the AI assistant"},
 	{"command": "cancel",       "description": "Cancel current action"},
 	{"command": "unlink",       "description": "Disconnect this Telegram chat"},
-	{"command": "help",         "description": "Help"},
+	{"command": "help",         "description": "Help (also send a receipt photo to auto-log it)"},
 ]
 
 
 HELP_TEXT = (
 	"👋 *TrackFinance*\n\n"
+	"📷 *Send a receipt photo* and I'll auto-extract amount/category for you.\n\n"
 	"Use the menu commands (top-left ☰ icon) or tap /menu for buttons.\n\n"
 	"You can also type naturally for the AI assistant:\n"
 	"_I spent 50 MAD on lunch_ · _How much did I spend on food?_\n\n"
-	"Need to cancel a step? /cancel"
+	"Other: /recurring · /digest · /cancel"
 )
 
 LINK_REQUIRED_TEXT = (
@@ -423,6 +427,33 @@ def _cmd_spending(chat_id: str, user: User, db: Session) -> None:
 
 def _cmd_help(chat_id: str) -> None:
 	TelegramService.send_message(chat_id, HELP_TEXT, reply_markup=_main_menu_kb())
+
+
+def _cmd_recurring(chat_id: str, user: User, db: Session) -> None:
+	items = RecurringTransactionService.list_for_user(db, user.id)
+	if not items:
+		TelegramService.send_message(
+			chat_id,
+			"🔁 *Recurring transactions*\n\n_None yet._\n\nAdd one in the web app at "
+			"*expensehub.site → Recurring*. They'll auto-post on the day you set, every month.",
+			reply_markup=_main_menu_kb(),
+		)
+		return
+	lines = ["🔁 *Recurring transactions*\n"]
+	for r in items:
+		emoji = "📥" if r.type == "income" else "📤"
+		active = "" if r.is_active else " _(paused)_"
+		lines.append(
+			f"`#{r.id}` {emoji} *{float(r.amount):,.2f} MAD* · {r.category} · day {r.day_of_month}{active}\n"
+			f"  Next: {r.next_run_date.strftime('%Y-%m-%d')}"
+		)
+	TelegramService.send_message(chat_id, "\n\n".join(lines), reply_markup=_main_menu_kb())
+
+
+def _cmd_digest(chat_id: str, user: User, db: Session) -> None:
+	"""On-demand weekly digest — same content the Monday cron sends."""
+	from app.services.digest_service import build_digest
+	TelegramService.send_message(chat_id, build_digest(db, user), reply_markup=_main_menu_kb())
 
 
 def _cmd_cancel(chat_id: str) -> None:
@@ -913,7 +944,60 @@ COMMAND_HANDLERS = {
 	"/budgets":      lambda chat_id, user, db: _cmd_budgets(chat_id, user, db),
 	"/goals":        lambda chat_id, user, db: _cmd_goals(chat_id, user, db),
 	"/spending":     lambda chat_id, user, db: _cmd_spending(chat_id, user, db),
+	"/recurring":    lambda chat_id, user, db: _cmd_recurring(chat_id, user, db),
+	"/digest":       lambda chat_id, user, db: _cmd_digest(chat_id, user, db),
 }
+
+
+# ============================================================
+# Receipt photo handler (Telegram photo → vision → addtx confirm)
+# ============================================================
+
+def _handle_photo(message: Dict[str, Any], chat_id: str, user: User, db: Session) -> None:
+	photos = message.get("photo") or []
+	if not photos:
+		TelegramService.send_message(chat_id, "I couldn't read that photo.")
+		return
+	# `photo` is a list of PhotoSize ascending in resolution — take the last (largest).
+	file_id = photos[-1].get("file_id")
+	if not file_id:
+		TelegramService.send_message(chat_id, "I couldn't read that photo.")
+		return
+
+	TelegramService.send_message(chat_id, "🧾 Reading receipt…")
+
+	image_bytes = TelegramService.download_file(file_id)
+	if not image_bytes:
+		TelegramService.send_message(chat_id, "❌ Couldn't download the photo from Telegram. Try sending again.")
+		return
+
+	extracted = vision_service.extract_receipt(image_bytes)
+	if not extracted.get("ok"):
+		TelegramService.send_message(
+			chat_id,
+			f"❌ {extracted.get('reason') or 'Could not extract a receipt.'}\n"
+			"Try a clearer photo, or use /add to enter manually.",
+		)
+		return
+
+	# Seed the standard addtx wizard at the confirm step. Save / Cancel buttons
+	# reuse the existing addtx callbacks.
+	data = {
+		"type": "expense",
+		"amount": extracted["amount"],
+		"category": extracted["category"],
+		"description": extracted["description"],
+		"date": extracted.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+	}
+	telegram_service.set_wizard(chat_id, "addtx", "confirm", data)
+
+	confidence_emoji = {"high": "✅", "medium": "🟡", "low": "🟠"}.get(extracted.get("confidence", "medium"), "🟡")
+	header = f"🧾 *Receipt extracted* {confidence_emoji}"
+	TelegramService.send_message(
+		chat_id,
+		f"{header}\n\n{_format_tx_confirm(data)}",
+		reply_markup=_kb([_btn("✅ Save", "addtx:save"), _btn("✖ Cancel", "nav:cancel")]),
+	)
 
 
 def _handle_message(message: Dict[str, Any], db: Session) -> None:
@@ -923,8 +1007,18 @@ def _handle_message(message: Dict[str, Any], db: Session) -> None:
 		return
 	chat_id = str(chat_id_raw)
 	text = (message.get("text") or "").strip()
+
+	# ── Photos go through the receipt OCR flow (linked users only). ──
+	if message.get("photo"):
+		user = db.query(User).filter(User.telegram_chat_id == chat_id).first()
+		if not user:
+			TelegramService.send_message(chat_id, LINK_REQUIRED_TEXT)
+			return
+		_handle_photo(message, chat_id, user, db)
+		return
+
 	if not text:
-		TelegramService.send_message(chat_id, "I can only read text messages right now.")
+		TelegramService.send_message(chat_id, "Send a text message or a receipt photo.")
 		return
 
 	# ── Pre-link / link commands ───────────────────────────────

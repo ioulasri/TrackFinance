@@ -65,6 +65,20 @@ class AchievementService:
 			db.commit()
 			db.refresh(user_achievement)
 
+			# Best-effort Telegram DM (no-ops if not linked or notifications off).
+			if user and achievement:
+				try:
+					from app.services import notification_service
+					notification_service.notify(
+						user,
+						f"🏆 *Achievement unlocked!*\n"
+						f"{achievement.icon or '🎖'} *{achievement.name}*\n"
+						f"_{achievement.description}_\n"
+						f"+{achievement.xp_reward} XP",
+					)
+				except Exception as e:
+					print(f"[achievements] DM failed for user {user.id}: {e}")
+
 			return user_achievement
 
 		except IntegrityError:

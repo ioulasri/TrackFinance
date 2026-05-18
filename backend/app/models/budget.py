@@ -15,7 +15,8 @@ class Budget(Base):
 	current_spent = Column(DECIMAL(10, 2), server_default=text("0"))
 
 	last_reset_date = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-	
+	last_alert_threshold = Column(Integer, nullable=False, server_default=text("0"))
+
 	created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 	updated_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

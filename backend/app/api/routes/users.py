@@ -137,7 +137,11 @@ def update_current_user(
 ):
 	old_username = current_user.username
 	try:
-		updated = UserService.update_user(db, current_user, username=update_data.username)
+		updated = UserService.update_user(
+			db, current_user,
+			username=update_data.username,
+			telegram_notifications_enabled=update_data.telegram_notifications_enabled,
+		)
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

@@ -120,6 +120,7 @@ class BudgetService:
 			budget.current_spent = 0
 			budget.last_reset_date = datetime.now(timezone.utc)
 			budget.updated_at = datetime.now(timezone.utc)
+			budget.last_alert_threshold = 0
 
 		db.commit()
 		return budgets

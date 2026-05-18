@@ -10,6 +10,7 @@ import { Budgets } from './components/Budgets';
 import { Goals } from './components/Goals';
 import { Analysis } from './components/Analysis';
 import { Achievements } from './components/Achievements';
+import { Recurring } from './components/Recurring';
 import { Settings } from './components/Settings';
 import { AIAssistant } from './components/AIAssistant';
 import { LandingPage } from './components/LandingPage';
@@ -184,6 +185,7 @@ export default function App() {
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/goals" element={<Goals />} />
+              <Route path="/recurring" element={<Recurring />} />
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/settings" element={<Settings onProfileUpdate={handleProfileUpdate} />} />

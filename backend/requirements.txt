@@ -29,3 +29,6 @@ python-multipart
 
 # PDF generation
 fpdf2==2.7.8
+
+# Background scheduler (recurring transactions, budget alerts, weekly digest)
+apscheduler==3.10.4

@@ -222,6 +222,8 @@ class TelegramService:
 				json={
 					"url": url,
 					"secret_token": secret,
+					# "message" already covers photos/documents (they're message subtypes),
+					# but listing explicitly is harmless and documents intent.
 					"allowed_updates": ["message", "callback_query"],
 					"drop_pending_updates": True,
 				},
@@ -249,6 +251,30 @@ class TelegramService:
 		with httpx.Client(timeout=10.0) as client:
 			resp = client.post(_api_url("setMyCommands", token=token), json={"commands": commands})
 			return resp.json()
+
+	@staticmethod
+	def download_file(file_id: str, token: Optional[str] = None) -> Optional[bytes]:
+		"""
+		Resolve a Telegram file_id to its bytes via getFile + the download URL.
+		Returns None on any failure.
+		"""
+		try:
+			tk = token or _bot_token()
+			with httpx.Client(timeout=15.0) as client:
+				info_resp = client.get(_api_url("getFile", token=tk), params={"file_id": file_id})
+				info = info_resp.json()
+				if not info.get("ok"):
+					return None
+				file_path = info["result"].get("file_path")
+				if not file_path:
+					return None
+				dl = client.get(f"{TELEGRAM_API_BASE}/file/bot{tk}/{file_path}")
+				if dl.status_code != 200:
+					return None
+				return dl.content
+		except Exception as e:
+			print(f"[telegram] download_file failed: {e}")
+			return None
 
 	@staticmethod
 	def get_updates(

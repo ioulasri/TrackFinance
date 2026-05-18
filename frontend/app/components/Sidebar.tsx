@@ -3,14 +3,15 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Receipt,
-  Wallet, 
+  Wallet,
   Target,
   Trophy,
   Settings,
   LogOut,
   LineChart,
   Camera,
-  Download
+  Download,
+  RotateCw
 } from 'lucide-react';
 import { XPBar } from './XPBar';
 import { authAPI, reportAPI } from '../api'; // Assuming '../api' is the correct path for authAPI
@@ -32,6 +33,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
     { id: 'transactions', path: '/transactions', label: 'Transactions', icon: Receipt },
     { id: 'budgets', path: '/budgets', label: 'Budgets', icon: Wallet },
     { id: 'goals', path: '/goals', label: 'Goals', icon: Target },
+    { id: 'recurring', path: '/recurring', label: 'Recurring', icon: RotateCw },
     { id: 'analysis', path: '/analysis', label: 'Analysis', icon: LineChart },
     { id: 'achievements', path: '/achievements', label: 'Achievements', icon: Trophy },
     { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
