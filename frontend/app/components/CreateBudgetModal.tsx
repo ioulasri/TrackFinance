@@ -1,7 +1,8 @@
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { ShoppingCart, Car, Utensils, Film, Home, Heart, Smartphone, GraduationCap, Plus, Loader2 } from 'lucide-react';
+import { ShoppingCart, Car, Utensils, Film, Home, Heart, Smartphone, GraduationCap, Plus, Tag, Loader2 } from 'lucide-react';
+import { getCustomCategories, addCustomCategory } from '../customCategories';
 
 interface CreateBudgetModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface CreateBudgetModalProps {
   isLoading?: boolean;
 }
 
-const categories = [
+const PREDEFINED_CATEGORIES = [
   { name: 'Food & Dining', icon: Utensils },
   { name: 'Transportation', icon: Car },
   { name: 'Shopping', icon: ShoppingCart },
@@ -27,10 +28,20 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget, is
   const [customCategory, setCustomCategory] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [monthlyLimit, setMonthlyLimit] = useState(editingBudget?.monthly_limit?.toString() || '');
+  const [savedCustomCategories, setSavedCustomCategories] = useState<string[]>([]);
+
+  const categories = [
+    ...PREDEFINED_CATEGORIES,
+    ...savedCustomCategories.map(name => ({ name, icon: Tag })),
+  ];
 
   React.useEffect(() => {
+    const custom = getCustomCategories();
+    setSavedCustomCategories(custom);
+    const allCategories = [...PREDEFINED_CATEGORIES, ...custom.map(name => ({ name, icon: Tag }))];
+
     if (editingBudget) {
-      const isPredefined = categories.some(cat => cat.name === editingBudget.category);
+      const isPredefined = allCategories.some(cat => cat.name === editingBudget.category);
       if (isPredefined) {
         setSelectedCategory(editingBudget.category);
         setIsCustom(false);
@@ -55,7 +66,12 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget, is
     const finalCategory = isCustom ? customCategory.trim() : selectedCategory;
 
     if (!finalCategory) {
-      return; // Don't submit if custom category is empty
+      return;
+    }
+
+    if (isCustom && customCategory.trim()) {
+      addCustomCategory(customCategory.trim());
+      setSavedCustomCategories(getCustomCategories());
     }
 
     onSubmit({

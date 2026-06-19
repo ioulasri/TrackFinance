@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Calendar, Loader2 } from 'lucide-react';
+import { getCustomCategories, addCustomCategory } from '../customCategories';
 
 interface CreateTransactionModalProps {
   isOpen: boolean;
@@ -12,25 +13,32 @@ interface CreateTransactionModalProps {
   isLoading?: boolean;
 }
 
+const PREDEFINED_CATEGORIES = [
+  'Food & Dining', 'Shopping', 'Transportation', 'Bills & Utilities', 'Entertainment',
+  'Healthcare', 'Education', 'Electronics',
+];
+
 export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTransaction, isLoading = false }: CreateTransactionModalProps) {
   const [formData, setFormData] = useState({
     amount: editingTransaction?.amount?.toString() || '',
-    category: editingTransaction?.category || 'Food',
+    category: editingTransaction?.category || 'Food & Dining',
     type: editingTransaction?.type || 'expense',
     description: editingTransaction?.description || '',
     date: editingTransaction?.date ? new Date(editingTransaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [savedCustomCategories, setSavedCustomCategories] = useState<string[]>([]);
 
-  const categories = [
-    'Food & Dining', 'Shopping', 'Transportation', 'Bills & Utilities', 'Entertainment',
-    'Healthcare', 'Education', 'Electronics', 'Other'
-  ];
+  const categories = [...PREDEFINED_CATEGORIES, ...savedCustomCategories, 'Other'];
 
   React.useEffect(() => {
+    const custom = getCustomCategories();
+    setSavedCustomCategories(custom);
+    const allCategories = [...PREDEFINED_CATEGORIES, ...custom, 'Other'];
+
     if (editingTransaction) {
-      const isPredefinedCategory = categories.includes(editingTransaction.category);
+      const isPredefinedCategory = allCategories.includes(editingTransaction.category);
       setFormData({
         amount: editingTransaction.amount.toString(),
         category: isPredefinedCategory ? editingTransaction.category : 'Other',
@@ -76,6 +84,11 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
     const finalCategory = showCustomInput && customCategory.trim()
       ? customCategory.trim()
       : formData.category;
+
+    if (showCustomInput && customCategory.trim()) {
+      addCustomCategory(customCategory.trim());
+      setSavedCustomCategories(getCustomCategories());
+    }
 
     onSubmit({
       ...formData,
