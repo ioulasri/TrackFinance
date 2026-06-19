@@ -15,9 +15,22 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { XPBar } from './XPBar';
 import { authAPI, reportAPI } from '../api';
-import { LogoMark } from './Logo';
+
+// ── Palette (matches the TrackFinance design mockup; see Dashboard.tsx) ──
+const C = {
+  paper: '#FAFAF7',
+  card: '#FFFFFF',
+  ink: '#1A1815',
+  ink2: '#2A2825',
+  muted: '#888780',
+  faint: '#B4B2A9',
+  border: '#E5E2DA',
+  divider: '#F0EDE5',
+  accent: '#E97B47',
+};
+const FONT = "'Inter',-apple-system,system-ui,sans-serif";
+const MONO = "'IBM Plex Mono',monospace";
 
 interface SidebarProps {
   user: {
@@ -105,26 +118,36 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
     }
   };
 
+  const xpPct = requiredXP > 0 ? Math.min((currentXP / requiredXP) * 100, 100) : 0;
+
   return (
     <aside
-      style={{ width: expanded ? 240 : 64 }}
-      className="fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border z-30
-        flex flex-col transition-[width] duration-200 ease-out"
+      style={{ width: expanded ? 240 : 64, background: C.card, borderRight: `0.5px solid ${C.border}`, fontFamily: FONT, color: C.ink }}
+      className={`tf-sidebar ${expanded ? '' : 'collapsed'} fixed left-0 top-0 z-30 flex h-screen flex-col transition-[width] duration-200 ease-out`}
     >
+      <style>{`
+        .tf-nav{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;border-radius:7px;padding:9px 10px;font-size:13.5px;font-weight:500;cursor:pointer;transition:background 150ms;background:transparent;color:${C.ink2};text-decoration:none;}
+        .tf-sidebar.collapsed .tf-nav{justify-content:center;padding:9px 0;}
+        .tf-nav:hover{background:${C.divider};}
+        .tf-nav.active{background:${C.ink};color:${C.paper};}
+        .tf-nav.active:hover{background:${C.ink};}
+        .tf-foot{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;border-radius:7px;padding:9px 10px;font-size:13px;cursor:pointer;transition:background 150ms;}
+        .tf-foot:hover{background:${C.divider};}
+        .tf-sidebar.collapsed .tf-foot{justify-content:center;padding:9px 0;}
+      `}</style>
+
       {/* Logo header — toggles expand/collapse */}
       {expanded ? (
-        <div className="h-14 flex items-center px-3 gap-2.5 border-b border-sidebar-border shrink-0">
-          <LogoMark size={28} className="shrink-0" />
-          <span
-            className="font-bold text-foreground text-lg tracking-tight whitespace-nowrap"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            TrackFinance
-          </span>
+        <div className="flex shrink-0 items-center" style={{ height: 64, padding: '0 20px', gap: 11, borderBottom: `0.5px solid ${C.border}` }}>
+          <div className="flex shrink-0 items-center justify-center" style={{ width: 30, height: 30, borderRadius: 7, background: C.ink, color: C.paper }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19h16" /><path d="M4 19V5" /><polyline points="7 14 11 10 14 13 20 6" /></svg>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>TrackFinance</div>
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+            className="ml-auto rounded-md p-1.5"
+            style={{ color: C.muted, background: 'transparent', border: 0, cursor: 'pointer' }}
             title="Collapse sidebar"
             aria-label="Collapse sidebar"
           >
@@ -135,17 +158,21 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="h-14 w-full flex items-center justify-center border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent transition-colors group"
+          className="group flex w-full shrink-0 items-center justify-center"
+          style={{ height: 64, borderBottom: `0.5px solid ${C.border}`, background: 'transparent', border: 0, cursor: 'pointer' }}
           title="Expand sidebar"
           aria-label="Expand sidebar"
         >
-          <LogoMark size={28} className="shrink-0 group-hover:hidden" />
-          <PanelLeftOpen size={20} className="hidden group-hover:block text-muted-foreground" />
+          <div className="flex shrink-0 items-center justify-center group-hover:hidden" style={{ width: 30, height: 30, borderRadius: 7, background: C.ink, color: C.paper }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19h16" /><path d="M4 19V5" /><polyline points="7 14 11 10 14 13 20 6" /></svg>
+          </div>
+          <PanelLeftOpen size={20} className="hidden group-hover:block" style={{ color: C.muted }} />
         </button>
       )}
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
+      <nav style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 2 }} className="flex-1 overflow-hidden">
+        {expanded && <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted, fontWeight: 500, padding: '8px 8px 6px' }}>Menu</div>}
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -153,101 +180,75 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
               key={item.id}
               to={item.path}
               title={expanded ? undefined : item.label}
-              className={({ isActive }) =>
-                `relative flex items-center gap-3 h-10 px-3 rounded-lg transition-colors group
-                ${isActive
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground'}`
-              }
+              className={({ isActive }) => `tf-nav${isActive ? ' active' : ''}`}
             >
-              {({ isActive }) => (
-                <>
-                  {/* Left accent strip on active item */}
-                  {isActive && (
-                    <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-primary" />
-                  )}
-                  <Icon size={18} className="shrink-0" />
-                  <span
-                    className={`text-sm whitespace-nowrap transition-opacity duration-150
-                      ${expanded ? 'opacity-100' : 'opacity-0'}`}
-                  >
-                    {item.label}
-                  </span>
-                </>
-              )}
+              <Icon size={19} strokeWidth={1.5} className="shrink-0" />
+              {expanded && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-sidebar-border p-2 space-y-2 shrink-0">
-        {/* Avatar + identity */}
-        <div className={`flex items-center gap-2.5 ${expanded ? 'p-2' : 'justify-center p-1'}`}>
-          <div className="relative cursor-pointer shrink-0" onClick={handleAvatarClick}>
-            <div className="relative w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold border border-border shadow-sm overflow-hidden group">
-              {user.avatar_url ? (
-                <img src={user.avatar_url} alt={username} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs">{initials}</span>
-              )}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-3.5 h-3.5 text-white" />
-              </div>
-              {isUploading && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      <div style={{ padding: '0 12px 14px', display: 'flex', flexDirection: 'column', gap: 4 }} className="shrink-0">
+        {/* XP / identity card */}
+        {expanded ? (
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, padding: 13, marginBottom: 6 }}>
+            <div className="flex items-center" style={{ gap: 10 }}>
+              <div className="relative shrink-0 cursor-pointer" onClick={handleAvatarClick}>
+                <div className="group relative flex items-center justify-center overflow-hidden" style={{ width: 30, height: 30, borderRadius: '50%', background: C.ink, color: C.paper, fontSize: 12, fontWeight: 600 }}>
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={username} className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{initials.toLowerCase()}</span>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" style={{ background: 'rgba(0,0,0,0.4)' }}>
+                    <Camera className="text-white" size={13} />
+                  </div>
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                      <div className="animate-spin rounded-full" style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                    </div>
+                  )}
                 </div>
-              )}
+                <input ref={fileInputRef} type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }} className="truncate">{username}</div>
+                <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted, marginTop: 2 }}>Level {level} · Progress</div>
+              </div>
             </div>
-            {/* Tiny level chip overlay (always visible) */}
-            <span className="absolute -bottom-1 -right-1 px-1 py-0.5 bg-foreground text-background text-[9px] font-bold rounded-md leading-none shadow-sm border border-background">
-              {level}
-            </span>
+            <div style={{ marginTop: 11, height: 6, borderRadius: 4, background: C.divider, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${xpPct}%`, borderRadius: 4, background: C.accent, transition: 'width 400ms cubic-bezier(0.16,1,0.3,1)' }}></div>
+            </div>
+            <div className="flex justify-between" style={{ marginTop: 7, fontFamily: MONO, fontSize: 10, color: C.muted, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>
+              <span>{currentXP.toLocaleString('en-US')} XP</span>
+              <span>{requiredXP.toLocaleString('en-US')} XP</span>
+            </div>
+          </div>
+        ) : (
+          <div className="relative mx-auto cursor-pointer" onClick={handleAvatarClick} style={{ marginBottom: 6 }}>
+            <div className="group relative flex items-center justify-center overflow-hidden" style={{ width: 32, height: 32, borderRadius: '50%', background: C.ink, color: C.paper, fontSize: 12, fontWeight: 600 }}>
+              {user.avatar_url ? <img src={user.avatar_url} alt={username} className="h-full w-full object-cover" /> : <span>{initials.toLowerCase()}</span>}
+            </div>
+            <span className="absolute" style={{ bottom: -3, right: -3, padding: '1px 4px', background: C.accent, color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 5, lineHeight: 1, border: `1.5px solid ${C.card}` }}>{level}</span>
             <input ref={fileInputRef} type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
           </div>
-
-          <div
-            className={`flex-1 min-w-0 transition-opacity duration-150 overflow-hidden
-              ${expanded ? 'opacity-100' : 'opacity-0 w-0'}`}
-          >
-            <p className="font-medium text-foreground text-sm truncate">{username}</p>
-            <div className="mt-1">
-              <XPBar currentXP={currentXP} requiredXP={requiredXP} level={level} />
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Action buttons */}
-        <div className={expanded ? 'space-y-1' : 'space-y-1'}>
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            title={expanded ? undefined : 'Export report'}
-            className={`w-full flex items-center gap-2 h-9 rounded-lg text-foreground hover:bg-sidebar-accent transition-colors
-              ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
-          >
-            {isExporting ? (
-              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin shrink-0" />
-            ) : (
-              <Download size={16} className="text-primary shrink-0" />
-            )}
-            <span className={`text-sm font-medium whitespace-nowrap transition-opacity ${expanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
-              {isExporting ? 'Generating…' : 'Export Report'}
-            </span>
-          </button>
-          <button
-            onClick={onLogout}
-            title={expanded ? undefined : 'Logout'}
-            className={`w-full flex items-center gap-2 h-9 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors
-              ${expanded ? 'px-3 justify-start' : 'justify-center'}`}
-          >
-            <LogOut size={16} className="shrink-0" />
-            <span className={`text-sm font-medium whitespace-nowrap transition-opacity ${expanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
-              Logout
-            </span>
-          </button>
-        </div>
+        <button onClick={handleExport} disabled={isExporting} title={expanded ? undefined : 'Export report'} className="tf-foot" style={{ color: C.ink2 }}>
+          {isExporting ? (
+            <div className="shrink-0 animate-spin rounded-full" style={{ width: 16, height: 16, border: `2px solid ${C.divider}`, borderTopColor: C.accent }} />
+          ) : (
+            <Download size={18} strokeWidth={1.5} className="shrink-0" />
+          )}
+          {expanded && <span style={{ whiteSpace: 'nowrap' }}>{isExporting ? 'Generating…' : 'Export report'}</span>}
+        </button>
+        <button onClick={onLogout} title={expanded ? undefined : 'Logout'} className="tf-foot" style={{ color: C.muted }}>
+          <LogOut size={18} strokeWidth={1.5} className="shrink-0" />
+          {expanded && <span style={{ whiteSpace: 'nowrap' }}>Log out</span>}
+        </button>
       </div>
     </aside>
   );
