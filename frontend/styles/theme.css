@@ -45,6 +45,20 @@
   --chart-4: #fb7185;             /* rose-400 — coral */
   --chart-5: #64748b;             /* slate-500 */
 
+  /* ── Up / down semantics (income vs expense, gains vs losses) ── */
+  --positive: #1d9e75;            /* teal-green — income / net up */
+  --positive-text: #0f6e56;       /* darkest shade for text on tint */
+  --positive-tint: #e4f4ee;       /* light fill for pills / badges */
+  --negative: #d85a30;            /* coral/red — expenses / declines */
+  --negative-text: #993c1d;       /* darkest shade for text on tint */
+  --negative-tint: #fbeae2;       /* light fill for pills / badges */
+
+  /* ── Cost-analysis donut: tonal teal family (one hue) ────────── */
+  --donut-1: #0f6e56;
+  --donut-2: #1d9e75;
+  --donut-3: #5dcaa5;
+  --donut-4: #9fe1cb;
+
   /* ── Layout / radius ──────────────────────────────────────────── */
   --radius: 0.625rem;             /* slightly larger base */
 
@@ -57,6 +71,62 @@
   --sidebar-accent-foreground: #0f1e1a;
   --sidebar-border: #d9e3dd;
   --sidebar-ring: #059669;
+}
+
+/* ===================================================================
+   Dark mode — applied when `.dark` is on a parent (next-themes default).
+   Surfaces go deep slate-green; semantic up/down hues stay legible and
+   their tints become translucent so badges read on a dark canvas.
+   =================================================================== */
+.dark {
+  --background: #0c1714;
+  --foreground: #e6efea;
+  --card: #122019;
+  --card-foreground: #e6efea;
+  --popover: #122019;
+  --popover-foreground: #e6efea;
+
+  --primary: #2bb083;
+  --primary-foreground: #06120d;
+  --secondary: #1a2b24;
+  --secondary-foreground: #e6efea;
+  --accent: #14b8a6;
+  --accent-foreground: #06120d;
+
+  --muted: #1a2b24;
+  --muted-foreground: #93a79e;
+  --destructive: #f0735a;
+  --destructive-foreground: #1a0c08;
+  --success: #2bb083;
+  --warning: #fbbf24;
+
+  --border: #243b32;
+  --input: #243b32;
+  --input-background: #122019;
+  --switch-background: #243b32;
+  --ring: #2bb083;
+
+  /* Semantic up/down — slightly lifted for contrast on dark surfaces */
+  --positive: #3fb88f;
+  --positive-text: #8fe0c5;
+  --positive-tint: rgba(45, 158, 117, 0.16);
+  --negative: #ef7a52;
+  --negative-text: #f3a988;
+  --negative-tint: rgba(216, 90, 48, 0.18);
+
+  --donut-1: #0f6e56;
+  --donut-2: #2bb083;
+  --donut-3: #5dcaa5;
+  --donut-4: #9fe1cb;
+
+  --sidebar-background: #0e1a16;
+  --sidebar-foreground: #e6efea;
+  --sidebar-primary: #2bb083;
+  --sidebar-primary-foreground: #06120d;
+  --sidebar-accent: #1a2b24;
+  --sidebar-accent-foreground: #e6efea;
+  --sidebar-border: #243b32;
+  --sidebar-ring: #2bb083;
 }
 
 @theme {
@@ -88,6 +158,16 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-positive: var(--positive);
+  --color-positive-text: var(--positive-text);
+  --color-positive-tint: var(--positive-tint);
+  --color-negative: var(--negative);
+  --color-negative-text: var(--negative-text);
+  --color-negative-tint: var(--negative-tint);
+  --color-donut-1: var(--donut-1);
+  --color-donut-2: var(--donut-2);
+  --color-donut-3: var(--donut-3);
+  --color-donut-4: var(--donut-4);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
