@@ -191,10 +191,10 @@ export default function App() {
         />
 
         {/* Main column — offset by sidebar (64px collapsed, 240px when pinned) */}
-        <div className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`}>
+        <div className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`} style={{ background: '#FAFAF7' }}>
           <TopBar user={user} />
-          <main className="flex-1 px-6 sm:px-8 py-6">
-            <div className="max-w-[1600px] mx-auto">
+          <main className="flex-1" style={{ padding: '30px 36px 48px' }}>
+            <div style={{ maxWidth: 1320, margin: '0 auto' }}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />

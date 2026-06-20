@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Lock, Bell, Globe, Camera, Loader2, Check, AlertCircle, MessageCircle, Send, Copy, Unlink } from 'lucide-react';
-import { Button } from './Button';
-import { Input } from './Input';
 import { authAPI, telegramAPI, type TelegramStatus, type TelegramLinkCode } from '../api';
+import {
+  C,
+  MONO,
+  FONT,
+  Page,
+  PageHeader,
+  Card,
+  SectionTitle,
+  PrimaryButton,
+  DSStyles,
+} from './ds';
 
 const PREFS_KEY = 'tf_preferences';
 const NOTIF_KEY = 'tf_notifications';
@@ -33,6 +42,116 @@ const idle: Status = { loading: false, error: '', success: '' };
 
 interface SettingsProps {
   onProfileUpdate?: (updates: Record<string, any>) => void;
+}
+
+// ── Shared visual atoms (local to Settings) ──────────────────────────
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 13px',
+  background: C.card,
+  border: `1px solid ${C.border}`,
+  color: C.ink,
+  borderRadius: 8,
+  fontSize: 13.5,
+  fontFamily: FONT,
+  outline: 'none',
+  transition: 'border-color 150ms, box-shadow 150ms',
+};
+
+const fieldLabelStyle: React.CSSProperties = {
+  display: 'block',
+  marginBottom: 6,
+  fontSize: 13,
+  fontWeight: 500,
+  color: C.ink2,
+};
+
+function SettingsCard({
+  icon: Icon,
+  title,
+  tint,
+  iconColor,
+  children,
+  onSubmit,
+}: {
+  icon: typeof User;
+  title: string;
+  tint: string;
+  iconColor: string;
+  children: React.ReactNode;
+  onSubmit?: (e: React.FormEvent) => void;
+}) {
+  const inner = (
+    <>
+      <div className="flex items-center" style={{ gap: 12, marginBottom: 20 }}>
+        <div className="flex items-center justify-center" style={{ width: 34, height: 34, borderRadius: 8, background: tint, color: iconColor }}>
+          <Icon size={18} strokeWidth={1.7} />
+        </div>
+        <SectionTitle title={title} />
+      </div>
+      {children}
+    </>
+  );
+  return onSubmit ? (
+    <form onSubmit={onSubmit}>
+      <Card style={{ padding: 22 }}>{inner}</Card>
+    </form>
+  ) : (
+    <Card style={{ padding: 22 }}>{inner}</Card>
+  );
+}
+
+function StatusBanner({ kind, message }: { kind: 'error' | 'success'; message: string }) {
+  const isError = kind === 'error';
+  return (
+    <div
+      className="flex items-center"
+      style={{
+        gap: 8,
+        padding: 12,
+        borderRadius: 8,
+        fontSize: 13,
+        color: isError ? C.over : C.incomeText,
+        background: isError ? C.overSoft : C.incomeSoft,
+        border: `1px solid ${isError ? 'rgba(196,69,69,0.3)' : 'rgba(91,163,114,0.3)'}`,
+      }}
+    >
+      {isError ? <AlertCircle size={15} className="shrink-0" /> : <Check size={15} className="shrink-0" />}
+      {message}
+    </div>
+  );
+}
+
+// Terracotta-tinted toggle switch (recolors the old emerald/primary switch).
+function Toggle({ checked, onChange, ariaLabel }: { checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; ariaLabel?: string }) {
+  return (
+    <span className="relative inline-block" style={{ width: 44, height: 24, flexShrink: 0 }}>
+      <input type="checkbox" checked={checked} onChange={onChange} aria-label={ariaLabel} className="sr-only peer" />
+      <span
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: 999,
+          background: checked ? C.accent : C.divider,
+          border: `1px solid ${checked ? C.accent : C.border}`,
+          transition: 'background 150ms, border-color 150ms',
+        }}
+      />
+      <span
+        style={{
+          position: 'absolute',
+          top: 3,
+          left: checked ? 22 : 3,
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          background: '#fff',
+          boxShadow: '0 1px 2px rgba(26,24,21,0.2)',
+          transition: 'left 150ms',
+        }}
+      />
+    </span>
+  );
 }
 
 export function Settings({ onProfileUpdate }: SettingsProps) {
@@ -239,36 +358,36 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
     : '??';
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account preferences and settings</p>
-      </div>
+    <Page>
+      <DSStyles />
+      <style>{`
+        .set-input:focus{border-color:${C.accent} !important;box-shadow:0 0 0 3px ${C.accentSoft};}
+        .set-link:hover{background:${C.accentDark} !important;}
+        .set-iconbtn:hover{background:${C.divider};}
+        @media (max-width:1024px){.set-grid{grid-template-columns:minmax(0,1fr) !important;}}
+      `}</style>
 
-      <div className="grid grid-cols-3 gap-6">
+      <PageHeader eyebrow="Preferences" title="Settings" />
+
+      <div className="set-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 24, marginTop: 26, alignItems: 'start' }}>
 
         {/* ── Profile Information ─────────────────────────────────── */}
-        <form onSubmit={handleSaveProfile} className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <User size={20} className="text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">Profile</h3>
-          </div>
-
-          <div className="space-y-4">
+        <SettingsCard icon={User} title="Profile" tint={C.accentSoft} iconColor={C.accent} onSubmit={handleSaveProfile}>
+          <div className="flex flex-col" style={{ gap: 16 }}>
             {/* Avatar */}
-            <div className="flex flex-col items-center gap-2 pb-6 border-b border-border">
+            <div className="flex flex-col items-center" style={{ gap: 10, paddingBottom: 20, borderBottom: `1px solid ${C.divider}` }}>
               <div className="relative group">
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt="Avatar"
-                    className="w-20 h-20 rounded-full object-cover shadow-sm"
+                    style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }}
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center text-foreground text-2xl font-semibold">
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: 80, height: 80, borderRadius: '50%', background: C.divider, color: C.ink, fontSize: 24, fontWeight: 600 }}
+                  >
                     {userLoading ? '…' : initials}
                   </div>
                 )}
@@ -276,12 +395,13 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={avatarStatus.loading}
-                  className="absolute inset-0 rounded-full bg-foreground/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity disabled:cursor-not-allowed"
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                  style={{ borderRadius: '50%', background: 'rgba(26,24,21,0.5)', border: 0, cursor: 'pointer' }}
                   aria-label="Change avatar"
                 >
                   {avatarStatus.loading
-                    ? <Loader2 size={20} className="text-white animate-spin" />
-                    : <Camera size={20} className="text-white" />}
+                    ? <Loader2 size={20} className="animate-spin" style={{ color: '#fff' }} />
+                    : <Camera size={20} style={{ color: '#fff' }} />}
                 </button>
               </div>
 
@@ -297,37 +417,37 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarStatus.loading}
-                className="text-sm text-primary hover:text-primary/80 font-medium transition-colors disabled:opacity-50"
+                style={{ background: 'none', border: 0, fontSize: 13, fontWeight: 500, color: C.accent, cursor: 'pointer', fontFamily: FONT }}
+                className="disabled:opacity-50"
               >
                 {avatarStatus.loading ? 'Uploading…' : 'Change Avatar'}
               </button>
 
               {avatarStatus.error && (
-                <p className="text-xs text-destructive text-center">{avatarStatus.error}</p>
+                <p style={{ fontSize: 12, color: C.over, textAlign: 'center' }}>{avatarStatus.error}</p>
               )}
               {avatarStatus.success && (
-                <p className="text-xs text-emerald-600 text-center">{avatarStatus.success}</p>
+                <p style={{ fontSize: 12, color: C.incomeText, textAlign: 'center' }}>{avatarStatus.success}</p>
               )}
             </div>
 
             {/* Email — read-only (changing email requires re-verification) */}
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-foreground">
-                Email Address
-              </label>
+              <label style={fieldLabelStyle}>Email Address</label>
               <input
                 type="email"
                 value={userLoading ? '…' : (user?.email ?? '')}
                 readOnly
-                className="w-full px-4 py-2.5 bg-muted border border-border text-muted-foreground rounded-lg text-sm cursor-not-allowed select-all"
+                style={{ ...inputStyle, background: C.paper, color: C.muted, cursor: 'not-allowed' }}
+                className="select-all"
                 title="Email cannot be changed"
               />
-              <p className="mt-1 text-xs text-muted-foreground">Email changes require re-verification and are not supported yet.</p>
+              <p style={{ marginTop: 6, fontSize: 12, color: C.muted }}>Email changes require re-verification and are not supported yet.</p>
             </div>
 
             {/* Username — editable */}
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-foreground">Username</label>
+              <label style={fieldLabelStyle}>Username</label>
               <input
                 type="text"
                 value={username}
@@ -335,109 +455,80 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                 minLength={3}
                 maxLength={50}
                 required
-                className="w-full px-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                style={inputStyle}
+                className="set-input"
               />
             </div>
 
-            {profileStatus.error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
-                <AlertCircle size={15} className="shrink-0" />
-                {profileStatus.error}
-              </div>
-            )}
-            {profileStatus.success && (
-              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm rounded-lg">
-                <Check size={15} className="shrink-0" />
-                {profileStatus.success}
-              </div>
-            )}
+            {profileStatus.error && <StatusBanner kind="error" message={profileStatus.error} />}
+            {profileStatus.success && <StatusBanner kind="success" message={profileStatus.success} />}
 
-            <Button
+            <PrimaryButton
               type="submit"
-              variant="primary"
-              size="medium"
-              className="w-full"
+              style={{ width: '100%' }}
               disabled={profileStatus.loading || userLoading || username === user?.username}
             >
               {profileStatus.loading
                 ? <><Loader2 className="animate-spin" size={16} /> Saving…</>
                 : 'Save Changes'}
-            </Button>
+            </PrimaryButton>
           </div>
-        </form>
+        </SettingsCard>
 
         {/* ── Security ────────────────────────────────────────────── */}
-        <form onSubmit={handlePasswordSubmit} className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-emerald-500/10 rounded-xl">
-              <Lock size={20} className="text-emerald-500" />
+        <SettingsCard icon={Lock} title="Security" tint={C.incomeSoft} iconColor={C.income} onSubmit={handlePasswordSubmit}>
+          <div className="flex flex-col" style={{ gap: 16 }}>
+            {passwordStatus.error && <StatusBanner kind="error" message={passwordStatus.error} />}
+            {passwordStatus.success && <StatusBanner kind="success" message={passwordStatus.success} />}
+
+            <div>
+              <label style={fieldLabelStyle}>Current Password</label>
+              <input
+                type="password"
+                placeholder="Enter current password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                style={inputStyle}
+                className="set-input"
+              />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Security</h3>
-          </div>
+            <div>
+              <label style={fieldLabelStyle}>New Password</label>
+              <input
+                type="password"
+                placeholder="At least 8 characters"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                style={inputStyle}
+                className="set-input"
+              />
+            </div>
+            <div>
+              <label style={fieldLabelStyle}>Confirm New Password</label>
+              <input
+                type="password"
+                placeholder="Repeat new password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                style={inputStyle}
+                className="set-input"
+              />
+            </div>
 
-          <div className="space-y-4">
-            {passwordStatus.error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
-                <AlertCircle size={15} className="shrink-0" />
-                {passwordStatus.error}
-              </div>
-            )}
-            {passwordStatus.success && (
-              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm rounded-lg">
-                <Check size={15} className="shrink-0" />
-                {passwordStatus.success}
-              </div>
-            )}
-
-            <Input
-              label="Current Password"
-              type="password"
-              placeholder="Enter current password"
-              value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-            />
-            <Input
-              label="New Password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-            />
-            <Input
-              label="Confirm New Password"
-              type="password"
-              placeholder="Repeat new password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="medium"
-              className="w-full"
-              disabled={passwordStatus.loading}
-            >
+            <PrimaryButton type="submit" style={{ width: '100%' }} disabled={passwordStatus.loading}>
               {passwordStatus.loading
                 ? <><Loader2 className="animate-spin" size={16} /> Updating…</>
                 : 'Update Password'}
-            </Button>
+            </PrimaryButton>
           </div>
-        </form>
+        </SettingsCard>
 
         {/* ── Preferences column ──────────────────────────────────── */}
-        <div className="space-y-6">
+        <div className="flex flex-col" style={{ gap: 24 }}>
 
           {/* Notifications */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-500/10 rounded-xl">
-                <Bell size={20} className="text-blue-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
-            </div>
-
-            <div className="space-y-4">
+          <SettingsCard icon={Bell} title="Notifications" tint="rgba(59,130,163,0.14)" iconColor={C.blue}>
+            <div className="flex flex-col" style={{ gap: 16 }}>
               {(Object.entries(notifications) as [keyof typeof defaultNotifications, boolean][]).map(([key, value]) => {
                 const labels: Record<keyof typeof defaultNotifications, string> = {
                   budgetAlerts: 'Budget Alerts',
@@ -446,44 +537,30 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                   monthlyReport: 'Monthly Report',
                 };
                 return (
-                  <label key={key} className="flex items-center justify-between cursor-pointer group">
-                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                      {labels[key]}
-                    </span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={value}
-                        onChange={(e) => setNotifications({ ...notifications, [key]: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/50 transition-all">
-                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow-sm" />
-                      </div>
-                    </div>
+                  <label key={key} className="flex items-center justify-between cursor-pointer">
+                    <span style={{ fontSize: 13.5, color: C.ink2 }}>{labels[key]}</span>
+                    <Toggle
+                      checked={value}
+                      ariaLabel={labels[key]}
+                      onChange={(e) => setNotifications({ ...notifications, [key]: e.target.checked })}
+                    />
                   </label>
                 );
               })}
-              <p className="text-xs text-muted-foreground pt-1">Notification preferences are saved locally.</p>
+              <p style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Notification preferences are saved locally.</p>
             </div>
-          </div>
+          </SettingsCard>
 
           {/* Display Preferences */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-orange-500/10 rounded-xl">
-                <Globe size={20} className="text-orange-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Display</h3>
-            </div>
-
-            <div className="space-y-4">
+          <SettingsCard icon={Globe} title="Display" tint={C.accentSoft} iconColor={C.accent}>
+            <div className="flex flex-col" style={{ gap: 16 }}>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-foreground">Currency</label>
+                <label style={fieldLabelStyle}>Currency</label>
                 <select
                   value={preferences.currency}
                   onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm appearance-none cursor-pointer"
+                  style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                  className="set-input"
                 >
                   <option value="MAD">MAD – Moroccan Dirham</option>
                   <option value="USD">USD – US Dollar</option>
@@ -493,70 +570,57 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
               </div>
 
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-foreground">Language</label>
+                <label style={fieldLabelStyle}>Language</label>
                 <select
                   value={preferences.language}
                   onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm appearance-none cursor-pointer"
+                  style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                  className="set-input"
                 >
                   <option value="English">English</option>
                   <option value="French">Français</option>
                   <option value="Arabic">العربية</option>
                 </select>
               </div>
-              <p className="text-xs text-muted-foreground">Display preferences are saved locally.</p>
+              <p style={{ fontSize: 12, color: C.muted }}>Display preferences are saved locally.</p>
             </div>
-          </div>
+          </SettingsCard>
 
           {/* Telegram */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-sky-500/10 rounded-xl">
-                <MessageCircle size={20} className="text-sky-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Telegram</h3>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+          <SettingsCard icon={MessageCircle} title="Telegram" tint={C.accentSoft} iconColor={C.accent}>
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
                 Message TrackFinance on Telegram to log spending or ask questions, e.g.{' '}
-                <span className="text-foreground">“I spent 50 MAD on lunch”</span>.
+                <span style={{ color: C.ink2 }}>“I spent 50 MAD on lunch”</span>.
               </p>
 
-              {telegramStatus.error && (
-                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
-                  <AlertCircle size={15} className="shrink-0" />
-                  {telegramStatus.error}
-                </div>
-              )}
-              {telegramStatus.success && (
-                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm rounded-lg">
-                  <Check size={15} className="shrink-0" />
-                  {telegramStatus.success}
-                </div>
-              )}
+              {telegramStatus.error && <StatusBanner kind="error" message={telegramStatus.error} />}
+              {telegramStatus.success && <StatusBanner kind="success" message={telegramStatus.success} />}
 
               {telegram?.linked ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="flex items-center gap-2 text-sm text-emerald-600">
+                <div className="flex flex-col" style={{ gap: 12 }}>
+                  <div
+                    className="flex items-center justify-between"
+                    style={{ padding: 12, borderRadius: 8, background: C.incomeSoft, border: `1px solid rgba(91,163,114,0.3)` }}
+                  >
+                    <div className="flex items-center" style={{ gap: 8, fontSize: 13, color: C.incomeText }}>
                       <Check size={15} />
                       <span>Connected{telegram.chat_id_masked ? ` (${telegram.chat_id_masked})` : ''}</span>
                     </div>
                   </div>
 
                   {/* Notifications toggle */}
-                  <label className="flex items-center justify-between cursor-pointer p-3 rounded-lg bg-muted/30 border border-border">
+                  <label className="flex items-center justify-between cursor-pointer" style={{ padding: 12, borderRadius: 8, background: C.paper, border: `1px solid ${C.border}` }}>
                     <div>
-                      <div className="text-sm font-medium text-foreground">DM notifications</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div style={{ fontSize: 13.5, fontWeight: 500, color: C.ink }}>DM notifications</div>
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
                         Budget alerts, achievements, weekly digest, auto-posted recurring transactions.
                       </div>
                     </div>
-                    <div className="relative ml-3 shrink-0">
-                      <input
-                        type="checkbox"
+                    <div className="ml-3 shrink-0">
+                      <Toggle
                         checked={user?.telegram_notifications_enabled !== false}
+                        ariaLabel="DM notifications"
                         onChange={async (e) => {
                           const next = e.target.checked;
                           // Optimistic update
@@ -569,43 +633,51 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                             setUser((u: any) => ({ ...(u || {}), telegram_notifications_enabled: !next }));
                           }
                         }}
-                        className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/50 transition-all">
-                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow-sm" />
-                      </div>
                     </div>
                   </label>
 
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="medium"
-                    className="w-full"
                     onClick={handleUnlinkTelegram}
                     disabled={telegramStatus.loading}
+                    className="inline-flex items-center justify-center disabled:opacity-60"
+                    style={{
+                      width: '100%',
+                      gap: 7,
+                      padding: '9px 15px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      fontFamily: FONT,
+                      color: C.over,
+                      background: C.card,
+                      border: `1px solid ${C.over}`,
+                      cursor: telegramStatus.loading ? 'default' : 'pointer',
+                    }}
                   >
                     {telegramStatus.loading
                       ? <><Loader2 className="animate-spin" size={16} /> Unlinking…</>
                       : <><Unlink size={16} /> Unlink Telegram</>}
-                  </Button>
+                  </button>
                 </div>
               ) : linkCode ? (
-                <div className="space-y-3">
-                  <div className="rounded-lg border border-border bg-muted/30 p-4 text-center">
-                    <p className="text-xs text-muted-foreground mb-2">Your one-time code (expires in 10 minutes)</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <code className="text-xl font-mono font-semibold tracking-widest text-foreground select-all">
+                <div className="flex flex-col" style={{ gap: 12 }}>
+                  <div style={{ borderRadius: 8, border: `1px solid ${C.border}`, background: C.paper, padding: 16, textAlign: 'center' }}>
+                    <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Your one-time code (expires in 10 minutes)</p>
+                    <div className="flex items-center justify-center" style={{ gap: 8 }}>
+                      <code style={{ fontSize: 20, fontFamily: MONO, fontWeight: 600, letterSpacing: '0.18em', color: C.ink }} className="select-all">
                         {linkCode.code}
                       </code>
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        className="p-2 rounded-md hover:bg-muted transition-colors"
+                        className="set-iconbtn flex items-center justify-center"
+                        style={{ padding: 8, borderRadius: 6, border: 0, background: 'transparent', cursor: 'pointer', transition: 'background 150ms' }}
                         title="Copy /start command"
                         aria-label="Copy"
                       >
-                        {codeCopied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} className="text-muted-foreground" />}
+                        {codeCopied ? <Check size={15} style={{ color: C.income }} /> : <Copy size={15} style={{ color: C.muted }} />}
                       </button>
                     </div>
                   </div>
@@ -613,35 +685,34 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                     href={linkCode.deeplink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+                    className="set-link inline-flex w-full items-center justify-center"
+                    style={{ gap: 8, borderRadius: 8, background: C.accent, color: '#fff', padding: '10px 16px', fontSize: 13, fontWeight: 500, transition: 'background 150ms' }}
                   >
                     <Send size={16} /> Open in Telegram
                   </a>
-                  <p className="text-xs text-muted-foreground">
+                  <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
                     Telegram will open with{' '}
-                    <code className="px-1 py-0.5 rounded bg-muted text-foreground">/start {linkCode.code}</code>{' '}
+                    <code style={{ padding: '1px 5px', borderRadius: 4, background: C.divider, color: C.ink2, fontFamily: MONO }}>/start {linkCode.code}</code>{' '}
                     pre-filled. Just tap send.
                   </p>
                 </div>
               ) : (
-                <Button
+                <PrimaryButton
                   type="button"
-                  variant="primary"
-                  size="medium"
-                  className="w-full"
+                  style={{ width: '100%' }}
                   onClick={handleGenerateLinkCode}
                   disabled={telegramStatus.loading}
                 >
                   {telegramStatus.loading
                     ? <><Loader2 className="animate-spin" size={16} /> Generating…</>
                     : <><Send size={16} /> Connect Telegram</>}
-                </Button>
+                </PrimaryButton>
               )}
             </div>
-          </div>
+          </SettingsCard>
         </div>
 
       </div>
-    </div>
+    </Page>
   );
 }

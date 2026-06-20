@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { AlertCircle } from 'lucide-react';
+import { C, FONT, GhostButton } from './ds';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -36,29 +37,47 @@ export function DeleteConfirmationModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="sm">
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-4" style={{ fontFamily: FONT }}>
         {/* Warning Icon */}
         <div className="flex justify-center">
-          <div className="p-4 bg-red-50 rounded-full">
-            <AlertCircle size={48} className="text-red-600" />
+          <div style={{ padding: 16, background: C.overSoft, borderRadius: '9999px' }}>
+            <AlertCircle size={48} color={C.over} />
           </div>
         </div>
 
         {/* Message */}
         <div>
-          <p className="text-gray-600">{modalMessage}</p>
+          <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.5 }}>{modalMessage}</p>
         </div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose}>
+          <GhostButton onClick={onClose} style={{ flex: 1, justifyContent: 'center', padding: '10px 15px', fontSize: 13 }}>
             Cancel
-          </Button>
-          <Button type="button" variant="danger" size="large" className="flex-1" onClick={handleConfirm}>
+          </GhostButton>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="delete-confirm-btn inline-flex items-center justify-center"
+            style={{
+              flex: 1,
+              border: 0,
+              borderRadius: 8,
+              padding: '10px 15px',
+              fontSize: 13,
+              fontWeight: 500,
+              fontFamily: FONT,
+              color: '#fff',
+              background: C.over,
+              cursor: 'pointer',
+              transition: 'background 150ms',
+            }}
+          >
             Delete
-          </Button>
+          </button>
         </div>
       </div>
+      <style>{`.delete-confirm-btn:hover{background:#A93A3A;}`}</style>
     </Modal>
   );
 }

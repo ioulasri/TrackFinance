@@ -15,6 +15,7 @@ import {
   LayoutDashboard, Receipt, Wallet, Target, Trophy, Settings,
   LineChart, RotateCw, Search, Sparkles, Flame, ArrowRight,
 } from 'lucide-react';
+import { C, FONT, MONO } from './ds';
 
 interface TopBarProps {
   user: {
@@ -98,57 +99,51 @@ export function TopBar({ user }: TopBarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 h-14 bg-card/95 backdrop-blur-sm border-b border-border flex items-center px-4 gap-4">
+      <header
+        className="sticky top-0 z-20 flex items-center gap-5"
+        style={{ height: 64, padding: '0 28px', background: C.card, borderBottom: `0.5px solid ${C.border}`, fontFamily: FONT, color: C.ink }}
+      >
         {/* Page title */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
-            <PageIcon size={16} />
-          </span>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-foreground leading-tight">{meta.title}</div>
-            {meta.subtitle && (
-              <div className="text-[11px] text-muted-foreground leading-tight">{meta.subtitle}</div>
-            )}
-          </div>
+        <div className="flex flex-col min-w-0" style={{ gap: 1 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: '-0.01em' }}>{meta.title}</div>
+          {meta.subtitle && (
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted }}>{meta.subtitle}</div>
+          )}
         </div>
 
         {/* Center — command palette trigger */}
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="flex-1 max-w-md mx-auto h-9 flex items-center gap-2 px-3 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 text-muted-foreground hover:text-foreground transition-colors"
+          className="relative mx-auto"
+          style={{ flex: 1, maxWidth: 520, display: 'flex', alignItems: 'center', gap: 8, height: 38, padding: '0 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.paper, color: C.muted, cursor: 'pointer', fontFamily: FONT }}
           aria-label="Open command palette"
         >
-          <Search size={14} className="shrink-0" />
-          <span className="text-sm">Jump to…</span>
-          <kbd className="ml-auto text-[10px] font-mono text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border">
-            ⌘K
-          </kbd>
+          <Search size={16} className="shrink-0" />
+          <span style={{ fontSize: 13 }}>Jump to…</span>
+          <kbd style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 11, color: C.faint, border: `1px solid ${C.border}`, borderRadius: 5, padding: '2px 6px' }}>⌘K</kbd>
         </button>
 
         {/* Right — AI + avatar/streak chip */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center shrink-0" style={{ gap: 12 }}>
           <button
             type="button"
             onClick={handleAIClick}
             title="Ask AI"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card hover:bg-primary/5 hover:border-primary/30 text-foreground transition-colors group"
+            className="ds-primary inline-flex items-center"
+            style={{ gap: 7, border: 0, borderRadius: 8, padding: '8px 13px', fontSize: 13, fontWeight: 500, color: '#fff', background: C.accent, cursor: 'pointer', fontFamily: FONT, transition: 'background 150ms' }}
           >
-            <Sparkles size={14} className="text-primary group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium hidden sm:inline">Ask AI</span>
+            <Sparkles size={16} />
+            <span className="hidden sm:inline">Ask AI</span>
           </button>
 
-          <div className="flex items-center gap-2 h-9 pl-1 pr-3 rounded-lg border border-border bg-card">
-            <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[11px] font-bold overflow-hidden shrink-0">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                initials
-              )}
+          <div className="flex items-center" style={{ gap: 9, padding: '4px 10px 4px 4px', border: `1px solid ${C.border}`, borderRadius: 999 }}>
+            <div className="flex items-center justify-center overflow-hidden shrink-0" style={{ width: 28, height: 28, borderRadius: '50%', background: C.ink, color: C.paper, fontSize: 11, fontWeight: 600 }}>
+              {user?.avatar_url ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" /> : initials.toLowerCase()}
             </div>
-            <span className="text-sm font-medium text-foreground hidden md:inline">{user?.username ?? 'User'}</span>
+            <span className="hidden md:inline" style={{ fontSize: 13, fontWeight: 500 }}>{user?.username ?? 'User'}</span>
             {streak > 0 && (
-              <span className="flex items-center gap-0.5 text-xs font-semibold text-amber-600 dark:text-amber-500 tabular-nums">
+              <span className="inline-flex items-center" style={{ gap: 2, fontSize: 12, fontWeight: 600, color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
                 <Flame size={12} />
                 {streak}
               </span>

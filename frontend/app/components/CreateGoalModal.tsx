@@ -2,6 +2,41 @@ import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Trophy, Gift, Plus, Loader2 } from 'lucide-react';
+import { C, FONT, PrimaryButton, GhostButton } from './ds';
+
+const fieldLabel: React.CSSProperties = { display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500, color: C.ink };
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 14px',
+  background: C.card,
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  fontSize: 14,
+  fontFamily: FONT,
+  color: C.ink,
+  outline: 'none',
+  transition: 'border-color 150ms, box-shadow 150ms',
+};
+const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.currentTarget.style.borderColor = C.accent;
+  e.currentTarget.style.boxShadow = `0 0 0 3px ${C.accentSoft}`;
+};
+const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.currentTarget.style.borderColor = C.border;
+  e.currentTarget.style.boxShadow = 'none';
+};
+const goalTile = (selected: boolean): React.CSSProperties => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 8,
+  padding: 12,
+  borderRadius: 12,
+  border: `1px solid ${selected ? C.accent : C.border}`,
+  background: selected ? C.accentSoft : C.card,
+  cursor: 'pointer',
+  transition: 'all 150ms',
+});
 
 interface CreateGoalModalProps {
   isOpen: boolean;
@@ -106,66 +141,53 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Goal Name */}
         <div>
-          <label className="block mb-2 text-gray-900 text-sm font-medium">Goal Name</label>
+          <label style={fieldLabel}>Goal Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g., Emergency Fund, Dream Vacation"
-            className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={inputBase}
             required
           />
         </div>
 
         {/* Category Selection */}
         <div>
-          <label className="block mb-3 text-gray-900 text-sm font-medium">Category</label>
+          <label style={fieldLabel}>Category</label>
           <div className="grid grid-cols-4 gap-3">
             {goalCategories.map((category) => {
-              const Icon = category.iconComponent;
+              const selected = selectedCategory === category.name && !isCustom;
               return (
                 <button
                   key={category.name}
                   type="button"
                   onClick={() => handleCategorySelect(category.name)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    selectedCategory === category.name && !isCustom
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
-                  }`}
+                  style={goalTile(selected)}
                 >
-                  <div className="text-2xl">{category.icon}</div>
-                  <span className={`text-xs text-center font-medium ${
-                    selectedCategory === category.name && !isCustom ? 'text-purple-600' : 'text-gray-600'
-                  }`}>
+                  <div style={{ fontSize: 22, lineHeight: 1 }}>{category.icon}</div>
+                  <span style={{ fontSize: 12, textAlign: 'center', fontWeight: 500, color: selected ? C.accent : C.muted }}>
                     {category.name}
                   </span>
                 </button>
               );
             })}
-            
+
             {/* Custom Category Button */}
             <button
               type="button"
               onClick={() => handleCategorySelect('Custom')}
-              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                isCustom
-                  ? 'border-purple-600 bg-purple-50'
-                  : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
-              }`}
+              style={goalTile(isCustom)}
             >
-              <Plus 
-                size={24} 
-                className={isCustom ? 'text-purple-600' : 'text-gray-600'} 
-              />
-              <span className={`text-xs text-center font-medium ${
-                isCustom ? 'text-purple-600' : 'text-gray-600'
-              }`}>
+              <Plus size={24} color={isCustom ? C.accent : C.muted} />
+              <span style={{ fontSize: 12, textAlign: 'center', fontWeight: 500, color: isCustom ? C.accent : C.muted }}>
                 Custom
               </span>
             </button>
           </div>
-          
+
           {/* Custom Category Input */}
           {isCustom && (
             <div className="mt-3">
@@ -174,7 +196,9 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Enter custom category name"
-                className="w-full px-4 py-2.5 bg-white border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                onFocus={focusOn}
+                onBlur={focusOff}
+                style={inputBase}
                 required={isCustom}
               />
             </div>
@@ -184,7 +208,7 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
         {/* Amount Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block mb-2 text-gray-900 text-sm font-medium">Target Amount (MAD)</label>
+            <label style={fieldLabel}>Target Amount (MAD)</label>
             <input
               type="number"
               value={targetAmount}
@@ -192,13 +216,15 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
               placeholder="10000"
               min="0"
               step="0.01"
-              className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              onFocus={focusOn}
+              onBlur={focusOff}
+              style={{ ...inputBase, fontVariantNumeric: 'tabular-nums' }}
               required
             />
           </div>
 
           <div>
-            <label className="block mb-2 text-gray-900 text-sm font-medium">Current Amount (MAD)</label>
+            <label style={fieldLabel}>Current Amount (MAD)</label>
             <input
               type="number"
               value={currentAmount}
@@ -206,40 +232,46 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
               placeholder="0"
               min="0"
               step="0.01"
-              className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              onFocus={focusOn}
+              onBlur={focusOff}
+              style={{ ...inputBase, fontVariantNumeric: 'tabular-nums' }}
             />
           </div>
         </div>
 
         {/* Deadline */}
         <div>
-          <label className="block mb-2 text-gray-900 text-sm font-medium">Deadline (Optional)</label>
+          <label style={fieldLabel}>Deadline (Optional)</label>
           <input
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={inputBase}
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block mb-2 text-gray-900 text-sm font-medium">Description (Optional)</label>
+          <label style={fieldLabel}>Description (Optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Why is this goal important to you?"
             rows={3}
-            className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={{ ...inputBase, resize: 'none' }}
           />
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1" disabled={isLoading}>
+          <GhostButton onClick={onClose} style={{ flex: 1, justifyContent: 'center', padding: '10px 15px', fontSize: 13, opacity: isLoading ? 0.6 : 1 }}>
             Cancel
-          </Button>
-          <Button type="submit" variant="primary" className="flex-1" disabled={isLoading}>
+          </GhostButton>
+          <PrimaryButton type="submit" disabled={isLoading} style={{ flex: 1 }}>
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
@@ -248,7 +280,7 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
             ) : (
               editingGoal ? 'Update Goal' : 'Create Goal'
             )}
-          </Button>
+          </PrimaryButton>
         </div>
       </form>
     </Modal>

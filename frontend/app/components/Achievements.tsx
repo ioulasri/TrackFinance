@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Lock, Target, PiggyBank, TrendingUp, Zap, Star, Award, CheckCircle } from 'lucide-react';
 import { achievementAPI } from '../api';
+import {
+  C,
+  MONO,
+  Page,
+  PageHeader,
+  Card,
+  SectionTitle,
+  GhostButton,
+  EmptyState,
+  DSStyles,
+  mono,
+} from './ds';
 
 const iconMap: Record<string, any> = {
   'first_transaction': CheckCircle,
@@ -56,7 +68,6 @@ export function Achievements() {
     unlocked: isUnlocked(achievement.id),
     unlockedDate: getUnlockedDate(achievement.id),
     icon: iconMap[achievement.achievement_key] || Trophy,
-    color: 'purple',
   }));
 
   const filteredAchievements = enrichedAchievements.filter(achievement => {
@@ -74,107 +85,94 @@ export function Achievements() {
 
   const unlockedCount = enrichedAchievements.filter(a => a.unlocked).length;
   const totalXP = enrichedAchievements.filter(a => a.unlocked).reduce((sum, a) => sum + a.xp_reward, 0);
+  const totalCount = enrichedAchievements.length;
+  const completionRate = totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading achievements...</p>
+      <Page>
+        <div className="flex items-center justify-center" style={{ minHeight: 384 }}>
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full" style={{ border: `2px solid ${C.border}`, borderBottomColor: C.accent }} />
+            <p className="mt-4" style={{ fontSize: 13, color: C.muted }}>Loading achievements…</p>
+          </div>
         </div>
-      </div>
+      </Page>
     );
   }
 
-  const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
-    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20' },
-    purple: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' },
-    orange: { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' },
-  };
+  // ── Stat tile ──────────────────────────────────────────────────────
+  const StatCard = ({
+    icon: Icon,
+    label,
+    value,
+    tint,
+    iconColor,
+  }: {
+    icon: typeof Trophy;
+    label: string;
+    value: string;
+    tint: string;
+    iconColor: string;
+  }) => (
+    <Card style={{ padding: '20px 22px' }}>
+      <div className="flex items-center" style={{ gap: 12, marginBottom: 14 }}>
+        <div className="flex items-center justify-center" style={{ width: 36, height: 36, borderRadius: 8, background: tint, color: iconColor }}>
+          <Icon size={19} strokeWidth={1.7} />
+        </div>
+        <div style={{ ...mono, fontSize: 10 }}>{label}</div>
+      </div>
+      <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, color: C.ink }}>
+        {value}
+      </div>
+    </Card>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Achievements</h1>
-        <p className="text-muted-foreground mt-1">Track your financial milestones and earn rewards</p>
-      </div>
+    <Page>
+      <DSStyles />
+      <style>{`
+        @media (max-width:1024px){.ach-stats{grid-template-columns:minmax(0,1fr) !important;}.ach-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}.ach-filters{flex-direction:column !important;align-items:stretch !important;}}
+        @media (max-width:640px){.ach-grid{grid-template-columns:minmax(0,1fr) !important;}}
+      `}</style>
+
+      <PageHeader eyebrow="Progress" title="Achievements" />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <Trophy size={24} className="text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground font-medium">Unlocked</p>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            {unlockedCount} / {enrichedAchievements.length}
-          </p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/10 rounded-xl">
-              <Star size={24} className="text-emerald-500" />
-            </div>
-            <p className="text-sm text-muted-foreground font-medium">Total XP Earned</p>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">{totalXP} XP</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/10 rounded-xl">
-              <Target size={24} className="text-blue-500" />
-            </div>
-            <p className="text-sm text-muted-foreground font-medium">Completion Rate</p>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            {((unlockedCount / enrichedAchievements.length) * 100).toFixed(0)}%
-          </p>
-        </div>
+      <div className="ach-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 24, marginTop: 26 }}>
+        <StatCard icon={Trophy} label="Unlocked" value={`${unlockedCount} / ${totalCount}`} tint={C.accentSoft} iconColor={C.accent} />
+        <StatCard icon={Star} label="Total XP Earned" value={`${totalXP} XP`} tint={C.incomeSoft} iconColor={C.income} />
+        <StatCard icon={Target} label="Completion Rate" value={`${completionRate.toFixed(0)}%`} tint="rgba(212,168,69,0.14)" iconColor={C.gold} />
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-        <div className="flex items-center justify-between">
-          {/* Status Filter */}
-          <div className="flex gap-2 p-1 bg-input rounded-lg border border-border">
-            <button
-              onClick={() => setFilter('all')}
-              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-[0_0_10px_rgba(127,13,242,0.4)]'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter('unlocked')}
-              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'unlocked'
-                  ? 'bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              Unlocked
-            </button>
-            <button
-              onClick={() => setFilter('locked')}
-              className={`flex-1 px-4 py-2 rounded-md font-medium text-sm transition-all ${filter === 'locked'
-                  ? 'bg-gray-600 text-white shadow-[0_0_10px_rgba(75,85,99,0.4)]'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              Locked
-            </button>
+      <Card style={{ padding: '16px 18px', marginTop: 24 }}>
+        <div className="ach-filters flex items-center justify-between" style={{ gap: 14, flexWrap: 'wrap' }}>
+          {/* Status filter chips */}
+          <div className="flex" style={{ gap: 8 }}>
+            <GhostButton active={filter === 'all'} onClick={() => setFilter('all')}>All</GhostButton>
+            <GhostButton active={filter === 'unlocked'} onClick={() => setFilter('unlocked')}>Unlocked</GhostButton>
+            <GhostButton active={filter === 'locked'} onClick={() => setFilter('locked')}>Locked</GhostButton>
           </div>
 
           {/* Category Filter */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none min-w-[200px]"
+            aria-label="Filter by category"
+            style={{
+              padding: '8px 14px',
+              minWidth: 200,
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              color: C.ink,
+              borderRadius: 8,
+              fontSize: 13,
+              fontFamily: 'inherit',
+              outline: 'none',
+              cursor: 'pointer',
+              appearance: 'none',
+            }}
           >
             {categories.map(cat => (
               <option key={cat} value={cat}>
@@ -183,86 +181,94 @@ export function Achievements() {
             ))}
           </select>
         </div>
-      </div>
+      </Card>
 
       {/* Achievements Grid */}
-      <div className="grid grid-cols-4 gap-6">
-        {filteredAchievements.map((achievement) => {
-          const Icon = achievement.icon;
-          const colors = colorClasses[achievement.color];
+      {filteredAchievements.length > 0 ? (
+        <div className="ach-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 24, marginTop: 24 }}>
+          {filteredAchievements.map((achievement) => {
+            const Icon = achievement.icon;
+            const unlocked = achievement.unlocked;
 
-          return (
-            <div
-              key={achievement.id}
-              className={`rounded-2xl p-6 shadow-sm transition-all group ${achievement.unlocked
-                  ? `bg-card border border-border hover:border-primary/30 hover:shadow-[0_0_15px_rgba(127,13,242,0.1)]`
-                  : 'bg-card/50 border border-border/50 opacity-60'
-                }`}
-            >
-              {/* Icon */}
-              <div className="relative mb-4 inline-block">
-                <div className={`p-4 rounded-2xl transition-transform duration-300 ${achievement.unlocked ? 'group-hover:scale-110' : ''} ${achievement.unlocked
-                    ? `${colors.bg} ${colors.text} shadow-[0_0_10px_rgba(127,13,242,0.2)]`
-                    : 'bg-muted text-muted-foreground'
-                  }`}>
-                  <Icon size={32} />
-                </div>
-                {!achievement.unlocked && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="p-2 bg-background border border-border rounded-full shadow-lg">
-                      <Lock size={16} className="text-muted-foreground" />
-                    </div>
+            // unlocked → accent tint + dark same-hue text; locked → muted/divider.
+            const iconTint = unlocked ? C.accentSoft : C.divider;
+            const iconColor = unlocked ? C.accent : C.faint;
+            const badgeStyle = unlocked
+              ? { color: C.accent, background: C.accentSoft }
+              : { color: C.muted, background: C.divider };
+
+            return (
+              <div
+                key={achievement.id}
+                className="ds-card-hover"
+                style={{
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  padding: 22,
+                  transition: 'border-color 150ms',
+                  opacity: unlocked ? 1 : 0.72,
+                }}
+              >
+                {/* Icon */}
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: 56, height: 56, borderRadius: 14, background: iconTint, color: iconColor }}
+                  >
+                    <Icon size={28} strokeWidth={1.7} />
                   </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-foreground">
-                  {achievement.title}
-                </h4>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {achievement.description}
-                </p>
-
-                {/* Category & XP Badge */}
-                <div className="flex items-center justify-between pt-2">
-                  <span className={`text-xs px-2 py-1 rounded-md ${achievement.unlocked ? `${colors.bg} ${colors.text}` : 'bg-muted text-muted-foreground'
-                    } font-medium`}>
-                    {achievement.category || 'Other'}
-                  </span>
-                  <span className={`text-xs font-bold ${achievement.unlocked ? 'text-primary' : 'text-muted-foreground'
-                    }`}>
-                    +{achievement.xp_reward} XP
-                  </span>
+                  {!unlocked && (
+                    <div style={{ position: 'absolute', inset: 0 }} className="flex items-center justify-center">
+                      <div
+                        className="flex items-center justify-center"
+                        style={{ width: 28, height: 28, borderRadius: '50%', background: C.card, border: `1px solid ${C.border}`, color: C.muted, boxShadow: '0 2px 6px rgba(26,24,21,0.08)' }}
+                      >
+                        <Lock size={14} strokeWidth={1.8} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Unlock Date */}
-                {achievement.unlocked && achievement.unlockedDate && (
-                  <p className="text-xs text-muted-foreground pt-3 border-t border-border mt-3">
-                    Unlocked: <span className="text-foreground">{achievement.unlockedDate}</span>
+                {/* Content */}
+                <div>
+                  <h4 style={{ fontSize: 15, fontWeight: 600, color: C.ink, letterSpacing: '-0.01em' }}>
+                    {achievement.title}
+                  </h4>
+                  <p style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.45 }} className="line-clamp-2">
+                    {achievement.description}
                   </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
-      {/* Empty State */}
-      {filteredAchievements.length === 0 && (
-        <div className="bg-card rounded-2xl p-12 shadow-sm border border-border text-center">
-          <div className="max-w-md mx-auto">
-            <div className="p-4 bg-muted rounded-full inline-flex mb-4">
-              <Trophy size={48} className="text-muted-foreground/50" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No achievements found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your filters to see more achievements
-            </p>
-          </div>
+                  {/* Category & XP Badge */}
+                  <div className="flex items-center justify-between" style={{ marginTop: 14 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 500, letterSpacing: '0.04em', padding: '3px 8px', borderRadius: 6, ...badgeStyle }}>
+                      {achievement.category || 'Other'}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: unlocked ? C.accent : C.faint }}>
+                      +{achievement.xp_reward} XP
+                    </span>
+                  </div>
+
+                  {/* Unlock Date */}
+                  {unlocked && achievement.unlockedDate && (
+                    <p style={{ fontSize: 12, color: C.muted, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.divider}` }}>
+                      Unlocked: <span style={{ color: C.ink2, fontWeight: 500 }}>{achievement.unlockedDate}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      ) : (
+        <Card style={{ padding: '40px 24px', marginTop: 24 }}>
+          <EmptyState
+            icon={Trophy}
+            title="No achievements found"
+            subtext="Try adjusting your filters to see more achievements."
+          />
+        </Card>
       )}
-    </div>
+    </Page>
   );
 }

@@ -36,6 +36,22 @@ import {
   AreaChart,
 } from 'recharts';
 import { transactionAPI, budgetAPI } from '../api';
+import {
+  C,
+  FONT,
+  MONO,
+  fmt,
+  fmtMAD,
+  colorFor,
+  mono,
+  Page,
+  PageHeader,
+  Card,
+  SectionTitle,
+  PrimaryButton,
+  EmptyState,
+  DSStyles,
+} from './ds';
 
 interface AnalysisData {
   financial_health_score: number;
@@ -49,8 +65,6 @@ interface AnalysisData {
   predictions: { next_month_spending: number; next_month_income: number; confidence_score: number };
   budget_performance: { category: string; budget: number; spent: number; percentage: number }[];
 }
-
-const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#F43F5E', '#F59E0B', '#06B6D4'];
 
 export function Analysis() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
@@ -94,7 +108,7 @@ export function Analysis() {
     const demoHealthScore = calculateBasicHealthScore(savingsRate, monthlyComparison.change_percentage);
     const demoInsights = generateBasicInsights(savingsRate, monthlyComparison, topCategories);
     const demoPredictions = generateBasicPredictions(spendingTrend);
-    
+
     // Calculate a mock net worth for the dashboard
     const netWorth = transactions.reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 50000);
 
@@ -301,32 +315,48 @@ export function Analysis() {
     return {
       next_month_spending: Math.round(avgSpending * 1.02), // slight predictive increase
       next_month_income: Math.round(avgIncome),
-      confidence_score: 84, 
+      confidence_score: 84,
     };
+  };
+
+  const tooltipStyle = {
+    background: C.ink,
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 12,
+    color: C.paper,
+    boxShadow: '0 8px 24px rgba(26,24,21,0.18)',
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin shadow-[0_0_15px_rgba(139,92,246,0.3)]"></div>
-          <p className="text-muted-foreground font-medium tracking-wide animate-pulse">Initializing AI Analysis Engine...</p>
+      <Page>
+        <DSStyles />
+        <div className="flex items-center justify-center" style={{ minHeight: 600 }}>
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full" style={{ border: `2px solid ${C.border}`, borderBottomColor: C.accent }} />
+            <p className="mt-4" style={{ fontSize: 13, color: C.muted }}>Loading analysis…</p>
+          </div>
         </div>
-      </div>
+      </Page>
     );
   }
 
   if (!analysisData) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center p-8 bg-card rounded-2xl border border-destructive/20">
-          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <p className="text-foreground font-semibold mb-3">Analysis Engine Error</p>
-          <button onClick={loadAnalysis} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
-            Reboot Engine
-          </button>
-        </div>
-      </div>
+      <Page>
+        <DSStyles />
+        <PageHeader eyebrow="Insights" title="Analysis" />
+        <Card style={{ marginTop: 26, padding: '32px 28px' }}>
+          <EmptyState
+            icon={AlertCircle}
+            title="Couldn't load analysis"
+            subtext={error || 'Something went wrong while reading your financial data.'}
+            action={<PrimaryButton onClick={loadAnalysis}>Try again</PrimaryButton>}
+            height={220}
+          />
+        </Card>
+      </Page>
     );
   }
 
@@ -342,200 +372,243 @@ export function Analysis() {
     net_worth
   } = analysisData;
 
-  const getScoreDetails = (score: number) => {
-    if (score >= 80) return { color: '#10B981', gradient: 'from-emerald-500/20 to-emerald-500/0', text: 'text-emerald-500', shadow: 'shadow-[0_0_30px_rgba(16,185,129,0.3)]' };
-    if (score >= 50) return { color: '#F59E0B', gradient: 'from-amber-500/20 to-amber-500/0', text: 'text-amber-500', shadow: 'shadow-[0_0_30px_rgba(245,158,11,0.3)]' };
-    return { color: '#F43F5E', gradient: 'from-rose-500/20 to-rose-500/0', text: 'text-rose-500', shadow: 'shadow-[0_0_30px_rgba(244,63,94,0.3)]' };
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return C.income;
+    if (score >= 50) return C.gold;
+    return C.over;
+  };
+  const scoreColor = getScoreColor(financial_health_score);
+
+  const insightTone = (type: string) => {
+    if (type === 'success') return { color: C.incomeText, bg: C.incomeSoft, Icon: CheckCircle };
+    if (type === 'warning') return { color: C.over, bg: C.overSoft, Icon: AlertCircle };
+    return { color: C.blue, bg: 'rgba(59,130,163,0.12)', Icon: Info };
   };
 
-  const scoreDetails = getScoreDetails(financial_health_score);
+  const cardBase: React.CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 12 };
+
+  const trendHasData = spending_trend.some(m => m.income > 0 || m.spending > 0);
+
+  const metrics = [
+    {
+      title: 'Current Month',
+      value: fmtMAD(monthly_comparison.current_month),
+      trend: monthly_comparison.change_percentage,
+      icon: DollarSign,
+      color: monthly_comparison.change_percentage > 0 ? C.over : C.incomeText,
+      bg: monthly_comparison.change_percentage > 0 ? C.overSoft : C.incomeSoft,
+      suffix: 'vs last month',
+    },
+    {
+      title: 'AI Forecast (Next Month)',
+      value: fmtMAD(predictions.next_month_spending),
+      trend: null,
+      icon: Activity,
+      color: C.accent,
+      bg: C.accentSoft,
+      suffix: `${predictions.confidence_score}% confidence score`,
+    },
+    {
+      title: 'Savings Rate',
+      value: `${savings_rate}%`,
+      trend: null,
+      icon: Target,
+      color: savings_rate >= 20 ? C.incomeText : C.gold,
+      bg: savings_rate >= 20 ? C.incomeSoft : 'rgba(212,168,69,0.14)',
+      suffix: 'Target: >20%',
+    },
+    {
+      title: 'Est. Net Worth',
+      value: fmtMAD(net_worth),
+      trend: 5.2,
+      icon: Wallet,
+      color: C.blue,
+      bg: 'rgba(59,130,163,0.12)',
+      suffix: '+5.2% YTD',
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
-            <Sparkles className="w-6 h-6 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">AI Financial Analysis</h1>
-        </div>
-        <p className="text-muted-foreground text-sm flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Engine active. Analyzing {spending_trend.length} months of real-time transactional data.
-        </p>
-      </div>
+    <Page>
+      <DSStyles />
+      <style>{`@media (max-width:1024px){.an-row{grid-template-columns:minmax(0,1fr) !important;}.an-metrics{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}@media (max-width:560px){.an-metrics{grid-template-columns:minmax(0,1fr) !important;}}`}</style>
 
-      {/* Top Section: Health Score & AI Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <PageHeader
+        eyebrow="Insights"
+        title="Analysis"
+        actions={
+          <span className="inline-flex items-center" style={{ gap: 8, ...mono, fontSize: 11 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: C.income }} />
+            {spending_trend.length} months analyzed
+          </span>
+        }
+      />
+
+      {/* Top Section: Health Score & Insights */}
+      <div className="an-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 2fr', gap: 24, marginTop: 26 }}>
         {/* Health Score Card */}
-        <div className="col-span-1 bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-8 relative overflow-hidden group">
-          <div className={`absolute inset-0 bg-gradient-to-b ${scoreDetails.gradient} opacity-50 transition-opacity group-hover:opacity-100`}></div>
-          <div className="relative z-10 flex flex-col items-center justify-center h-full">
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-6">Health Score</h3>
-            
-            <div className={`relative w-48 h-48 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md border border-border/50 ${scoreDetails.shadow} transition-all duration-700`}>
-              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                <circle cx="96" cy="96" r="88" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/20" />
-                <circle 
-                  cx="96" cy="96" r="88" fill="none" stroke={scoreDetails.color} strokeWidth="8" strokeLinecap="round"
-                  strokeDasharray={`${(financial_health_score / 100) * 553} 553`}
-                  className="transition-all duration-1500 ease-out"
-                />
-              </svg>
-              <div className="text-center">
-                <span className={`text-6xl font-black tracking-tighter ${scoreDetails.text}`}>{financial_health_score}</span>
-                <div className="text-xs font-bold text-muted-foreground mt-1">OUT OF 100</div>
-              </div>
-            </div>
+        <div style={{ ...cardBase, padding: '28px 26px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ ...mono, fontSize: 11, marginBottom: 22 }}>Health Score</div>
 
-            <p className="mt-8 text-sm font-medium text-center text-muted-foreground">
-              Based on savings rate and month-over-month trajectory analysis.
-            </p>
+          <div style={{ position: 'relative', width: 188, height: 188, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }} width="188" height="188" viewBox="0 0 192 192">
+              <circle cx="96" cy="96" r="88" fill="none" stroke={C.divider} strokeWidth="8" />
+              <circle
+                cx="96" cy="96" r="88" fill="none" stroke={scoreColor} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={`${(financial_health_score / 100) * 553} 553`}
+                style={{ transition: 'stroke-dasharray 1s ease-out' }}
+              />
+            </svg>
+            <div className="text-center">
+              <span style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.03em', color: scoreColor, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{financial_health_score}</span>
+              <div style={{ ...mono, fontSize: 10, marginTop: 6 }}>Out of 100</div>
+            </div>
           </div>
+
+          <p style={{ marginTop: 24, fontSize: 13, color: C.muted, textAlign: 'center', maxWidth: 240 }}>
+            Based on savings rate and month-over-month trajectory analysis.
+          </p>
         </div>
 
-        {/* AI Insights Engine Panel */}
-        <div className="col-span-1 lg:col-span-2 bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-6 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-          
-          <div className="flex items-center gap-2 mb-6 relative z-10">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-bold text-foreground">AI Intelligence Report</h3>
-          </div>
+        {/* Insights Panel */}
+        <div style={{ ...cardBase, padding: '24px 26px', display: 'flex', flexDirection: 'column' }}>
+          <SectionTitle title="Intelligence Report" subtitle="Signals from your recent activity" />
 
-          <div className="flex-1 flex flex-col gap-4 relative z-10">
-            {insights.length > 0 ? insights.map((insight, idx) => (
-              <div key={idx} className="group p-5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 hover:border-border transition-all duration-300">
-                <div className="flex gap-4">
-                  <div className="mt-0.5">
-                    {insight.type === 'success' && <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]"><CheckCircle size={18} /></div>}
-                    {insight.type === 'warning' && <div className="p-2 rounded-full bg-amber-500/10 text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]"><AlertCircle size={18} /></div>}
-                    {insight.type === 'info' && <div className="p-2 rounded-full bg-blue-500/10 text-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]"><Info size={18} /></div>}
-                  </div>
-                  <div>
-                    <h4 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{insight.title}</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{insight.description}</p>
+          <div className="flex flex-col" style={{ gap: 12, marginTop: 18, flex: 1 }}>
+            {insights.length > 0 ? insights.map((insight, idx) => {
+              const { color, bg, Icon } = insightTone(insight.type);
+              return (
+                <div key={idx} style={{ padding: '16px 18px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.paper }}>
+                  <div className="flex" style={{ gap: 14 }}>
+                    <div className="flex items-center justify-center" style={{ width: 34, height: 34, borderRadius: 8, background: bg, color, flexShrink: 0 }}>
+                      <Icon size={18} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: 14.5, fontWeight: 600, color: C.ink, marginBottom: 3 }}>{insight.title}</h4>
+                      <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>{insight.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )) : (
-               <div className="flex-1 flex items-center justify-center">
-                 <p className="text-muted-foreground">Gathering more intelligence...</p>
-               </div>
+              );
+            }) : (
+              <EmptyState icon={Sparkles} title="No insights yet" subtext="Add transactions to surface trends and signals" height={200} />
             )}
           </div>
         </div>
       </div>
 
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { title: "Current Month", value: `MAD ${monthly_comparison.current_month.toLocaleString()}`, trend: monthly_comparison.change_percentage, icon: DollarSign, color: monthly_comparison.change_percentage > 0 ? 'text-rose-500' : 'text-emerald-500', bg: monthly_comparison.change_percentage > 0 ? 'bg-rose-500/10' : 'bg-emerald-500/10', suffix: 'vs last month' },
-          { title: "AI Forecast (Next Month)", value: `MAD ${predictions.next_month_spending.toLocaleString()}`, trend: null, icon: Activity, color: 'text-primary', bg: 'bg-primary/10', suffix: `${predictions.confidence_score}% confidence score` },
-          { title: "Savings Rate", value: `${savings_rate}%`, trend: null, icon: Target, color: savings_rate >= 20 ? 'text-emerald-500' : 'text-amber-500', bg: savings_rate >= 20 ? 'bg-emerald-500/10' : 'bg-amber-500/10', suffix: 'Target: >20%' },
-          { title: "Est. Net Worth", value: `MAD ${net_worth.toLocaleString()}`, trend: 5.2, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10', suffix: '+5.2% YTD' }
-        ].map((metric, idx) => (
-          <div key={idx} className="bg-card/60 backdrop-blur-md border border-border/50 rounded-2xl p-5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${metric.bg}`}>
-                <metric.icon className={`w-5 h-5 ${metric.color}`} />
+      <div className="an-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginTop: 24 }}>
+        {metrics.map((metric, idx) => (
+          <div key={idx} style={{ ...cardBase, padding: '20px 22px' }}>
+            <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
+              <div className="flex items-center justify-center" style={{ width: 38, height: 38, borderRadius: 9, background: metric.bg, color: metric.color }}>
+                <metric.icon size={19} strokeWidth={1.7} />
               </div>
               {metric.trend !== null && (
-                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${metric.trend > 0 ? (metric.title === 'Est. Net Worth' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500') : 'bg-emerald-500/10 text-emerald-500'}`}>
+                <span
+                  className="inline-flex items-center"
+                  style={{
+                    gap: 4,
+                    fontFamily: MONO,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: '0.02em',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    color: metric.trend > 0 ? (metric.title === 'Est. Net Worth' ? C.incomeText : C.over) : C.incomeText,
+                    background: metric.trend > 0 ? (metric.title === 'Est. Net Worth' ? C.incomeSoft : C.overSoft) : C.incomeSoft,
+                  }}
+                >
                   {metric.trend > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                   {Math.abs(metric.trend)}%
-                </div>
+                </span>
               )}
             </div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">{metric.title}</h3>
-            <div className="text-2xl font-bold text-foreground tracking-tight mb-2">{metric.value}</div>
-            <p className="text-xs text-muted-foreground">{metric.suffix}</p>
+            <div style={{ ...mono, fontSize: 10 }}>{metric.title}</div>
+            <div style={{ marginTop: 7, fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', color: C.ink, fontVariantNumeric: 'tabular-nums' }}>{metric.value}</div>
+            <p style={{ marginTop: 6, fontSize: 12, color: C.muted }}>{metric.suffix}</p>
           </div>
         ))}
       </div>
 
       {/* Main Charts area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Trend Chart */}
-        <div className="col-span-1 lg:col-span-2 bg-card/60 backdrop-blur-md rounded-3xl p-6 border border-border/50">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              Cash Flow Trajectory
-            </h2>
-            <div className="flex items-center gap-4 text-sm font-medium">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div> Income</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div> Spending</div>
+      <div className="an-row" style={{ display: 'grid', gridTemplateColumns: '2fr minmax(0,1fr)', gap: 24, marginTop: 24 }}>
+        {/* Trend Chart (wider) */}
+        <div style={{ ...cardBase, padding: '24px 26px' }}>
+          <div className="flex items-start justify-between">
+            <SectionTitle title="Cash Flow Trajectory" subtitle="Income against spending over 6 months" />
+            <div className="flex items-center" style={{ gap: 18 }}>
+              <span className="inline-flex items-center" style={{ gap: 8, fontSize: 13, color: C.ink2 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: C.income }} />Income
+              </span>
+              <span className="inline-flex items-center" style={{ gap: 8, fontSize: 13, color: C.ink2 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: C.accent }} />Spending
+              </span>
             </div>
           </div>
-          
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={spending_trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorIncomeChart" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorSpendChart" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.4} />
-                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `MAD${val}`} dx={-10} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(9, 9, 11, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid var(--border)', borderRadius: '12px', color: '#fff', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' }}
-                  itemStyle={{ color: '#fff', fontWeight: 600 }}
-                  labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '8px' }}
-                />
-                <Area type="monotone" dataKey="income" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncomeChart)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10B981' }} />
-                <Area type="monotone" dataKey="spending" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorSpendChart)" activeDot={{ r: 6, strokeWidth: 0, fill: '#8B5CF6' }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+
+          {trendHasData ? (
+            <div style={{ marginTop: 24, height: 300, width: '100%' }} aria-label="Cash flow trajectory chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={spending_trend} margin={{ top: 8, right: 10, left: -8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="anIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={C.income} stopOpacity={0.22} />
+                      <stop offset="100%" stopColor={C.income} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="anSpend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={C.accent} stopOpacity={0.22} />
+                      <stop offset="100%" stopColor={C.accent} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke={C.grid} strokeDasharray="4 4" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11.5, fill: C.muted }} dy={6} />
+                  <YAxis axisLine={false} tickLine={false} width={50} tick={{ fontSize: 10, fill: C.faint, fontFamily: MONO }} tickFormatter={(v: number) => fmt(v)} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: C.border }} formatter={(v: number, n: string) => [`${fmt(v)} MAD`, n === 'income' ? 'Income' : 'Spending']} labelStyle={{ color: C.faint }} />
+                  <Area type="monotone" dataKey="income" stroke={C.income} strokeWidth={2.5} fillOpacity={1} fill="url(#anIncome)" activeDot={{ r: 5, strokeWidth: 0, fill: C.income }} />
+                  <Area type="monotone" dataKey="spending" stroke={C.accent} strokeWidth={2.5} fillOpacity={1} fill="url(#anSpend)" activeDot={{ r: 5, strokeWidth: 0, fill: C.accent }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState icon={BarChart3} title="No cash flow yet" subtext="Income and spending will chart here" height={300} />
+          )}
         </div>
 
         {/* Budget Performance */}
-        <div className="col-span-1 bg-card/60 backdrop-blur-md rounded-3xl p-6 border border-border/50 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-6">
-            <Target className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">Budget Velocity</h2>
-          </div>
-          
-          <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
-            {budget_performance.length > 0 ? budget_performance.map((item, idx) => (
-              <div key={idx} className="group">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-semibold text-foreground">{item.category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                      {item.spent} / {item.budget}
-                    </span>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${item.percentage > 100 ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : item.percentage > 80 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>
-                      {item.percentage}%
-                    </span>
+        <div style={{ ...cardBase, padding: '24px 26px', display: 'flex', flexDirection: 'column' }}>
+          <SectionTitle title="Budget Velocity" subtitle="Spent against monthly limits" />
+
+          <div className="flex flex-col" style={{ gap: 18, marginTop: 20, flex: 1 }}>
+            {budget_performance.length > 0 ? budget_performance.map((item, idx) => {
+              const barColor = item.percentage > 100 ? C.over : item.percentage > 80 ? C.gold : C.income;
+              const pillColor = item.percentage > 100 ? C.over : item.percentage > 80 ? C.gold : C.incomeText;
+              const pillBg = item.percentage > 100 ? C.overSoft : item.percentage > 80 ? 'rgba(212,168,69,0.14)' : C.incomeSoft;
+              return (
+                <div key={idx}>
+                  <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: C.ink }}>{item.category}</span>
+                    <div className="flex items-center" style={{ gap: 8 }}>
+                      <span style={{ fontSize: 12, color: C.muted, fontVariantNumeric: 'tabular-nums' }}>
+                        {fmt(item.spent)} / {fmt(item.budget)}
+                      </span>
+                      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 500, letterSpacing: '0.02em', padding: '2px 7px', borderRadius: 6, color: pillColor, background: pillBg }}>
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ width: '100%', height: 6, background: C.divider, borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.min(item.percentage, 100)}%`, background: barColor, borderRadius: 999, transition: 'width 1s ease-out' }} />
                   </div>
                 </div>
-                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden relative">
-                  <div
-                    className={`absolute top-0 left-0 bottom-0 rounded-full transition-all duration-1000 ease-out ${item.percentage > 100 ? 'bg-rose-500' : item.percentage > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            )) : (
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-sm text-muted-foreground text-center">No budgets detected.<br/>Setup budgets to track velocity.</p>
-              </div>
+              );
+            }) : (
+              <EmptyState icon={Target} title="No budgets yet" subtext="Set budgets to track velocity here" height={200} />
             )}
           </div>
         </div>
-
       </div>
-    </div>
+    </Page>
   );
 }

@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Car, Utensils, Film, Home, Heart, Smartphone, Edit, Trash2 } from 'lucide-react';
-import { Button } from './Button';
-import { ProgressBar } from './ProgressBar';
+import { Plus, Wallet, Edit, Trash2 } from 'lucide-react';
 import { CreateBudgetModal } from './CreateBudgetModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { budgetAPI } from '../api';
-
-const iconMap: Record<string, any> = {
-  'Food & Dining': Utensils,
-  'Transportation': Car,
-  'Entertainment': Film,
-  'Shopping': ShoppingCart,
-  'Bills & Utilities': Home,
-  'Healthcare': Heart,
-  'Electronics': Smartphone,
-};
+import {
+  C,
+  FONT,
+  MONO,
+  fmt,
+  colorFor,
+  Page,
+  PageHeader,
+  Card,
+  PrimaryButton,
+  EmptyState,
+  DSStyles,
+} from './ds';
 
 export function Budgets() {
   const [budgets, setBudgets] = useState<any[]>([]);
@@ -77,161 +78,174 @@ export function Budgets() {
     }
   };
 
-  const getBudgetStatus = (spent: number, limit: number) => {
-    const percentage = (spent / limit) * 100;
-    if (percentage > 100) return { color: 'red', text: 'Over Budget', bgColor: 'bg-destructive/10 border border-destructive/20', textColor: 'text-destructive' };
-    if (percentage >= 80) return { color: 'orange', text: 'High Usage', bgColor: 'bg-orange-500/10 border border-orange-500/20', textColor: 'text-orange-500' };
-    if (percentage >= 60) return { color: 'blue', text: 'Moderate', bgColor: 'bg-blue-500/10 border border-blue-500/20', textColor: 'text-blue-500' };
-    return { color: 'emerald', text: 'On Track', bgColor: 'bg-emerald-500/10 border border-emerald-500/20', textColor: 'text-emerald-500' };
-  };
-
   const totalBudget = budgets.reduce((sum, b) => sum + b.monthly_limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.current_spent, 0);
   const totalRemaining = totalBudget - totalSpent;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center" style={{ minHeight: 384, fontFamily: FONT }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading budgets...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full" style={{ border: `2px solid ${C.border}`, borderBottomColor: C.accent }} />
+          <p className="mt-4" style={{ fontSize: 13, color: C.muted }}>Loading budgets…</p>
         </div>
       </div>
     );
   }
 
+  const createButton = (
+    <PrimaryButton onClick={() => setIsCreateModalOpen(true)}>
+      <Plus size={16} strokeWidth={2} />
+      Create budget
+    </PrimaryButton>
+  );
+
+  const summaryCards: { label: string; value: number; color: string; accent?: string }[] = [
+    { label: 'Total budget', value: totalBudget, color: C.ink },
+    { label: 'Spent', value: totalSpent, color: C.ink },
+    {
+      label: 'Remaining',
+      value: totalRemaining,
+      color: totalRemaining < 0 ? C.over : C.incomeText,
+      accent: C.income,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Budgets</h1>
-          <p className="text-muted-foreground mt-1">Manage your spending limits by category</p>
-        </div>
-        <Button variant="primary" size="large" onClick={() => setIsCreateModalOpen(true)} className="shadow-sm hover:opacity-90">
-          <Plus size={20} className="mr-2" />
-          Create Budget
-        </Button>
-      </div>
+    <Page>
+      <DSStyles />
+      <style>{`@media (max-width:768px){.budget-summary{grid-template-columns:minmax(0,1fr) !important;}}`}</style>
 
-      {/* Budget Summary */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <p className="text-sm text-muted-foreground mb-2 font-medium">Total Budget</p>
-          <p className="text-3xl font-bold text-foreground tracking-tight">MAD {totalBudget.toLocaleString()}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <p className="text-sm text-muted-foreground mb-2 font-medium">Total Spent</p>
-          <p className="text-3xl font-bold text-foreground tracking-tight">MAD {totalSpent.toLocaleString()}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <p className="text-sm text-muted-foreground mb-2 font-medium">Remaining</p>
-          <p className="text-3xl font-bold text-emerald-500 tracking-tight">MAD {totalRemaining.toLocaleString()}</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="This month" title="Budgets" actions={createButton} />
 
-      {/* Budget Cards Grid */}
-      <div className="grid grid-cols-3 gap-6">
-        {budgets.map((budget) => {
-          const Icon = iconMap[budget.category] || ShoppingCart;
-          const percentage = (budget.current_spent / budget.monthly_limit) * 100;
-          const remaining = budget.monthly_limit - budget.current_spent;
-          const spent = budget.current_spent;
-          const limit = budget.monthly_limit;
-          const status = getBudgetStatus(spent, limit);
-          const isHovered = hoveredBudget === budget.id;
-
-          return (
+      {/* Summary cards */}
+      <div
+        className="budget-summary"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 16, marginTop: 26 }}
+      >
+        {summaryCards.map((c) => (
+          <Card key={c.label} accent={c.accent} style={{ padding: '20px 22px' }}>
+            <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted, fontWeight: 500 }}>
+              {c.label}
+            </div>
             <div
-              key={budget.id}
-              onMouseEnter={() => setHoveredBudget(budget.id)}
-              onMouseLeave={() => setHoveredBudget(null)}
-              className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:border-primary/30 transition-all relative group"
+              style={{ marginTop: 10, fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: c.color, fontVariantNumeric: 'tabular-nums' }}
+              aria-label={`${c.label}: ${fmt(c.value)} MAD`}
             >
-              {/* Action Buttons */}
-              <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'
-                }`}>
-                <button
-                  onClick={() => {
-                    setEditingBudget(budget);
-                    setIsCreateModalOpen(true);
+              {fmt(c.value)} <span style={{ fontSize: 14, color: C.muted, fontWeight: 500 }}>MAD</span>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Budget list */}
+      <Card style={{ marginTop: 24, padding: budgets.length === 0 ? 12 : '8px 4px' }}>
+        {budgets.length === 0 ? (
+          <EmptyState
+            icon={Wallet}
+            title="No budgets yet"
+            subtext="Set a monthly limit for a category to track your spending."
+            action={createButton}
+          />
+        ) : (
+          <div className="flex flex-col">
+            {budgets.map((budget, i) => {
+              const spent = budget.current_spent;
+              const limit = budget.monthly_limit;
+              const remaining = limit - spent;
+              const percentage = limit > 0 ? (spent / limit) * 100 : 0;
+              const over = remaining < 0;
+              const dot = colorFor(budget.category);
+              const fillColor = over ? C.over : dot;
+              const isHovered = hoveredBudget === budget.id;
+
+              return (
+                <div
+                  key={budget.id}
+                  className="ds-row"
+                  onMouseEnter={() => setHoveredBudget(budget.id)}
+                  onMouseLeave={() => setHoveredBudget(null)}
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: 9,
+                    borderBottom: i < budgets.length - 1 ? `0.5px solid ${C.divider}` : 'none',
+                    transition: 'background 150ms',
                   }}
-                  className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                 >
-                  <Edit size={16} />
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedBudget(budget);
-                    setIsDeleteModalOpen(true);
-                  }}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+                  {/* Top line: category + amounts + actions */}
+                  <div className="flex items-center" style={{ gap: 12 }}>
+                    <span
+                      aria-hidden="true"
+                      style={{ width: 10, height: 10, borderRadius: 3, background: dot, flexShrink: 0 }}
+                    />
+                    <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: C.ink }}>{budget.category}</span>
 
-              {/* Category Header */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`p-2.5 rounded-lg transition-transform duration-300 group-hover:scale-105 ${percentage > 100 ? 'bg-destructive/10 text-destructive' :
-                  percentage >= 80 ? 'bg-orange-50 text-orange-600' :
-                    percentage >= 60 ? 'bg-blue-50 text-blue-600' :
-                      'bg-emerald-50 text-emerald-600'
-                  }`}>
-                  <Icon size={24} />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-foreground">{budget.category}</h4>
-                </div>
-              </div>
+                    <span style={{ fontSize: 13, color: C.muted, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontWeight: 600, color: C.ink }}>{fmt(spent)}</span> / {fmt(limit)} MAD
+                    </span>
 
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <ProgressBar current={spent} max={limit} showPercentage={false} />
-              </div>
+                    <div
+                      className="flex items-center"
+                      style={{ gap: 4, marginLeft: 4, opacity: isHovered ? 1 : 0, transition: 'opacity 150ms' }}
+                    >
+                      <button
+                        type="button"
+                        aria-label={`Edit ${budget.category} budget`}
+                        onClick={() => {
+                          setEditingBudget(budget);
+                          setIsCreateModalOpen(true);
+                        }}
+                        className="ds-icon-btn flex items-center justify-center"
+                        style={{ width: 30, height: 30, borderRadius: 7, border: 0, background: 'transparent', color: C.muted, cursor: 'pointer', transition: 'all 150ms' }}
+                      >
+                        <Edit size={15} strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${budget.category} budget`}
+                        onClick={() => {
+                          setSelectedBudget(budget);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="ds-icon-btn flex items-center justify-center"
+                        style={{ width: 30, height: 30, borderRadius: 7, border: 0, background: 'transparent', color: C.muted, cursor: 'pointer', transition: 'all 150ms' }}
+                      >
+                        <Trash2 size={15} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Budget Details */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Spent</span>
-                  <span className="font-semibold text-foreground">
-                    MAD {spent.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Limit</span>
-                  <span className="font-semibold text-foreground">
-                    MAD {limit.toLocaleString()}
-                  </span>
-                </div>
-                <div className="pt-3 border-t border-border mt-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{status.text}</span>
-                    <span className={`font-semibold ${remaining < 0 ? 'text-destructive' : 'text-emerald-500'
-                      }`}>
-                      {remaining < 0 ? 'Over MAD ' : 'Remaining MAD '}{Math.abs(remaining).toLocaleString()}
+                  {/* Progress track */}
+                  <div
+                    style={{ marginTop: 12, width: '100%', height: 8, borderRadius: 5, background: C.divider, overflow: 'hidden' }}
+                    role="progressbar"
+                    aria-valuenow={Math.round(percentage)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${budget.category} budget usage`}
+                  >
+                    <div
+                      style={{ width: `${Math.min(percentage, 100)}%`, height: '100%', borderRadius: 5, background: fillColor, transition: 'width 300ms ease' }}
+                    />
+                  </div>
+
+                  {/* Bottom line: percent + remaining/over */}
+                  <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.02em', color: over ? C.over : C.muted, fontWeight: 500 }}>
+                      {Math.round(percentage)}%
+                    </span>
+                    <span
+                      style={{ fontSize: 12.5, fontVariantNumeric: 'tabular-nums', color: over ? C.over : C.muted, fontWeight: over ? 600 : 400 }}
+                    >
+                      {over ? `${fmt(Math.abs(remaining))} MAD over` : `${fmt(remaining)} MAD left`}
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Empty State Card */}
-        <div
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-card rounded-2xl p-6 border-2 border-dashed border-border flex flex-col items-center justify-center min-h-[280px] hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
-        >
-          <div className="p-4 bg-primary/10 rounded-full mb-4 group-hover:shadow-[0_0_15px_rgba(127,13,242,0.3)]">
-            <Plus size={32} className="text-primary" />
+              );
+            })}
           </div>
-          <h4 className="font-semibold text-foreground mb-2">Add New Budget</h4>
-          <p className="text-sm text-muted-foreground text-center">
-            Create a budget for a new category
-          </p>
-        </div>
-      </div>
+        )}
+      </Card>
 
       {/* Modals */}
       <CreateBudgetModal
@@ -256,6 +270,8 @@ export function Budgets() {
         title="Delete Budget"
         message="Are you sure you want to delete this budget? This action cannot be undone."
       />
-    </div>
+
+      <style>{`.ds-icon-btn:hover{background:${C.divider};color:${C.ink2};}`}</style>
+    </Page>
   );
 }

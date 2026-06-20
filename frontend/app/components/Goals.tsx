@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Edit, Trash2, Calendar, TrendingDown } from 'lucide-react';
-import { Button } from './Button';
-import { ProgressBar } from './ProgressBar';
+import { Plus, Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Edit, Trash2, Calendar } from 'lucide-react';
 import { CreateGoalModal } from './CreateGoalModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { goalAPI } from '../api';
+import {
+  C,
+  FONT,
+  MONO,
+  fmtMAD,
+  colorFor,
+  mono,
+  cardStyle,
+  Page,
+  PageHeader,
+  Card,
+  MonoLabel,
+  PrimaryButton,
+  GhostButton,
+  Pill,
+  EmptyState,
+  DSStyles,
+} from './ds';
 
 const iconMap: Record<string, any> = {
   '💰': PiggyBank,
@@ -100,228 +116,215 @@ export function Goals() {
     const percentage = (current / target) * 100;
     const daysInfo = calculateDaysRemaining(deadline);
 
-    if (percentage >= 100) return { color: 'emerald', text: 'Completed', bgColor: 'bg-emerald-500/10 border border-emerald-500/20', textColor: 'text-emerald-500' };
-    if (daysInfo.isOverdue) return { color: 'red', text: 'Overdue', bgColor: 'bg-destructive/10 border border-destructive/20', textColor: 'text-destructive' };
-    if (percentage >= 75) return { color: 'blue', text: 'Almost There', bgColor: 'bg-blue-500/10 border border-blue-500/20', textColor: 'text-blue-500' };
-    if (percentage >= 50) return { color: 'purple', text: 'In Progress', bgColor: 'bg-primary/10 border border-primary/20', textColor: 'text-primary' };
-    return { color: 'orange', text: 'Just Started', bgColor: 'bg-orange-500/10 border border-orange-500/20', textColor: 'text-orange-500' };
+    if (percentage >= 100) return { text: 'Completed', tone: 'pos' as const, color: C.income };
+    if (daysInfo.isOverdue) return { text: 'Overdue', tone: 'neg' as const, color: C.over };
+    if (percentage >= 75) return { text: 'Almost There', tone: 'neutral' as const, color: C.blue };
+    if (percentage >= 50) return { text: 'In Progress', tone: 'neutral' as const, color: C.accent };
+    return { text: 'Just Started', tone: 'neutral' as const, color: C.gold };
   };
 
   const totalTargetAmount = goals.reduce((sum, g) => sum + g.target_amount, 0);
   const totalCurrentAmount = goals.reduce((sum, g) => sum + g.current_amount, 0);
   const totalRemaining = totalTargetAmount - totalCurrentAmount;
-  const overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) * 100 : 0;
+
+  const tabs: { id: 'active' | 'completed' | 'all'; label: string }[] = [
+    { id: 'active', label: 'Active' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'all', label: 'All' },
+  ];
+
+  const num: React.CSSProperties = { fontVariantNumeric: 'tabular-nums' };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading goals...</p>
+      <Page>
+        <DSStyles />
+        <div className="flex items-center justify-center" style={{ minHeight: 384, fontFamily: FONT }}>
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full" style={{ border: `2px solid ${C.border}`, borderBottomColor: C.accent }} />
+            <p className="mt-4" style={{ fontSize: 13, color: C.muted }}>Loading goals…</p>
+          </div>
         </div>
-      </div>
+      </Page>
     );
   }
 
+  const summary: { label: string; value: string; color?: string }[] = [
+    { label: 'Total Goals', value: String(goals.length) },
+    { label: 'Target Amount', value: fmtMAD(totalTargetAmount) },
+    { label: 'Saved So Far', value: fmtMAD(totalCurrentAmount), color: C.income },
+    { label: 'Remaining', value: fmtMAD(Math.max(0, totalRemaining)), color: C.accent },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Goals</h1>
-          <p className="text-muted-foreground mt-1">Track and achieve your financial goals</p>
-        </div>
-        <Button variant="primary" size="large" onClick={() => setIsCreateModalOpen(true)} className="shadow-[0_0_15px_rgba(127,13,242,0.4)]">
-          <Plus size={20} className="mr-2" />
-          Create Goal
-        </Button>
+    <Page>
+      <DSStyles />
+      <style>{`
+        @media (max-width:1024px){.goals-summary{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}.goals-grid{grid-template-columns:minmax(0,1fr) !important;}}
+        @media (max-width:560px){.goals-summary{grid-template-columns:minmax(0,1fr) !important;}}
+        .ds-icon-btn:hover{background:${C.divider} !important;color:${C.ink} !important;}
+      `}</style>
+
+      <PageHeader
+        eyebrow="Targets"
+        title="Goals"
+        actions={
+          <PrimaryButton onClick={() => setIsCreateModalOpen(true)}>
+            <Plus size={16} strokeWidth={2} />
+            Create Goal
+          </PrimaryButton>
+        }
+      />
+
+      {/* Tabs */}
+      <div className="flex items-center" style={{ gap: 8, marginTop: 24 }}>
+        {tabs.map((t) => (
+          <GhostButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)}>
+            {t.label}
+          </GhostButton>
+        ))}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border">
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 font-medium transition-colors relative ${activeTab === 'active'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          Active Goals
-          {activeTab === 'active' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_10px_rgba(127,13,242,0.8)]" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`px-4 py-2 font-medium transition-colors relative ${activeTab === 'completed'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          Completed
-          {activeTab === 'completed' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_10px_rgba(127,13,242,0.8)]" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 font-medium transition-colors relative ${activeTab === 'all'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          All Goals
-          {activeTab === 'all' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_10px_rgba(127,13,242,0.8)]" />
-          )}
-        </button>
-      </div>
-
-      {/* Summary Cards */}
+      {/* Summary */}
       {goals.length > 0 && (
-        <div className="grid grid-cols-4 gap-6">
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <p className="text-sm text-muted-foreground mb-2 font-medium">Total Goals</p>
-            <p className="text-3xl font-bold text-foreground tracking-tight">{goals.length}</p>
-          </div>
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <p className="text-sm text-muted-foreground mb-2 font-medium">Target Amount</p>
-            <p className="text-3xl font-bold text-foreground tracking-tight">MAD {totalTargetAmount.toLocaleString()}</p>
-          </div>
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <p className="text-sm text-muted-foreground mb-2 font-medium">Saved So Far</p>
-            <p className="text-3xl font-bold text-blue-500 tracking-tight">MAD {totalCurrentAmount.toLocaleString()}</p>
-          </div>
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-            <p className="text-sm text-muted-foreground mb-2 font-medium">Remaining</p>
-            <p className="text-3xl font-bold text-primary tracking-tight">MAD {totalRemaining.toLocaleString()}</p>
-          </div>
+        <div className="goals-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginTop: 24 }}>
+          {summary.map((s) => (
+            <Card key={s.label} style={{ padding: '18px 20px' }}>
+              <MonoLabel style={{ fontSize: 10 }}>{s.label}</MonoLabel>
+              <div style={{ marginTop: 10, fontSize: 26, fontWeight: 600, letterSpacing: '-0.025em', color: s.color || C.ink, ...num }}>
+                {s.value}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Goals Grid */}
+      {/* Goals grid */}
       {goals.length === 0 ? (
-        <div className="bg-card rounded-2xl p-12 shadow-sm border border-border text-center">
-          <Target className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No goals yet</h3>
-          <p className="text-muted-foreground mb-6">
-            {activeTab === 'completed'
-              ? "You haven't completed any goals yet. Keep working on your active goals!"
-              : "Create your first financial goal to start tracking your progress"}
-          </p>
-          {activeTab !== 'completed' && (
-            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
-              <Plus size={18} className="mr-2" />
-              Create Your First Goal
-            </Button>
-          )}
-        </div>
+        <Card style={{ marginTop: 24, padding: '48px 24px' }} className="flex">
+          <EmptyState
+            icon={Target}
+            title="No goals yet"
+            subtext={
+              activeTab === 'completed'
+                ? "You haven't completed any goals yet. Keep working on your active goals."
+                : 'Create your first financial goal to start tracking your progress.'
+            }
+            action={
+              activeTab !== 'completed' ? (
+                <PrimaryButton onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus size={16} strokeWidth={2} />
+                  Create Your First Goal
+                </PrimaryButton>
+              ) : undefined
+            }
+          />
+        </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="goals-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginTop: 24 }}>
           {goals.map((goal) => {
-            const Icon = iconMap[goal.icon] || Target;
-            const percentage = (goal.current_amount / goal.target_amount) * 100;
+            const percentage = Math.min(100, (goal.current_amount / goal.target_amount) * 100);
             const remaining = goal.target_amount - goal.current_amount;
             const daysInfo = calculateDaysRemaining(goal.deadline);
             const status = getGoalStatus(goal.current_amount, goal.target_amount, goal.deadline);
             const isHovered = hoveredGoal === goal.id;
-            const isCompleted = percentage >= 100;
+            const isCompleted = (goal.current_amount / goal.target_amount) * 100 >= 100;
+            const fill = isCompleted ? C.income : colorFor(goal.name);
 
             return (
               <div
                 key={goal.id}
+                className="ds-card-hover"
                 onMouseEnter={() => setHoveredGoal(goal.id)}
                 onMouseLeave={() => setHoveredGoal(null)}
-                className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:border-primary/30 transition-all relative group"
+                style={{ ...cardStyle, borderLeft: `3px solid ${status.color}`, position: 'relative', padding: '22px 24px', transition: 'border-color 150ms' }}
               >
-                {/* Action Buttons */}
-                <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'
-                  }`}>
+                {/* Action buttons */}
+                <div
+                  className="flex"
+                  style={{ position: 'absolute', top: 16, right: 16, gap: 4, opacity: isHovered ? 1 : 0, transition: 'opacity 150ms' }}
+                >
                   <button
+                    aria-label="Edit goal"
                     onClick={() => {
                       setEditingGoal(goal);
                       setIsCreateModalOpen(true);
                     }}
-                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                    className="ds-icon-btn flex items-center justify-center"
+                    style={{ width: 30, height: 30, borderRadius: 7, border: 0, background: 'transparent', color: C.muted, cursor: 'pointer' }}
                   >
-                    <Edit size={16} />
+                    <Edit size={15} />
                   </button>
                   <button
+                    aria-label="Delete goal"
                     onClick={() => {
                       setSelectedGoal(goal);
                       setIsDeleteModalOpen(true);
                     }}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    className="ds-icon-btn flex items-center justify-center"
+                    style={{ width: 30, height: 30, borderRadius: 7, border: 0, background: 'transparent', color: C.muted, cursor: 'pointer' }}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
 
-                {/* Goal Header */}
-                <div className="flex items-start gap-4 mb-4">
-                  <div className={`p-3 rounded-xl text-3xl transition-transform duration-300 group-hover:scale-110 ${isCompleted ? 'bg-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.2)]' :
-                      daysInfo.isOverdue ? 'bg-destructive/10 shadow-[0_0_10px_rgba(239,68,68,0.2)]' :
-                        'bg-primary/10 shadow-[0_0_10px_rgba(127,13,242,0.2)]'
-                    }`}>
+                {/* Header */}
+                <div className="flex items-start" style={{ gap: 14, marginBottom: 16, paddingRight: 64 }}>
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: 46, height: 46, borderRadius: 11, fontSize: 24, background: C.divider, border: `1px solid ${C.border}`, flexShrink: 0 }}
+                  >
                     {goal.icon}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-foreground text-lg mb-1">{goal.name}</h4>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded-md ${status.bgColor} ${status.textColor} font-medium`}>
-                        {status.text}
-                      </span>
-                      {goal.category && (
-                        <span className="text-xs text-muted-foreground">{goal.category}</span>
-                      )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', color: C.ink }}>{goal.name}</div>
+                    <div className="flex items-center" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                      <Pill tone={status.tone}>{status.text}</Pill>
+                      {goal.category && <span style={{ fontSize: 12, color: C.muted }}>{goal.category}</span>}
                     </div>
                   </div>
                 </div>
 
-                {/* Description */}
                 {goal.description && (
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{goal.description}</p>
+                  <p style={{ fontSize: 13, color: C.muted, marginBottom: 16, lineHeight: 1.5 }}>{goal.description}</p>
                 )}
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {percentage.toFixed(1)}% Complete
+                {/* Progress */}
+                <div style={{ marginBottom: 16 }}>
+                  <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+                    <span style={{ ...mono, fontSize: 10 }}>Progress</span>
+                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 500, color: C.ink, ...num }}>
+                      {percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <ProgressBar current={goal.current_amount} max={goal.target_amount} showPercentage={false} />
+                  <div style={{ height: 8, borderRadius: 5, background: C.divider, overflow: 'hidden' }}>
+                    <div style={{ width: `${percentage}%`, height: '100%', borderRadius: 5, background: fill, transition: 'width 300ms' }} />
+                  </div>
                 </div>
 
-                {/* Goal Details */}
-                <div className="space-y-3 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Current</span>
-                    <span className="font-semibold text-foreground">
-                      MAD {goal.current_amount.toLocaleString()}
-                    </span>
+                {/* Details */}
+                <div style={{ paddingTop: 14, borderTop: `1px solid ${C.divider}`, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: C.muted }}>Current</span>
+                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{fmtMAD(goal.current_amount)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Target</span>
-                    <span className="font-semibold text-foreground">
-                      MAD {goal.target_amount.toLocaleString()}
-                    </span>
+                  <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: C.muted }}>Target</span>
+                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{fmtMAD(goal.target_amount)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Remaining</span>
-                    <span className={`font-semibold ${remaining <= 0 ? 'text-emerald-500' : 'text-primary'}`}>
-                      MAD {Math.max(0, remaining).toLocaleString()}
+                  <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: C.muted }}>Remaining</span>
+                    <span style={{ fontWeight: 600, color: remaining <= 0 ? C.incomeText : C.accent, ...num }}>
+                      {fmtMAD(Math.max(0, remaining))}
                     </span>
                   </div>
                   {goal.deadline && (
-                    <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar size={14} />
-                        <span>Deadline</span>
-                      </div>
-                      <span className={`font-medium ${daysInfo.isOverdue ? 'text-destructive' : 'text-foreground'}`}>
-                        {daysInfo.text}
+                    <div className="flex items-center justify-between" style={{ fontSize: 13, paddingTop: 9, borderTop: `1px solid ${C.divider}` }}>
+                      <span className="flex items-center" style={{ gap: 6, color: C.muted }}>
+                        <Calendar size={14} strokeWidth={1.7} />
+                        Deadline
                       </span>
+                      <span style={{ fontWeight: 500, color: daysInfo.isOverdue ? C.over : C.ink }}>{daysInfo.text}</span>
                     </div>
                   )}
                 </div>
@@ -354,6 +357,6 @@ export function Goals() {
         title="Delete Goal"
         message={`Are you sure you want to delete "${selectedGoal?.name}"? This action cannot be undone.`}
       />
-    </div>
+    </Page>
   );
 }

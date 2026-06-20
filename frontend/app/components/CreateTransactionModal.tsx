@@ -4,6 +4,29 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { Calendar, Loader2 } from 'lucide-react';
 import { getCustomCategories, addCustomCategory } from '../customCategories';
+import { C, FONT, MONO, PrimaryButton, GhostButton } from './ds';
+
+const fieldLabel: React.CSSProperties = { display: 'block', marginBottom: 7, fontSize: 13, fontWeight: 500, color: C.ink };
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 14px',
+  background: C.card,
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  fontSize: 14,
+  fontFamily: FONT,
+  color: C.ink,
+  outline: 'none',
+  transition: 'border-color 150ms, box-shadow 150ms',
+};
+const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = C.accent;
+  e.currentTarget.style.boxShadow = `0 0 0 3px ${C.accentSoft}`;
+};
+const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = C.border;
+  e.currentTarget.style.boxShadow = 'none';
+};
 
 interface CreateTransactionModalProps {
   isOpen: boolean;
@@ -101,38 +124,57 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Amount */}
         <div>
-          <label className="block mb-2 text-sm font-medium text-foreground">Amount (MAD)</label>
+          <label style={fieldLabel}>Amount (MAD)</label>
           <input
             type="number"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
             placeholder="0.00"
-            className="w-full px-4 py-3 text-3xl font-bold bg-muted/30 border-2 border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder-muted-foreground transition-all"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={{ ...inputBase, padding: '12px 14px', fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: C.ink }}
             required
           />
         </div>
 
         {/* Type Toggle */}
         <div>
-          <label className="block mb-2 text-sm font-medium text-foreground">Type</label>
-          <div className="grid grid-cols-2 gap-3 p-1 bg-muted rounded-lg border border-border">
+          <label style={fieldLabel}>Type</label>
+          <div className="grid grid-cols-2" style={{ gap: 6, padding: 4, background: C.divider, borderRadius: 10, border: `1px solid ${C.border}` }}>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'income' })}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${formData.type === 'income'
-                ? 'bg-green-600 text-white shadow-sm'
-                : 'text-foreground/70 hover:text-foreground hover:bg-background/50'
-                }`}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 7,
+                border: 0,
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: FONT,
+                cursor: 'pointer',
+                transition: 'all 150ms',
+                background: formData.type === 'income' ? C.income : 'transparent',
+                color: formData.type === 'income' ? '#fff' : C.muted,
+              }}
             >
               Income
             </button>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'expense' })}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${formData.type === 'expense'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-foreground/70 hover:text-foreground hover:bg-background/50'
-                }`}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 7,
+                border: 0,
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: FONT,
+                cursor: 'pointer',
+                transition: 'all 150ms',
+                background: formData.type === 'expense' ? C.card : 'transparent',
+                color: formData.type === 'expense' ? C.ink : C.muted,
+                boxShadow: formData.type === 'expense' ? '0 1px 2px rgba(26,24,21,0.08)' : 'none',
+              }}
             >
               Expense
             </button>
@@ -141,11 +183,13 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Category */}
         <div>
-          <label className="block mb-2 text-sm font-medium text-foreground">Category</label>
+          <label style={fieldLabel}>Category</label>
           <select
             value={formData.category}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className="w-full px-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all appearance-none cursor-pointer"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={{ ...inputBase, cursor: 'pointer', appearance: 'none' }}
             required
           >
             {categories.map(cat => (
@@ -161,7 +205,9 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Enter custom category name"
-                className="w-full px-4 py-2.5 bg-background border border-primary text-foreground placeholder-muted-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                onFocus={focusOn}
+                onBlur={focusOff}
+                style={inputBase}
                 required={showCustomInput}
               />
             </div>
@@ -170,27 +216,31 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Description */}
         <div>
-          <label className="block mb-2 text-sm font-medium text-foreground">Description</label>
+          <label style={fieldLabel}>Description</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Add a note..."
             rows={3}
-            className="w-full px-4 py-2.5 bg-background border border-border text-foreground placeholder-muted-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none transition-all"
+            onFocus={focusOn}
+            onBlur={focusOff}
+            style={{ ...inputBase, resize: 'none' }}
             required
           />
         </div>
 
         {/* Date */}
         <div>
-          <label className="block mb-2 text-sm font-medium text-foreground">Date</label>
+          <label style={fieldLabel}>Date</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+            <Calendar style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint }} size={18} />
             <input
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full pl-10 pr-4 py-2.5 bg-background border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all cursor-pointer"
+              onFocus={focusOn}
+              onBlur={focusOff}
+              style={{ ...inputBase, paddingLeft: 38, cursor: 'pointer' }}
               required
             />
           </div>
@@ -198,10 +248,10 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="secondary" size="large" className="flex-1" onClick={onClose} disabled={isLoading}>
+          <GhostButton onClick={onClose} style={{ flex: 1, justifyContent: 'center', padding: '10px 15px', fontSize: 13, opacity: isLoading ? 0.6 : 1 }}>
             Cancel
-          </Button>
-          <Button type="submit" variant="primary" size="large" className="flex-1 text-primary-foreground" disabled={isLoading}>
+          </GhostButton>
+          <PrimaryButton type="submit" disabled={isLoading} style={{ flex: 1 }}>
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
@@ -210,7 +260,7 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
             ) : (
               editingTransaction ? 'Update Transaction' : 'Create Transaction'
             )}
-          </Button>
+          </PrimaryButton>
         </div>
       </form>
     </Modal>
