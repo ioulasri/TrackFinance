@@ -2,8 +2,8 @@ import React from 'react';
 
 /**
  * Shared design tokens + atoms for the authenticated app.
- * Mirrors the TrackFinance design mockup (warm paper, near-black ink,
- * terracotta accent, Inter + IBM Plex Mono). Landing/auth screens keep the
+ * TrackFinance identity: warm paper, near-black ink, indigo accent, Inter +
+ * IBM Plex Mono, with a concentric-ring motif. Landing/auth screens keep the
  * emerald theme — this is applied only inside the signed-in shell.
  */
 export const C = {
@@ -16,9 +16,9 @@ export const C = {
   border: '#E5E2DA',
   divider: '#F0EDE5',
   grid: '#ECE9E1',
-  accent: '#E97B47',
-  accentDark: '#DC6F3C',
-  accentSoft: 'rgba(233,123,71,0.14)',
+  accent: '#4F46E5',
+  accentDark: '#4338CA',
+  accentSoft: 'rgba(79,70,229,0.14)',
   income: '#5BA372',
   incomeText: '#3B7A4D',
   incomeSoft: 'rgba(91,163,114,0.12)',
@@ -29,7 +29,7 @@ export const C = {
   overSoft: 'rgba(196,69,69,0.12)',
 };
 
-export const RAMP = [C.accent, C.blue, C.income, C.gold, C.faint, C.purple, '#C98A3B'];
+export const RAMP = [C.accent, C.income, C.gold, C.blue, C.purple, C.faint, '#C98A3B'];
 export const FONT = "'Inter',-apple-system,system-ui,sans-serif";
 export const MONO = "'IBM Plex Mono',monospace";
 
@@ -115,7 +115,7 @@ export function SectionTitle({ title, subtitle }: { title: string; subtitle?: st
   );
 }
 
-/** Solid terracotta primary button. */
+/** Solid indigo primary button. */
 export function PrimaryButton({
   children,
   onClick,

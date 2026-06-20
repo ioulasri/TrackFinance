@@ -191,7 +191,15 @@ export default function App() {
         />
 
         {/* Main column — offset by sidebar (64px collapsed, 240px when pinned) */}
-        <div className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`} style={{ background: '#FAFAF7' }}>
+        <div
+          className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`}
+          style={{
+            backgroundColor: '#FAFAF7',
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cg fill='none' stroke='%234F46E5' stroke-opacity='0.05'%3E%3Ccircle cx='120' cy='120' r='30'/%3E%3Ccircle cx='120' cy='120' r='58'/%3E%3Ccircle cx='120' cy='120' r='86'/%3E%3Ccircle cx='120' cy='120' r='114'/%3E%3C/g%3E%3C/svg%3E\")",
+            backgroundSize: '240px 240px',
+          }}
+        >
           <TopBar user={user} />
           <main className="flex-1" style={{ padding: '30px 36px 48px' }}>
             <div style={{ maxWidth: 1320, margin: '0 auto' }}>

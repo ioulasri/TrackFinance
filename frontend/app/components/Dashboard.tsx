@@ -33,8 +33,8 @@ const C = {
   border: '#E5E2DA',
   divider: '#F0EDE5',
   grid: '#ECE9E1',
-  accent: '#E97B47',
-  accentSoft: 'rgba(233,123,71,0.14)',
+  accent: '#4F46E5',
+  accentSoft: 'rgba(79,70,229,0.14)',
   income: '#5BA372',
   incomeText: '#3B7A4D',
   incomeSoft: 'rgba(91,163,114,0.12)',
@@ -42,7 +42,7 @@ const C = {
   gold: '#D4A845',
   over: '#C44545',
 };
-const DONUT_RAMP = [C.accent, C.blue, C.income, C.gold, C.faint, '#9C6FB0', '#C98A3B'];
+const DONUT_RAMP = [C.accent, C.income, C.gold, C.blue, '#9C6FB0', C.faint, '#C98A3B'];
 const FONT = "'Inter',-apple-system,system-ui,sans-serif";
 const MONO = "'IBM Plex Mono',monospace";
 

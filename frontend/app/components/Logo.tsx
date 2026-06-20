@@ -1,10 +1,10 @@
 /**
  * TrackFinance logo.
  *
- * A rounded emerald "coin" tile holding a bold white chart-line mark
- * that rises into a dot at the apex. Reads as: money + tracking + growth.
+ * A rounded indigo "coin" tile holding concentric white rings around a
+ * center dot — the brand's ring motif, echoed by the faint background pattern.
  *
- * Colors are hardcoded (not `currentColor`) so the mark is always emerald
+ * Colors are hardcoded (not `currentColor`) so the mark is always indigo
  * regardless of where it's mounted.
  *
  * Usage:
@@ -62,7 +62,7 @@ interface LogoMarkProps {
  */
 export function LogoMark({
   size = 32,
-  color = '#059669',
+  color = '#4F46E5',
   className = '',
 }: LogoMarkProps) {
   return (
@@ -75,25 +75,16 @@ export function LogoMark({
       role="img"
       aria-label="TrackFinance"
     >
-      {/* Emerald coin tile */}
+      {/* Indigo coin tile */}
       <rect x="0" y="0" width="32" height="32" rx="9" fill={color} />
 
       {/* Subtle diagonal highlight for depth */}
       <rect x="0" y="0" width="32" height="32" rx="9" fill="url(#tf-logo-highlight)" opacity="0.22" />
 
-      {/* Bold rising chart line: low-left → high-right */}
-      <path
-        d="M8 22 L14 16 L18 19 L23 12"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-
-      {/* Apex marker: white halo + colored center dot */}
-      <circle cx="23" cy="12" r="3.4" fill="white" />
-      <circle cx="23" cy="12" r="1.6" fill={color} />
+      {/* Concentric ring motif */}
+      <circle cx="16" cy="16" r="9" fill="none" stroke="white" strokeWidth="2.4" />
+      <circle cx="16" cy="16" r="4.2" fill="none" stroke="white" strokeWidth="2.4" />
+      <circle cx="16" cy="16" r="1.5" fill="white" />
 
       <defs>
         <linearGradient id="tf-logo-highlight" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">

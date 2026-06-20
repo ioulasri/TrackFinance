@@ -27,7 +27,7 @@ const C = {
   faint: '#B4B2A9',
   border: '#E5E2DA',
   divider: '#F0EDE5',
-  accent: '#E97B47',
+  accent: '#4F46E5',
 };
 const FONT = "'Inter',-apple-system,system-ui,sans-serif";
 const MONO = "'IBM Plex Mono',monospace";
@@ -140,7 +140,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
       {expanded ? (
         <div className="flex shrink-0 items-center" style={{ height: 64, padding: '0 20px', gap: 11, borderBottom: `0.5px solid ${C.border}` }}>
           <div className="flex shrink-0 items-center justify-center" style={{ width: 30, height: 30, borderRadius: 7, background: C.ink, color: C.paper }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19h16" /><path d="M4 19V5" /><polyline points="7 14 11 10 14 13 20 6" /></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.3" /><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" /></svg>
           </div>
           <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>TrackFinance</div>
           <button
@@ -164,7 +164,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
           aria-label="Expand sidebar"
         >
           <div className="flex shrink-0 items-center justify-center group-hover:hidden" style={{ width: 30, height: 30, borderRadius: 7, background: C.ink, color: C.paper }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19h16" /><path d="M4 19V5" /><polyline points="7 14 11 10 14 13 20 6" /></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.3" /><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" /></svg>
           </div>
           <PanelLeftOpen size={20} className="hidden group-hover:block" style={{ color: C.muted }} />
         </button>
