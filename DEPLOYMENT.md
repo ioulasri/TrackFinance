@@ -157,6 +157,8 @@ Import the same repository as a second Vercel project:
 
 - **Root Directory: `frontend`**.
 - Framework: **Vite**.
+- Node.js: **22.x**, matching `frontend/package.json`.
+- Install command: `npm ci` (set in `frontend/vercel.json`). Dependencies are installed from the lockfile; `node_modules` stays out of Git.
 - Build command: `npm run build`.
 - Output directory: `dist`.
 - Production environment variable: `VITE_API_URL=https://YOUR_API_DOMAIN`.
