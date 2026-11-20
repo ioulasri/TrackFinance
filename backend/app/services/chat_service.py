@@ -222,7 +222,7 @@ class FinanceChatService:
 		if not api_key:
 			raise ValueError("GROQ_API_KEY environment variable is not set.")
 		self.groq_client = Groq(api_key=api_key)
-		self.model = "llama-3.3-70b-versatile"
+		self.model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 	# ============================================================
 	# Main chat entry point

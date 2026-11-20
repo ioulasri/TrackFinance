@@ -139,6 +139,7 @@ Add the following environment variables to the backend's **Production** environm
 | `RESEND_API_KEY` | Your Resend API key, needed for password-account verification emails |
 | `FROM_EMAIL` | A sender on a domain verified with Resend |
 | `GROQ_API_KEY` | Your existing key, if using AI chat or receipt recognition |
+| `GROQ_MODEL` | Optional chat model override; defaults to `openai/gpt-oss-20b`. Use a model available to your Groq account. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | If using Google login |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | If using Discord login |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET` | If using Telegram |
