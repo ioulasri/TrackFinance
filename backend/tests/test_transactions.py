@@ -10,7 +10,7 @@ class TestTransactionCreation:
     def test_create_expense_transaction(self, client, test_user, auth_headers):
         """Test creating an expense transaction."""
         response = client.post(
-            "/api/v1/transactions/",
+            "/v1/transactions/",
             headers=auth_headers,
             json={
                 "amount": 50.00,
@@ -30,7 +30,7 @@ class TestTransactionCreation:
     def test_create_income_transaction(self, client, test_user, auth_headers):
         """Test creating an income transaction."""
         response = client.post(
-            "/api/v1/transactions/",
+            "/v1/transactions/",
             headers=auth_headers,
             json={
                 "amount": 1000.00,
@@ -48,7 +48,7 @@ class TestTransactionCreation:
     def test_create_transaction_unauthorized(self, client):
         """Test creating transaction without auth."""
         response = client.post(
-            "/api/v1/transactions/",
+            "/v1/transactions/",
             json={
                 "amount": 50.00,
                 "category": "groceries",
@@ -65,7 +65,7 @@ class TestTransactionRetrieval:
 
     def test_list_transactions(self, client, test_user, test_transaction, auth_headers):
         """Test listing user transactions."""
-        response = client.get("/api/v1/transactions/", headers=auth_headers)
+        response = client.get("/v1/transactions/", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
@@ -74,7 +74,7 @@ class TestTransactionRetrieval:
     def test_get_transaction_by_id(self, client, test_user, test_transaction, auth_headers):
         """Test getting a specific transaction."""
         response = client.get(
-            f"/api/v1/transactions/{test_transaction.id}",
+            f"/v1/transactions/{test_transaction.id}",
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
@@ -84,7 +84,7 @@ class TestTransactionRetrieval:
 
     def test_get_nonexistent_transaction(self, client, auth_headers):
         """Test getting a non-existent transaction."""
-        response = client.get("/api/v1/transactions/99999", headers=auth_headers)
+        response = client.get("/v1/transactions/99999", headers=auth_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -95,7 +95,7 @@ class TestTransactionUpdate:
     def test_update_transaction(self, client, test_transaction, auth_headers):
         """Test updating a transaction."""
         response = client.patch(
-            f"/api/v1/transactions/{test_transaction.id}",
+            f"/v1/transactions/{test_transaction.id}",
             headers=auth_headers,
             json={
                 "amount": 75.00,
@@ -110,7 +110,7 @@ class TestTransactionUpdate:
     def test_update_nonexistent_transaction(self, client, auth_headers):
         """Test updating a non-existent transaction."""
         response = client.patch(
-            "/api/v1/transactions/99999",
+            "/v1/transactions/99999",
             headers=auth_headers,
             json={"amount": 100.00}
         )
@@ -124,12 +124,12 @@ class TestTransactionDeletion:
     def test_delete_transaction(self, client, test_transaction, auth_headers):
         """Test deleting a transaction (soft delete)."""
         response = client.delete(
-            f"/api/v1/transactions/{test_transaction.id}",
+            f"/v1/transactions/{test_transaction.id}",
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_delete_nonexistent_transaction(self, client, auth_headers):
         """Test deleting a non-existent transaction."""
-        response = client.delete("/api/v1/transactions/99999", headers=auth_headers)
+        response = client.delete("/v1/transactions/99999", headers=auth_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND

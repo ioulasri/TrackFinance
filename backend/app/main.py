@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram, recurring
+from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram, recurring, jobs
 from app.db.session import engine, Base
 from app.services import scheduler_service
 import os
@@ -11,13 +11,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS
-# Allow all origins in production (DigitalOcean domains are dynamic)
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173").split(",")
+# Use exact frontend origins, including the custom domain when configured.
+allowed_origins = [origin.strip().rstrip("/") for origin in os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+).split(",") if origin.strip()]
+if "*" in allowed_origins:
+    raise RuntimeError("ALLOWED_ORIGINS must list exact frontend origins.")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if os.getenv("ENVIRONMENT") == "production" else allowed_origins,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,6 +40,7 @@ app.include_router(chat.router)
 app.include_router(reports.router)
 app.include_router(telegram.router)
 app.include_router(recurring.router)
+app.include_router(jobs.router)
 
 
 @app.on_event("startup")

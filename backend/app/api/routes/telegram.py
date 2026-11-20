@@ -86,7 +86,7 @@ HELP_TEXT = (
 
 LINK_REQUIRED_TEXT = (
 	"🔒 This chat isn't linked yet.\n"
-	"Open *expensehub.site → Settings → Telegram* and tap *Connect Telegram* — "
+	"Open *TrackFinance → Settings → Telegram* and tap *Connect Telegram* — "
 	"the button opens this chat with a one-tap link code."
 )
 

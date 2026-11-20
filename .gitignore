@@ -20,6 +20,10 @@ env/
 # Environment variables
 .env
 .env.local
+.env.*.local
+.vercel/
+node_modules/
+*.dump
 
 # Local AI assistant instructions
 CLAUDE.md
@@ -39,3 +43,4 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+env.txt

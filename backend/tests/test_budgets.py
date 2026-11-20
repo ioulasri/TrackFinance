@@ -9,7 +9,7 @@ class TestBudgetCreation:
     def test_create_budget(self, client, test_user, auth_headers):
         """Test creating a budget."""
         response = client.post(
-            "/api/v1/budgets/",
+            "/v1/budgets/",
             headers=auth_headers,
             json={
                 "category": "entertainment",
@@ -25,7 +25,7 @@ class TestBudgetCreation:
     def test_create_duplicate_budget(self, client, test_budget, auth_headers):
         """Test creating a duplicate budget for same category fails."""
         response = client.post(
-            "/api/v1/budgets/",
+            "/v1/budgets/",
             headers=auth_headers,
             json={
                 "category": test_budget.category,
@@ -37,7 +37,7 @@ class TestBudgetCreation:
     def test_create_budget_unauthorized(self, client):
         """Test creating budget without auth."""
         response = client.post(
-            "/api/v1/budgets/",
+            "/v1/budgets/",
             json={
                 "category": "groceries",
                 "monthly_limit": 500.00
@@ -52,7 +52,7 @@ class TestBudgetRetrieval:
 
     def test_list_budgets(self, client, test_budget, auth_headers):
         """Test listing user budgets."""
-        response = client.get("/api/v1/budgets/", headers=auth_headers)
+        response = client.get("/v1/budgets/", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
@@ -61,7 +61,7 @@ class TestBudgetRetrieval:
     def test_get_budget_by_id(self, client, test_budget, auth_headers):
         """Test getting a specific budget."""
         response = client.get(
-            f"/api/v1/budgets/{test_budget.id}",
+            f"/v1/budgets/{test_budget.id}",
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
@@ -71,7 +71,7 @@ class TestBudgetRetrieval:
 
     def test_get_budget_status(self, client, test_budget, auth_headers):
         """Test getting budget status."""
-        response = client.get("/api/v1/budgets/status", headers=auth_headers)
+        response = client.get("/v1/budgets/status", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, dict)
@@ -79,7 +79,7 @@ class TestBudgetRetrieval:
 
     def test_get_nonexistent_budget(self, client, auth_headers):
         """Test getting a non-existent budget."""
-        response = client.get("/api/v1/budgets/99999", headers=auth_headers)
+        response = client.get("/v1/budgets/99999", headers=auth_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -90,7 +90,7 @@ class TestBudgetUpdate:
     def test_update_budget(self, client, test_budget, auth_headers):
         """Test updating a budget."""
         response = client.patch(
-            f"/api/v1/budgets/{test_budget.id}",
+            f"/v1/budgets/{test_budget.id}",
             headers=auth_headers,
             json={
                 "monthly_limit": 600.00
@@ -103,7 +103,7 @@ class TestBudgetUpdate:
     def test_update_nonexistent_budget(self, client, auth_headers):
         """Test updating a non-existent budget."""
         response = client.patch(
-            "/api/v1/budgets/99999",
+            "/v1/budgets/99999",
             headers=auth_headers,
             json={"monthly_limit": 700.00}
         )
@@ -117,14 +117,14 @@ class TestBudgetDeletion:
     def test_delete_budget(self, client, test_budget, auth_headers):
         """Test deleting a budget."""
         response = client.delete(
-            f"/api/v1/budgets/{test_budget.id}",
+            f"/v1/budgets/{test_budget.id}",
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_delete_nonexistent_budget(self, client, auth_headers):
         """Test deleting a non-existent budget."""
-        response = client.delete("/api/v1/budgets/99999", headers=auth_headers)
+        response = client.delete("/v1/budgets/99999", headers=auth_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -134,7 +134,7 @@ class TestBudgetReset:
 
     def test_reset_monthly_budgets(self, client, test_budget, auth_headers):
         """Test resetting monthly budgets."""
-        response = client.post("/api/v1/budgets/reset-monthly", headers=auth_headers)
+        response = client.post("/v1/budgets/reset-monthly", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "message" in data

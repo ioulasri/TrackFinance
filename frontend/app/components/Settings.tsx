@@ -247,8 +247,8 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarStatus({ loading: false, error: 'File must be under 5 MB.', success: '' });
+    if (file.size > 4 * 1024 * 1024) {
+      setAvatarStatus({ loading: false, error: 'File must be under 4 MB.', success: '' });
       return;
     }
 
@@ -408,7 +408,7 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
               <input
                 ref={avatarInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
+                accept="image/png,image/jpeg,image/webp"
                 className="sr-only"
                 onChange={handleAvatarChange}
               />

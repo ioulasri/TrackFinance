@@ -99,7 +99,7 @@ class BudgetService:
 		return True
 	
 	@staticmethod
-	def update_spent_amount(db: Session, user_id: int, category: str, amount: Decimal) -> Optional[Budget]:
+	def update_spent_amount(db: Session, user_id: int, category: str, amount: Decimal, *, commit: bool = True) -> Optional[Budget]:
 		budget = BudgetService.get_budget_by_category(db, user_id, category)
 
 		if not budget:
@@ -108,7 +108,10 @@ class BudgetService:
 		budget.current_spent += Decimal(amount)
 		budget.updated_at = datetime.now(timezone.utc)
 
-		db.commit()
+		if commit:
+			db.commit()
+		else:
+			db.flush()
 		db.refresh(budget)
 		return budget
 	

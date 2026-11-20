@@ -18,7 +18,7 @@ class XPService:
 		return ((current_level + 1) ** 2) * 100
 
 	@staticmethod
-	def award_xp(db: Session, user_id: int, amount: int) -> Optional[User]:
+	def award_xp(db: Session, user_id: int, amount: int, *, commit: bool = True) -> Optional[User]:
 		user = UserService.get_user_by_id(db, user_id)
 
 		if not user:
@@ -45,11 +45,16 @@ class XPService:
 		user.last_activity_date = now.replace(tzinfo=None) 
 
 		try:
-			db.commit()
+			if commit:
+				db.commit()
+			else:
+				db.flush()
 			db.refresh(user)
 			return user
 		except IntegrityError:
 			db.rollback()
+			if not commit:
+				raise
 			return None
 		except Exception:
 			db.rollback()

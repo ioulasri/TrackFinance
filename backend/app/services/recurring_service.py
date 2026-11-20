@@ -120,7 +120,7 @@ class RecurringTransactionService:
 		"""
 		now = now or datetime.now(timezone.utc)
 		due = (
-			db.query(RecurringTransaction)
+			db.query(RecurringTransaction.id)
 			.filter(
 				RecurringTransaction.is_active == True,  # noqa: E712
 				RecurringTransaction.next_run_date <= now,
@@ -128,8 +128,19 @@ class RecurringTransactionService:
 			.all()
 		)
 		results: List[Tuple[RecurringTransaction, Transaction]] = []
-		for r in due:
+		for (recurring_id,) in due:
 			try:
+				# Recheck under a row lock. A manual run or a concurrent worker may
+				# have posted this entry since the initial candidate query.
+				r = (
+					db.query(RecurringTransaction)
+					.filter(RecurringTransaction.id == recurring_id,
+						RecurringTransaction.is_active == True,
+						RecurringTransaction.next_run_date <= now)
+					.populate_existing().with_for_update(skip_locked=True).first()
+				)
+				if r is None:
+					continue
 				tx = TransactionService.create_transaction(
 					db, r.user_id,
 					TransactionCreate(
@@ -139,7 +150,10 @@ class RecurringTransactionService:
 						description=(r.description or "Recurring"),
 						date=r.next_run_date,
 					),
+					commit=False,
 				)
+				# Commit the transaction, XP, budget, and next run together. A
+				# terminated function cannot leave a posted-but-still-due entry.
 				r.last_run_at = now
 				r.next_run_date = _compute_next_run(now, r.day_of_month)
 				r.updated_at = now
@@ -147,8 +161,9 @@ class RecurringTransactionService:
 				db.refresh(r)
 				results.append((r, tx))
 			except Exception as e:
-				print(f"[recurring] failed to process #{r.id}: {e}")
+				print(f"[recurring] failed to process #{recurring_id}: {e}")
 				db.rollback()
+				raise
 		return results
 
 

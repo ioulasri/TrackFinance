@@ -3,8 +3,9 @@ Telegram Service
 
 Adapter that lets users interact with TrackFinance via a Telegram bot. AI is
 delegated to FinanceChatService; this module owns Telegram I/O, account linking,
-in-memory conversation history (for AI), and the in-memory wizard state machine
-that powers the interactive command UI (/add, /budgets, etc.).
+conversation history (for AI), and the wizard state machine that powers the
+interactive command UI (/add, /budgets, etc.). State persists in PostgreSQL on
+Vercel, or when TELEGRAM_STATE_BACKEND=database; local defaults use memory.
 
 Public surface:
   TelegramService — static methods wrapping Telegram Bot API
@@ -30,6 +31,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+from app.services import telegram_state_service
 
 
 TELEGRAM_API_BASE = "https://api.telegram.org"
@@ -44,6 +46,11 @@ _HISTORY: Dict[int, Tuple[float, List[Dict[str, str]]]] = {}
 
 # In-memory per-chat wizard state: {chat_id: {"flow": str, "step": str, "data": dict, "ts": float}}
 _WIZARDS: Dict[str, Dict[str, Any]] = {}
+
+
+def _persistent_state() -> bool:
+	# Vercel requests can reach different instances. Memory is for local use only.
+	return bool(os.getenv("VERCEL")) or os.getenv("TELEGRAM_STATE_BACKEND") == "database"
 
 
 def _bot_token() -> str:
@@ -69,6 +76,8 @@ def _evict_expired_history() -> None:
 
 
 def get_history(user_id: int) -> List[Dict[str, str]]:
+	if _persistent_state():
+		return telegram_state_service.get_state(f"history:{user_id}") or []
 	_evict_expired_history()
 	entry = _HISTORY.get(user_id)
 	if not entry:
@@ -78,10 +87,16 @@ def get_history(user_id: int) -> List[Dict[str, str]]:
 
 def update_history(user_id: int, history: List[Dict[str, str]]) -> None:
 	trimmed = history[-_HISTORY_MAX_MESSAGES:] if history else []
+	if _persistent_state():
+		telegram_state_service.put_state(f"history:{user_id}", trimmed, _HISTORY_TTL_SECONDS)
+		return
 	_HISTORY[user_id] = (time.time(), trimmed)
 
 
 def clear_history(user_id: int) -> None:
+	if _persistent_state():
+		telegram_state_service.delete_state(f"history:{user_id}")
+		return
 	_HISTORY.pop(user_id, None)
 
 
@@ -97,35 +112,47 @@ def _evict_expired_wizards() -> None:
 
 
 def get_wizard(chat_id: str | int) -> Optional[Dict[str, Any]]:
+	if _persistent_state():
+		return telegram_state_service.get_state(f"wizard:{chat_id}")
 	_evict_expired_wizards()
 	return _WIZARDS.get(str(chat_id))
 
 
 def set_wizard(chat_id: str | int, flow: str, step: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
 	state = {"flow": flow, "step": step, "data": dict(data or {}), "ts": time.time()}
+	if _persistent_state():
+		telegram_state_service.put_state(f"wizard:{chat_id}", state, _WIZARD_TTL_SECONDS)
+		return state
 	_WIZARDS[str(chat_id)] = state
 	return state
 
 
 def set_wizard_step(chat_id: str | int, step: str) -> Optional[Dict[str, Any]]:
-	w = _WIZARDS.get(str(chat_id))
+	w = get_wizard(chat_id)
 	if not w:
 		return None
 	w["step"] = step
 	w["ts"] = time.time()
+	if _persistent_state():
+		telegram_state_service.put_state(f"wizard:{chat_id}", w, _WIZARD_TTL_SECONDS)
 	return w
 
 
 def update_wizard_data(chat_id: str | int, **kwargs: Any) -> Optional[Dict[str, Any]]:
-	w = _WIZARDS.get(str(chat_id))
+	w = get_wizard(chat_id)
 	if not w:
 		return None
 	w["data"].update(kwargs)
 	w["ts"] = time.time()
+	if _persistent_state():
+		telegram_state_service.put_state(f"wizard:{chat_id}", w, _WIZARD_TTL_SECONDS)
 	return w
 
 
 def clear_wizard(chat_id: str | int) -> None:
+	if _persistent_state():
+		telegram_state_service.delete_state(f"wizard:{chat_id}")
+		return
 	_WIZARDS.pop(str(chat_id), None)
 
 
@@ -222,6 +249,8 @@ class TelegramService:
 				json={
 					"url": url,
 					"secret_token": secret,
+					# Serialize this small bot's updates so wizard steps stay ordered.
+					"max_connections": 1,
 					# "message" already covers photos/documents (they're message subtypes),
 					# but listing explicitly is harmless and documents intent.
 					"allowed_updates": ["message", "callback_query"],

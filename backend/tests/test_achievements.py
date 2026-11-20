@@ -8,7 +8,7 @@ class TestAchievementRetrieval:
 
     def test_list_all_achievements(self, client, test_achievement):
         """Test listing all achievements (no auth required)."""
-        response = client.get("/api/v1/achievements/")
+        response = client.get("/v1/achievements/")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
@@ -16,7 +16,7 @@ class TestAchievementRetrieval:
 
     def test_get_achievement_by_id(self, client, test_achievement):
         """Test getting a specific achievement."""
-        response = client.get(f"/api/v1/achievements/{test_achievement.id}")
+        response = client.get(f"/v1/achievements/{test_achievement.id}")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["id"] == test_achievement.id
@@ -24,7 +24,7 @@ class TestAchievementRetrieval:
 
     def test_get_nonexistent_achievement(self, client):
         """Test getting a non-existent achievement."""
-        response = client.get("/api/v1/achievements/99999")
+        response = client.get("/v1/achievements/99999")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -34,14 +34,14 @@ class TestUserAchievements:
 
     def test_get_user_achievements(self, client, test_user, auth_headers):
         """Test getting user's unlocked achievements."""
-        response = client.get("/api/v1/achievements/me", headers=auth_headers)
+        response = client.get("/v1/achievements/me", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
 
     def test_get_user_achievement_stats(self, client, test_user, auth_headers):
         """Test getting user achievement statistics."""
-        response = client.get("/api/v1/achievements/me/stats", headers=auth_headers)
+        response = client.get("/v1/achievements/me/stats", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "unlocked_count" in data
@@ -50,7 +50,7 @@ class TestUserAchievements:
 
     def test_get_achievements_unauthorized(self, client):
         """Test getting user achievements without auth."""
-        response = client.get("/api/v1/achievements/me")
+        response = client.get("/v1/achievements/me")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -65,7 +65,7 @@ class TestAchievementUnlocking:
         
         # Create a transaction
         response = client.post(
-            "/api/v1/transactions/",
+            "/v1/transactions/",
             headers=auth_headers,
             json={
                 "amount": 50.00,
@@ -80,7 +80,7 @@ class TestAchievementUnlocking:
     def test_unlock_first_budget_achievement(self, client, test_user, auth_headers):
         """Test that creating first budget can trigger achievement."""
         response = client.post(
-            "/api/v1/budgets/",
+            "/v1/budgets/",
             headers=auth_headers,
             json={
                 "category": "test_category",

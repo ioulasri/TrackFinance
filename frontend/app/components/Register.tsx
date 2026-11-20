@@ -3,23 +3,9 @@ import { Mail, Lock, User, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Logo } from './Logo';
-import { authAPI } from '../api';
+import { authAPI, API_URL } from '../api';
 
-// Get the API base URL for OAuth redirects
-const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (import.meta.env.PROD) {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-    if (hostname.includes('ondigitalocean.app')) {
-      return `${protocol}//${hostname.replace('frontend', 'backend')}`;
-    }
-    return `${protocol}//${hostname}:8000`;
-  }
-  return 'http://localhost:8000';
-};
-const API_URL = getApiUrl();
-const OAUTH_BASE_URL = API_URL.replace(/\/$/, '');
+const OAUTH_BASE_URL = API_URL;
 
 interface RegisterProps {
   onSwitchToLogin: () => void;

@@ -4,27 +4,19 @@ import axios from 'axios';
 const getApiUrl = () => {
   // 1. Use explicit environment variable if set
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
   }
 
-  // 2. In production, detect backend URL from current domain
+  // Production builds validate this setting in vite.config.ts.
   if (import.meta.env.PROD) {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-
-    if (hostname.includes('ondigitalocean.app')) {
-      return `${protocol}//${hostname.replace('frontend', 'backend')}`;
-    }
-
-    // Default production fallback
-    return `${protocol}//${hostname}:8000`;
+    throw new Error('VITE_API_URL must be set to the backend HTTPS URL.');
   }
 
   // 3. Development fallback
   return 'http://localhost:8000';
 };
 
-const API_URL = getApiUrl();
+export const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,

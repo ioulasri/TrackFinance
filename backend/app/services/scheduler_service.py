@@ -5,40 +5,67 @@ Two cron jobs:
   - Hourly tick:  fire due recurring transactions + budget alert sweep
   - Weekly tick:  Monday 07:00 UTC (≈ 08:00 Casablanca winter) — send weekly digest
 
-In-process. State is held in the FastAPI process; restarts are tolerated because
-every job is idempotent (recurring uses next_run_date<=now; budget alerts use
-last_alert_threshold; digest uses last_weekly_digest_at + 23h de-dupe).
-
-Disabled in tests via the `TESTING` env var.
+Vercel uses protected HTTP routes called by Supabase Cron. Elsewhere, APScheduler
+calls the same job functions. Database locks serialize jobs across instances.
+The in-process scheduler is disabled on Vercel and in tests.
 """
 
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
 from typing import Optional
+from contextlib import contextmanager
+from sqlalchemy import text
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.db.session import SessionLocal
-from app.services import digest_service, recurring_service, budget_alerts
+from app.services import digest_service, recurring_service, budget_alerts, telegram_state_service
 
 
 _scheduler: Optional[BackgroundScheduler] = None
+
+
+@contextmanager
+def _job_lock(db):
+	"""Serialize jobs across instances, even through Supabase transaction pooling.
+
+	The lock lives in a separate open transaction; service-level commits cannot
+	accidentally release it. Both jobs share it to avoid duplicate notifications.
+	"""
+	if db.get_bind().dialect.name != "postgresql":
+		yield True  # SQLite unit tests/local development.
+		return
+	with db.get_bind().begin() as connection:
+		connection.execute(text("SET LOCAL idle_in_transaction_session_timeout = '310s'"))
+		acquired = connection.execute(
+			text("SELECT pg_try_advisory_xact_lock(:key)"), {"key": 764329810},
+		).scalar()
+		yield acquired
+
+
+def run_job(db, job_name: str) -> dict:
+	if job_name not in {"hourly", "weekly-digest"}:
+		raise ValueError("Unknown scheduled job")
+	with _job_lock(db) as acquired:
+		if not acquired:
+			return {"ok": True, "job": job_name, "skipped": "another job is running"}
+		if job_name == "hourly":
+			applied = recurring_service.RecurringTransactionService.process_due(db)
+			for recurring, transaction in applied:
+				recurring_service.notify_recurring_applied(db, recurring, transaction)
+			alerts = budget_alerts.find_and_send_alerts(db)
+			telegram_state_service.delete_expired(db)
+			return {"ok": True, "job": job_name, "recurring_applied": len(applied), "alerts_sent": alerts}
+		return {"ok": True, "job": job_name, "digests_sent": digest_service.send_weekly_digests(db)}
 
 
 def _hourly_tick() -> None:
 	"""Process due recurring transactions, then sweep budget alerts."""
 	db = SessionLocal()
 	try:
-		applied = recurring_service.RecurringTransactionService.process_due(db)
-		for r, tx in applied:
-			recurring_service.notify_recurring_applied(db, r, tx)
-		alerts_sent = budget_alerts.find_and_send_alerts(db)
-		if applied or alerts_sent:
-			print(f"[scheduler] hourly tick @ {datetime.now(timezone.utc).isoformat()} "
-				f"— {len(applied)} recurring, {alerts_sent} alerts")
+		print(f"[scheduler] {run_job(db, 'hourly')}")
 	except Exception as e:
 		print(f"[scheduler] hourly tick error: {e}")
 		try:
@@ -52,8 +79,7 @@ def _hourly_tick() -> None:
 def _weekly_digest_tick() -> None:
 	db = SessionLocal()
 	try:
-		sent = digest_service.send_weekly_digests(db)
-		print(f"[scheduler] weekly digest @ {datetime.now(timezone.utc).isoformat()} — {sent} sent")
+		print(f"[scheduler] {run_job(db, 'weekly-digest')}")
 	except Exception as e:
 		print(f"[scheduler] weekly digest error: {e}")
 		try:
@@ -71,8 +97,8 @@ def start_scheduler() -> Optional[BackgroundScheduler]:
 		return _scheduler
 	if os.getenv("TESTING") == "1":
 		return None
-	if os.getenv("DISABLE_SCHEDULER") == "1":
-		print("[scheduler] DISABLE_SCHEDULER=1, skipping")
+	if os.getenv("VERCEL") or os.getenv("DISABLE_SCHEDULER") == "1":
+		print("[scheduler] Using external scheduling, skipping in-process scheduler")
 		return None
 
 	sched = BackgroundScheduler(timezone="UTC")

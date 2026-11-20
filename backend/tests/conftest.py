@@ -3,6 +3,7 @@ import os
 
 # Set testing environment variable before importing app
 os.environ["TESTING"] = "1"
+os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@localhost/trackfinance_test")
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -17,6 +18,12 @@ from app.models.budget import Budget
 from app.models.achievement import Achievement
 from app.models.user_achievement import UserAchievement
 from app.core.security import hash_password, create_access_token
+
+
+@pytest.fixture(autouse=True)
+def _disable_external_email(monkeypatch):
+    from app.services.email_service import EmailService
+    monkeypatch.setattr(EmailService, "send_verification_email", staticmethod(lambda *args: None))
 
 
 # Create in-memory SQLite database for testing

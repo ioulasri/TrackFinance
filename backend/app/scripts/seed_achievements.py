@@ -18,9 +18,9 @@ def seed_achievements():
         db.commit()
         print(f"Successfully seeded {len(INITIAL_ACHIEVEMENTS)} achievements!")
     
-    except Exception as e:
+    except Exception:
         db.rollback()
-        print(f"Error seeding achievements: {e}")
+        raise
     finally:
         db.close()
 

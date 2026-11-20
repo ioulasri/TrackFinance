@@ -1,80 +1,105 @@
+"""Avatar uploads via Supabase's S3 API, with legacy Spaces support for migration."""
+
+from dataclasses import dataclass
+import logging
+import os
+from urllib.parse import quote, unquote
+import uuid
+
 import boto3
 from botocore.client import Config
 from fastapi import UploadFile
-import uuid
-import os
+from starlette.concurrency import run_in_threadpool
 
-DO_SPACES_KEY = os.getenv("DO_SPACES_KEY")
-DO_SPACES_SECRET = os.getenv("DO_SPACES_SECRET")
-DO_SPACES_REGION = os.getenv("DO_SPACES_REGION", "nyc3")
-DO_SPACES_BUCKET = os.getenv("DO_SPACES_BUCKET")
-DO_SPACES_ENDPOINT = os.getenv("DO_SPACES_ENDPOINT", f"https://{os.getenv('DO_SPACES_REGION', 'nyc3')}.digitaloceanspaces.com")
+logger = logging.getLogger(__name__)
+MAX_AVATAR_BYTES = 4 * 1024 * 1024  # Leaves room for multipart under Vercel's 4.5 MB limit.
+IMAGE_TYPES = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+
+
+@dataclass(frozen=True)
+class StorageConfig:
+    provider: str
+    endpoint: str
+    region: str
+    bucket: str
+    access_key: str
+    secret_key: str
+    public_url: str
+
+
+def get_storage_config(provider: str | None = None) -> StorageConfig:
+    provider = provider or os.getenv("AVATAR_STORAGE_PROVIDER", "supabase" if os.getenv("SUPABASE_URL") else "digitalocean")
+    if provider == "supabase":
+        url = os.getenv("SUPABASE_URL", "").rstrip("/")
+        bucket = os.getenv("SUPABASE_STORAGE_BUCKET", "avatars")
+        config = StorageConfig(
+            provider, os.getenv("SUPABASE_S3_ENDPOINT") or (f"{url}/storage/v1/s3" if url else ""),
+            os.getenv("SUPABASE_STORAGE_REGION", ""), bucket,
+            os.getenv("SUPABASE_S3_ACCESS_KEY_ID", ""), os.getenv("SUPABASE_S3_SECRET_ACCESS_KEY", ""),
+            f"{url}/storage/v1/object/public/{quote(bucket, safe='')}" if url else "",
+        )
+    elif provider == "digitalocean":
+        region = os.getenv("DO_SPACES_REGION", "nyc3")
+        bucket = os.getenv("DO_SPACES_BUCKET", "")
+        config = StorageConfig(
+            provider, os.getenv("DO_SPACES_ENDPOINT", f"https://{region}.digitaloceanspaces.com"),
+            region, bucket, os.getenv("DO_SPACES_KEY", ""), os.getenv("DO_SPACES_SECRET", ""),
+            f"https://{bucket}.{region}.digitaloceanspaces.com",
+        )
+    else:
+        raise ValueError("AVATAR_STORAGE_PROVIDER must be supabase or digitalocean")
+    if not all((config.endpoint, config.region, config.bucket, config.access_key, config.secret_key)):
+        raise RuntimeError(f"{provider} avatar storage is not configured; see backend/.env.example")
+    return config
+
+
+def object_key_from_url(url: str, config: StorageConfig) -> str | None:
+    prefix = config.public_url + "/"
+    if not url.startswith(prefix):
+        return None
+    key = unquote(url[len(prefix):].split("?", 1)[0])
+    if not key.startswith("avatars/") or ".." in key.split("/"):
+        return None
+    return key
 
 
 class AvatarService:
     @staticmethod
-    def validate_config():
-        """Validate that all required DO Spaces environment variables are set."""
-        missing = []
-        if not DO_SPACES_KEY: missing.append("DO_SPACES_KEY")
-        if not DO_SPACES_SECRET: missing.append("DO_SPACES_SECRET")
-        if not DO_SPACES_BUCKET: missing.append("DO_SPACES_BUCKET")
-        
-        if missing:
-            raise ValueError(f"Missing required DigitalOcean Spaces configuration: {', '.join(missing)}")
-
-    @staticmethod
-    def get_client():
-        AvatarService.validate_config()
+    def get_client(config: StorageConfig | None = None):
+        config = config or get_storage_config()
         return boto3.client(
-            "s3",
-            region_name=DO_SPACES_REGION,
-            endpoint_url=DO_SPACES_ENDPOINT,
-            aws_access_key_id=DO_SPACES_KEY,
-            aws_secret_access_key=DO_SPACES_SECRET,
-            config=Config(signature_version="s3v4")
+            "s3", region_name=config.region, endpoint_url=config.endpoint,
+            aws_access_key_id=config.access_key, aws_secret_access_key=config.secret_key,
+            config=Config(
+                signature_version="s3v4", s3={"addressing_style": "path"},
+                connect_timeout=10, read_timeout=30, retries={"max_attempts": 2},
+                request_checksum_calculation="when_required", response_checksum_validation="when_required",
+            ),
         )
-    
+
     @staticmethod
     async def upload_avatar(file: UploadFile, user_id: int) -> str:
-        """Upload avatar to DigitalOcean spaces and return public URL."""
-        ext = file.filename.split(".")[-1].lower()
-
-        if ext not in ["jpg", "jpeg", "png", "webp"]:
-            raise ValueError("Only jpg, jpeg, png and webp files are allowed")
-
-        filename = f"avatars/{user_id}/{uuid.uuid4()}.{ext}"
-        contents = await file.read()
-
-        try:
-            client = AvatarService.get_client()
-            client.put_object(
-                Bucket=DO_SPACES_BUCKET,
-                Key=filename,
-                Body=contents,
-                ContentType=file.content_type,
-                ACL="public-read"
-            )
-
-            # Standard DigitalOcean Spaces public URL format
-            # Using the format: https://bucket.region.digitaloceanspaces.com/filename
-            url = f"https://{DO_SPACES_BUCKET}.{DO_SPACES_REGION}.digitaloceanspaces.com/{filename}"
-            return url
-        except Exception as e:
-            # Re-raise with a more descriptive message if it's a boto3 error
-            raise Exception(f"S3/Spaces error: {str(e)}")
+        ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+        if ext not in IMAGE_TYPES or file.content_type != IMAGE_TYPES[ext]:
+            raise ValueError("Only JPG, PNG and WebP images are allowed")
+        contents = await file.read(MAX_AVATAR_BYTES + 1)
+        if not contents or len(contents) > MAX_AVATAR_BYTES:
+            raise ValueError("Avatar must be non-empty and under 4 MB")
+        config = get_storage_config()
+        key = f"avatars/{user_id}/{uuid.uuid4()}.{ext}"
+        options = {"ACL": "public-read"} if config.provider == "digitalocean" else {}
+        await run_in_threadpool(
+            AvatarService.get_client(config).put_object,
+            Bucket=config.bucket, Key=key, Body=contents, ContentType=IMAGE_TYPES[ext], **options,
+        )
+        return f"{config.public_url}/{quote(key, safe='/')}"
 
     @staticmethod
     def delete_avatar(avatar_url: str):
-        """Delete old avatar from spaces when user uploads a new one."""
         try:
-            if not avatar_url or not DO_SPACES_BUCKET or DO_SPACES_BUCKET not in avatar_url:
-                return
-            key = avatar_url.split(f"{DO_SPACES_REGION}.digitaloceanspaces.com/")[-1]
-            if "/" not in key: # Fallback for old URL format if any
-                key = avatar_url.split(f"{DO_SPACES_BUCKET}/")[-1]
-                
-            client = AvatarService.get_client()
-            client.delete_object(Bucket=DO_SPACES_BUCKET, Key=key)
+            config = get_storage_config()
+            key = object_key_from_url(avatar_url, config)
+            if key:
+                AvatarService.get_client(config).delete_object(Bucket=config.bucket, Key=key)
         except Exception:
-            pass
+            logger.exception("Could not delete old avatar")

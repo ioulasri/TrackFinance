@@ -488,7 +488,7 @@ The frontend proxies API requests to the backend service. In Docker, it uses the
 
 ## 📖 Additional Documentation
 
-- [Deployment Guide](DEPLOYMENT.md) - DigitalOcean deployment instructions
+- [Deployment Guide](DEPLOYMENT.md) - Vercel and Supabase setup and DigitalOcean migration
 - [Docker Guide](DOCKER.md) - Docker configuration and troubleshooting
 - [Project Status](PROJECT_STATUS.md) - Detailed feature implementation status
 - [Workflow Guide](WORKFLOW.md) - Development workflow and best practices

@@ -12,7 +12,8 @@ from datetime import timedelta
 from app.services.xp_service import XPService
 from app.schemas.user import UserStatsResponse
 import os
-from app.services.avatar_service import AvatarService
+from app.services.avatar_service import AvatarService, MAX_AVATAR_BYTES
+from starlette.concurrency import run_in_threadpool
 from fastapi import File, UploadFile
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
@@ -211,25 +212,26 @@ async def upload_avatar(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user)
 ):
-	if file.size and file.size > 5 * 1024 * 1024:
+	if file.size and file.size > MAX_AVATAR_BYTES:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="File size must be under 5MB"
+			detail="File size must be under 4 MB"
 		)
 
 	try:
-		if current_user.avatar_url:
-			AvatarService.delete_avatar(current_user.avatar_url)
-
+		old_url = current_user.avatar_url
 		url = await AvatarService.upload_avatar(file, current_user.id)
 
 		current_user.avatar_url = url
 		db.commit()
 		db.refresh(current_user)
+		if old_url:
+			await run_in_threadpool(AvatarService.delete_avatar, old_url)
 
 		return current_user
 
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 	except Exception as e:
-		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to upload avatar: {str(e)}")
+		db.rollback()
+		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload avatar; check storage configuration")

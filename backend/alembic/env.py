@@ -1,5 +1,6 @@
 from logging.config import fileConfig
 import os
+from app.db.config import settings
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -11,9 +12,11 @@ from alembic import context
 config = context.config
 
 # Override sqlalchemy.url with DATABASE_URL from environment
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+# Use a direct/session connection for DDL, rather than the transaction pooler.
+# BaseSettings also loads backend/.env for local migration commands.
+database_url = settings.database_migration_url or settings.database_url
+# ConfigParser interprets percent signs, including URL-encoded passwords.
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

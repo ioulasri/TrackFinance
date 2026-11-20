@@ -14,7 +14,7 @@ class TransactionService:
 	"""Handles transaction logic"""
 
 	@staticmethod
-	def create_transaction(db: Session, user_id: int, transaction_data: TransactionCreate) -> Transaction:
+	def create_transaction(db: Session, user_id: int, transaction_data: TransactionCreate, *, commit: bool = True) -> Transaction:
 
 		new_transaction = Transaction(
 			user_id=user_id,
@@ -27,15 +27,18 @@ class TransactionService:
 
 		try:
 			db.add(new_transaction)
-			db.commit()
+			if commit:
+				db.commit()
+			else:
+				db.flush()
 			db.refresh(new_transaction)
 
 			# Award XP to user
-			XPService.award_xp(db, user_id, 10)
+			XPService.award_xp(db, user_id, 10, commit=commit)
 			
 			# Update budget tracking for expense transactions
 			if new_transaction.type == 'expense':
-				BudgetService.update_spent_amount(db, user_id, new_transaction.category, new_transaction.amount)
+				BudgetService.update_spent_amount(db, user_id, new_transaction.category, new_transaction.amount, commit=commit)
 			
 			# TODO: Update user's last_activity_date for streaks (Phase 2)
 
