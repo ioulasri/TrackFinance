@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserResponse, UserStatsResponse, UserLogin, Token, UserPasswordChange, UserPasswordReset, ResendVerificationRequest, CycleStartDayRequest, UserUpdate, UserUpdateResponse
 from app.services.user_service import UserService
-from app.services.oauth_service import OAuthService
+from app.services.oauth_service import OAuthService, BACKEND_URL, STATE_TTL_SECONDS
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.security import create_access_token
@@ -12,11 +12,14 @@ from datetime import timedelta
 from app.services.xp_service import XPService
 from app.schemas.user import UserStatsResponse
 import os
+import logging
+from urllib.parse import urlencode
 from app.services.avatar_service import AvatarService, MAX_AVATAR_BYTES
 from starlette.concurrency import run_in_threadpool
 from fastapi import File, UploadFile
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://expensehub.site").rstrip("/")
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/users", tags=["users"])
 
@@ -96,35 +99,79 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 	return {"message": "If that email is registed and unverified, a new link has been sent"}
 
-# ── OAuth: Google ───────────────────────────────────────────
+# OAuth state lives in a signed, browser-bound cookie so callbacks work across
+# different Vercel function instances without a server-side session store.
+def _oauth_redirect(provider: str, *, token: str | None = None, error: str | None = None):
+	# Fragments stay in the browser; the login JWT never enters frontend request logs.
+	suffix = "#" + urlencode({"token": token}) if token else "?" + urlencode({"error": error})
+	response = RedirectResponse(f"{FRONTEND_URL}/oauth-callback{suffix}")
+	response.headers["Cache-Control"] = "no-store"
+	response.headers["Referrer-Policy"] = "no-referrer"
+	response.delete_cookie(f"tf_oauth_{provider}", path=f"/v1/users/oauth/{provider}/callback")
+	return response
+
+
+def _oauth_login(provider: str):
+	try:
+		OAuthService.require_configured(provider)
+		state, cookie = OAuthService.create_state(provider)
+		get_url = getattr(OAuthService, f"get_{provider}_auth_url")
+		response = RedirectResponse(get_url(state))
+		response.headers["Cache-Control"] = "no-store"
+		response.headers["Referrer-Policy"] = "no-referrer"
+		response.set_cookie(
+			f"tf_oauth_{provider}", cookie, max_age=STATE_TTL_SECONDS,
+			path=f"/v1/users/oauth/{provider}/callback",
+			httponly=True, secure=BACKEND_URL.startswith("https://"), samesite="lax",
+		)
+		return response
+	except ValueError as exc:
+		return _oauth_redirect(provider, error=str(exc))
+
+
+async def _oauth_callback(provider: str, request: Request, db: Session):
+	try:
+		OAuthService.validate_state(provider, request.query_params.get("state"), request.cookies.get(f"tf_oauth_{provider}"))
+		issuer = request.query_params.get("iss")
+		if issuer and issuer != {"google": "https://accounts.google.com", "discord": "https://discord.com"}[provider]:
+			raise ValueError("invalid_state")
+		if request.query_params.get("error"):
+			raise ValueError("access_denied" if request.query_params["error"] == "access_denied" else "provider_error")
+		code = request.query_params.get("code")
+		if not code:
+			raise ValueError("missing_code")
+		handle_callback = getattr(OAuthService, f"handle_{provider}_callback")
+		token = await handle_callback(code, db)
+		return _oauth_redirect(provider, token=token)
+	except ValueError as exc:
+		db.rollback()
+		return _oauth_redirect(provider, error=str(exc))
+	except Exception as exc:
+		db.rollback()
+		logger.error("%s OAuth callback failed (%s)", provider, type(exc).__name__)
+		return _oauth_redirect(provider, error="login_failed")
+
+
 @router.get("/oauth/google")
 def google_login():
 	"""Redirect user to Google's OAuth consent screen."""
-	return RedirectResponse(url=OAuthService.get_google_auth_url())
+	return _oauth_login("google")
 
 @router.get("/oauth/google/callback")
-async def google_callback(code: str = Query(...), db: Session = Depends(get_db)):
+async def google_callback(request: Request, db: Session = Depends(get_db)):
 	"""Handle Google OAuth callback."""
-	try:
-		access_token = await OAuthService.handle_google_callback(code, db)
-		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?token={access_token}")
-	except ValueError as e:
-		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?error={str(e)}")
+	return await _oauth_callback("google", request, db)
 
 # ── OAuth: Discord ──────────────────────────────────────────
 @router.get("/oauth/discord")
 def discord_login():
 	"""Redirect user to Discord's OAuth consent screen."""
-	return RedirectResponse(url=OAuthService.get_discord_auth_url())
+	return _oauth_login("discord")
 
 @router.get("/oauth/discord/callback")
-async def discord_callback(code: str = Query(...), db: Session = Depends(get_db)):
+async def discord_callback(request: Request, db: Session = Depends(get_db)):
 	"""Handle Discord OAuth callback."""
-	try:
-		access_token = await OAuthService.handle_discord_callback(code, db)
-		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?token={access_token}")
-	except ValueError as e:
-		return RedirectResponse(url=f"{FRONTEND_URL}/oauth-callback?error={str(e)}")
+	return await _oauth_callback("discord", request, db)
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

@@ -123,16 +123,20 @@ class TestUserProfile:
 class TestOAuthRoutes:
     """Test OAuth redirect endpoints."""
 
-    def test_google_oauth_route_exists(self, client):
+    def test_google_oauth_route_exists(self, client, monkeypatch):
         """Google sign-in should redirect to Google's consent screen."""
+        monkeypatch.setattr("app.services.oauth_service.GOOGLE_CLIENT_ID", "test-client")
+        monkeypatch.setattr("app.services.oauth_service.GOOGLE_CLIENT_SECRET", "test-secret")
         response = client.get("/v1/users/oauth/google", follow_redirects=False)
 
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
         assert response.headers["location"].startswith("https://accounts.google.com/")
 
-    def test_google_oauth_redirect_uses_live_callback_route(self):
+    def test_google_oauth_redirect_uses_live_callback_route(self, monkeypatch):
         """OAuth config should point back to the actual FastAPI callback route."""
-        auth_url = OAuthService.get_google_auth_url()
+        monkeypatch.setattr("app.services.oauth_service.GOOGLE_CLIENT_ID", "test-client")
+        monkeypatch.setattr("app.services.oauth_service.GOOGLE_CLIENT_SECRET", "test-secret")
+        auth_url = OAuthService.get_google_auth_url("test-state")
 
         assert "redirect_uri=" in auth_url
         assert "%2Fv1%2Fusers%2Foauth%2Fgoogle%2Fcallback" in auth_url

@@ -8,15 +8,16 @@ import { authAPI, API_URL } from '../api';
 const OAUTH_BASE_URL = API_URL;
 
 interface LoginProps {
+  initialError?: string;
   onSwitchToRegister: () => void;
   onLogin: () => void;
 }
 
-export function Login({ onSwitchToRegister, onLogin }: LoginProps) {
+export function Login({ onSwitchToRegister, onLogin, initialError = '' }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 

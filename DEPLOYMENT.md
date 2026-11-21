@@ -187,7 +187,20 @@ https://YOUR_API_DOMAIN/v1/users/oauth/google/callback
 https://YOUR_API_DOMAIN/v1/users/oauth/discord/callback
 ```
 
-Keep the old callbacks temporarily if you need rollback. Test login through the frontend. Do not register the frontend URL as the backend callback.
+For the current production deployment, these are:
+
+```text
+Google:  https://track-finance-one.vercel.app/v1/users/oauth/google/callback
+Discord: https://track-finance-one.vercel.app/v1/users/oauth/discord/callback
+```
+
+1. **Google:** open [Google Auth Platform](https://console.cloud.google.com/auth/overview), select or create a project, and configure Branding and Audience. Choose an External audience for personal Google accounts. In Clients, create a **Web application** OAuth client and add the Google callback above to **Authorized redirect URIs**. If setting JavaScript origins, use `https://www.expensehub.site`. For initial testing, add your Google account under Audience → Test users; publish the app when ready for public users. Request only `openid`, `email`, and `profile` for sign-in.
+2. **Discord:** open [Developer Portal → Applications](https://discord.com/developers/applications), select or create an application, and open OAuth2. Add the Discord callback above under Redirects and save. Copy the OAuth2 Client ID and Client Secret; a bot token is not used for this flow. The app requests `identify` and `email`.
+3. In the **backend** Vercel project (`track-finance`), add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, and `DISCORD_CLIENT_SECRET` as Production environment variables. Keep `BACKEND_URL=https://track-finance-one.vercel.app` and `FRONTEND_URL=https://www.expensehub.site`. Keep client secrets out of frontend environment variables.
+4. Deploy the latest `develop` commit in both Vercel projects so the backend changes and frontend error handling match. Redeploying a historical deployment rebuilds that historical commit. Select the newest commit under Deployments or create a deployment from `develop` when a new commit is missing.
+5. Open the frontend and test **each** provider: approve consent, confirm the dashboard opens, log out, then sign in again. An existing account with the same verified email should retain its transactions; a new email creates an account without requiring a password. The provider must supply a verified email. Test cancelling consent too: the app should return to login with a readable message.
+
+Keep the old callbacks temporarily if you need rollback. Do not register the frontend URL as the backend callback. OAuth callbacks use a ten-minute signed HttpOnly state cookie; start and finish login on the same backend hostname. No additional database migration is needed for these OAuth changes.
 
 **Telegram:** after updating the local `.env` to the new `BACKEND_URL` and the same bot credentials as Vercel, run from `backend/`:
 

@@ -35,6 +35,7 @@ export default function App() {
   const [authState, setAuthState] = useState<AuthState>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loginError, setLoginError] = useState('');
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
     try { return localStorage.getItem('tf_sidebar_pinned') === '1'; } catch { return false; }
   });
@@ -61,7 +62,9 @@ export default function App() {
     // Handle OAuth callback — extract token from URL
     if (window.location.pathname === '/oauth-callback') {
       const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      // Accept the query format while older backend deployments are being replaced.
+      const token = fragment.get('token') || params.get('token');
       const error = params.get('error');
       if (token) {
         localStorage.setItem('token', token);
@@ -70,7 +73,17 @@ export default function App() {
         fetchUser(true);
         return;
       } else {
-        console.error('OAuth error:', error);
+        const messages: Record<string, string> = {
+          google_not_configured: 'Google sign-in is not configured yet. Please use your username and password.',
+          discord_not_configured: 'Discord sign-in is not configured yet. Please use your username and password.',
+          invalid_state: 'Your sign-in session expired or could not be verified. Please try again.',
+          access_denied: 'Sign-in was cancelled. You can try again or use your username and password.',
+          email_not_verified: 'Please verify your email address with Google or Discord before signing in.',
+          email_required: 'Your provider did not share an email address. Allow email access and try again.',
+          provider_error: 'Google or Discord could not complete sign-in. Please try again.',
+          missing_code: 'Sign-in did not complete. Please try again.',
+        };
+        setLoginError(messages[error || ''] || 'Sign-in failed. Please try again.');
         window.history.replaceState({}, '', '/');
         setAuthState('login');
         setLoading(false);
@@ -93,6 +106,7 @@ export default function App() {
       setAuthState('authenticated');
     } catch (error) {
       localStorage.removeItem('token');
+      if (fromLogin) setLoginError('We could not load your account. Please sign in again.');
       setAuthState(fromLogin ? 'login' : 'landing');
     } finally {
       setLoading(false);
@@ -148,7 +162,8 @@ export default function App() {
   if (authState === 'login') {
     return (
       <Login
-        onSwitchToRegister={() => setAuthState('register')}
+        initialError={loginError}
+        onSwitchToRegister={() => { setLoginError(''); setAuthState('register'); }}
         onLogin={handleLogin}
       />
     );
