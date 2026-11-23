@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh, CURRENCIES, type Currency } from '../currency';
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Lock, Bell, Globe, Camera, Loader2, Check, AlertCircle, MessageCircle, Send, Copy, Unlink } from 'lucide-react';
 import { authAPI, telegramAPI, type TelegramStatus, type TelegramLinkCode } from '../api';
@@ -155,6 +156,13 @@ function Toggle({ checked, onChange, ariaLabel }: { checked: boolean; onChange: 
 }
 
 export function Settings({ onProfileUpdate }: SettingsProps) {
+  const { currency, saveCurrency } = useCurrency();
+  const [currencyStatus, setCurrencyStatus] = useState<Status>(idle);
+  const handleCurrencyChange = async (next: Currency) => {
+    setCurrencyStatus({ loading: true, error: '', success: '' });
+    try { await saveCurrency(next); setCurrencyStatus({ loading: false, error: '', success: 'Account currency saved. Existing amounts are unchanged.' }); }
+    catch { setCurrencyStatus({ loading: false, error: 'Could not save currency. Please try again.', success: '' }); }
+  };
   // ── Real user data ───────────────────────────────────────────────
   const [user, setUser] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -186,6 +194,10 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
   const [linkCode, setLinkCode] = useState<TelegramLinkCode | null>(null);
   const [telegramStatus, setTelegramStatus] = useState<Status>(idle);
   const [codeCopied, setCodeCopied] = useState(false);
+
+  useFinanceRefresh(() => {
+    authAPI.getCurrentUser().then(res => { setUser(res.data); setUsername(res.data.username); }).catch(() => {});
+  });
 
   // ── Load user on mount ────────────────────────────────────────────
   useEffect(() => {
@@ -557,15 +569,12 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
               <div>
                 <label style={fieldLabelStyle}>Currency</label>
                 <select
-                  value={preferences.currency}
-                  onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
+                  aria-label="Account currency" disabled={currencyStatus.loading} value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value as Currency)}
                   style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
                   className="set-input"
                 >
-                  <option value="MAD">MAD – Moroccan Dirham</option>
-                  <option value="USD">USD – US Dollar</option>
-                  <option value="EUR">EUR – Euro</option>
-                  <option value="GBP">GBP – British Pound</option>
+                  {Object.entries(CURRENCIES).map(([code, name]) => <option key={code} value={code}>{code} – {name}</option>)}
                 </select>
               </div>
 
@@ -582,7 +591,9 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
                   <option value="Arabic">العربية</option>
                 </select>
               </div>
-              <p style={{ fontSize: 12, color: C.muted }}>Display preferences are saved locally.</p>
+              <p style={{ fontSize: 12, color: C.muted }}>Currency is saved to your account across devices. Changing it preserves amounts; it does not convert exchange rates.</p>
+              {currencyStatus.error && <StatusBanner kind="error" message={currencyStatus.error} />}
+              {currencyStatus.success && <StatusBanner kind="success" message={currencyStatus.success} />}
             </div>
           </SettingsCard>
 
@@ -591,7 +602,7 @@ export function Settings({ onProfileUpdate }: SettingsProps) {
             <div className="flex flex-col" style={{ gap: 16 }}>
               <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
                 Message TrackFinance on Telegram to log spending or ask questions, e.g.{' '}
-                <span style={{ color: C.ink2 }}>“I spent 50 MAD on lunch”</span>.
+                <span style={{ color: C.ink2 }}>“I spent 50 {currency} on lunch”</span>.
               </p>
 
               {telegramStatus.error && <StatusBanner kind="error" message={telegramStatus.error} />}

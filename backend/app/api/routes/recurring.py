@@ -79,14 +79,7 @@ def run_recurring_now(
 	db: Session = Depends(get_db),
 ):
 	"""Force this recurring entry to run on the next process tick — handy for testing."""
-	row = RecurringTransactionService.get(db, current_user.id, rid)
-	if not row:
+	row = RecurringTransactionService.run_now(db, current_user.id, rid)
+	if row is None:
 		raise HTTPException(status_code=404, detail="Not found")
-	row.next_run_date = datetime.now(timezone.utc)
-	db.commit()
-	# Process synchronously and notify.
-	applied = RecurringTransactionService.process_due(db)
-	for r, tx in applied:
-		notify_recurring_applied(db, r, tx)
-	db.refresh(row)
 	return row

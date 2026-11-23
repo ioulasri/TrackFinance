@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram, recurring, jobs
+from app.api.routes import users, transactions, achievement, budget, goals, chat, reports, telegram, recurring, jobs, receipts
 from app.db.session import engine, Base
 from app.services import scheduler_service
 import os
@@ -41,6 +41,7 @@ app.include_router(reports.router)
 app.include_router(telegram.router)
 app.include_router(recurring.router)
 app.include_router(jobs.router)
+app.include_router(receipts.router)
 
 
 @app.on_event("startup")

@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   TrendingUp,
@@ -46,7 +47,7 @@ const DONUT_RAMP = [C.accent, C.income, C.gold, C.blue, '#9C6FB0', C.faint, '#C9
 const FONT = "'Inter',-apple-system,system-ui,sans-serif";
 const MONO = "'IBM Plex Mono',monospace";
 
-const fmt = (n: number) => Math.round(n || 0).toLocaleString('en-US');
+const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
 const mono: React.CSSProperties = {
   fontFamily: MONO,
@@ -80,17 +81,22 @@ function EmptyState({
 }
 
 export function Dashboard() {
+  const { currency, formatMoney } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [range, setRange] = useState<'7d' | '30d'>('7d');
 
   useEffect(() => {
-    (async () => {
+    loadDashboard();
+  }, []);
+
+  useFinanceRefresh(() => { loadDashboard(); });
+  const loadDashboard = async () => {
       try {
         const [statsRes, txRes] = await Promise.all([
           authAPI.getUserStats(),
-          transactionAPI.list(0, 1000),
+          transactionAPI.listAll(),
         ]);
         setStats(statsRes.data);
         setTransactions(txRes.data || []);
@@ -99,8 +105,7 @@ export function Dashboard() {
       } finally {
         setLoading(false);
       }
-    })();
-  }, []);
+  };
 
   const startOfDay = (d: Date) => {
     const x = new Date(d);
@@ -233,7 +238,7 @@ export function Dashboard() {
             <div>
               <div style={mono}>Net balance</div>
               <div style={{ marginTop: 12, fontSize: 56, lineHeight: 1, fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(net)} <span style={{ fontSize: 24, fontWeight: 500, color: C.muted, letterSpacing: 0 }}>MAD</span>
+                {fmt(net)} <span style={{ fontSize: 24, fontWeight: 500, color: C.muted, letterSpacing: 0 }}>{currency}</span>
               </div>
               <div className="flex items-center" style={{ marginTop: 16, gap: 14 }}>
                 <span style={{ fontSize: 13, color: C.muted }}>Level <b style={{ color: C.ink, fontWeight: 600 }}>{level}</b></span>
@@ -268,7 +273,7 @@ export function Dashboard() {
                       <stop offset="100%" stopColor={C.accent} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${fmt(v)} MAD`, 'Net']} labelStyle={{ color: C.faint }} cursor={false} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${fmt(v)} ${currency}`, 'Net']} labelStyle={{ color: C.faint }} cursor={false} />
                   <Area type="monotone" dataKey="value" stroke={C.accent} strokeWidth={2.5} fill="url(#tfSpark)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -288,7 +293,7 @@ export function Dashboard() {
             </div>
             <div style={{ ...mono, fontSize: 10, marginTop: 16 }}>Income</div>
             <div style={{ marginTop: 7, fontSize: 30, fontWeight: 600, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-              {fmt(cur.income)} <span style={{ fontSize: 15, color: C.muted, fontWeight: 500 }}>MAD</span>
+              {fmt(cur.income)} <span style={{ fontSize: 15, color: C.muted, fontWeight: 500 }}>{currency}</span>
             </div>
           </div>
           <div style={{ ...cardBase, flex: 1, borderLeft: `3px solid ${C.accent}`, padding: '20px 22px' }}>
@@ -300,7 +305,7 @@ export function Dashboard() {
             </div>
             <div style={{ ...mono, fontSize: 10, marginTop: 16 }}>Expenses</div>
             <div style={{ marginTop: 7, fontSize: 30, fontWeight: 600, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-              {fmt(cur.expense)} <span style={{ fontSize: 15, color: C.muted, fontWeight: 500 }}>MAD</span>
+              {fmt(cur.expense)} <span style={{ fontSize: 15, color: C.muted, fontWeight: 500 }}>{currency}</span>
             </div>
           </div>
         </div>
@@ -331,7 +336,7 @@ export function Dashboard() {
                     <CartesianGrid vertical={false} stroke={C.grid} strokeDasharray="4 4" />
                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11.5, fill: C.muted }} />
                     <YAxis axisLine={false} tickLine={false} width={42} tick={{ fontSize: 10, fill: C.faint, fontFamily: MONO }} tickFormatter={(v: number) => fmt(v)} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(26,24,21,0.04)' }} formatter={(v: number, n: string) => [`${fmt(v)} MAD`, n === 'income' ? 'In' : 'Out']} labelStyle={{ color: C.faint }} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(26,24,21,0.04)' }} formatter={(v: number, n: string) => [`${fmt(v)} ${currency}`, n === 'income' ? 'In' : 'Out']} labelStyle={{ color: C.faint }} />
                     <Bar dataKey="income" fill={C.income} radius={[5, 5, 0, 0]} maxBarSize={16} />
                     <Bar dataKey="expense" fill={C.blue} radius={[5, 5, 0, 0]} maxBarSize={16} />
                   </BarChart>
@@ -372,13 +377,13 @@ export function Dashboard() {
                         <Cell key={c2.name} fill={c2.color} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n: string) => [`${fmt(v)} MAD`, n]} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n: string) => [`${fmt(v)} ${currency}`, n]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   <div style={{ ...mono, fontSize: 10 }}>Total</div>
                   <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{fmt(categories.total)}</div>
-                  <div style={{ fontSize: 11, color: C.faint }}>MAD</div>
+                  <div style={{ fontSize: 11, color: C.faint }}>{currency}</div>
                 </div>
               </div>
               <div className="flex flex-col" style={{ gap: 1, marginTop: 14 }}>

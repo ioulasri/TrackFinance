@@ -139,6 +139,7 @@ class UserService:
 		user: User,
 		username: Optional[str] = None,
 		telegram_notifications_enabled: Optional[bool] = None,
+		currency: Optional[str] = None,
 	) -> User:
 		if username is not None and username != user.username:
 			conflict = db.query(User).filter(User.username == username).first()
@@ -147,6 +148,11 @@ class UserService:
 			user.username = username
 		if telegram_notifications_enabled is not None:
 			user.telegram_notifications_enabled = telegram_notifications_enabled
+		if currency is not None:
+			from app.core.currencies import SUPPORTED_CURRENCIES
+			if currency not in SUPPORTED_CURRENCIES:
+				raise ValueError("Unsupported currency")
+			user.currency = currency
 		try:
 			db.commit()
 			db.refresh(user)

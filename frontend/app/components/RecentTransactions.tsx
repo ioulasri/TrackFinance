@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, ShoppingCart, Coffee, Car, Home, Smartphone, DollarSign } from 'lucide-react';
 import { transactionAPI } from '../api';
@@ -13,6 +14,7 @@ const iconMap: Record<string, any> = {
 };
 
 export function RecentTransactions() {
+  const { currency, formatMoney } = useCurrency();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +88,7 @@ export function RecentTransactions() {
 
                 <div className={`font-semibold ${isIncome ? 'text-emerald-500' : 'text-foreground'
                   }`}>
-                  {isIncome ? '+' : '-'} MAD {transaction.amount.toLocaleString()}
+                  {isIncome ? '+' : '-'} {currency} {transaction.amount.toLocaleString()}
                 </div>
               </div>
             );

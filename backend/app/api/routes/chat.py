@@ -93,7 +93,7 @@ class SuggestionsResponse(BaseModel):
 # ============================================================
 
 @router.post("/chat", response_model=ChatResponse, status_code=status.HTTP_200_OK)
-async def chat_with_assistant(
+def chat_with_assistant(
     payload: ChatMessage,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -178,6 +178,9 @@ async def get_chat_suggestions(
         "What's my total spending this month?",
         "How much did I spend on food last month?",
         "What are my biggest expenses this month?",
+        "Change my currency to EUR",
+        "Create a monthly recurring expense",
+        "Scan a receipt",
         "Help me set a new budget goal"
     ]
     

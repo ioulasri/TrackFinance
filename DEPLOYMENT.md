@@ -276,3 +276,17 @@ VITE_API_URL=https://YOUR_API_DOMAIN npm run build
 Database migrations are intentionally manual. Vercel preview builds and cold starts never migrate or seed the production database.
 
 The optional PostgreSQL integration test runs when `TEST_POSTGRES_ADMIN_URL` points to a disposable PostgreSQL server with `CREATEDB` privileges. It creates and removes two test databases to check fresh migrations, backup/restore, password preservation, and identity sequences. It is skipped during normal unit tests.
+
+## Account currency, receipts, and the assistant
+
+When upgrading an existing deployment, run `python -m alembic upgrade head` from `backend/` with the Supabase session/direct migration connection **before** deploying the new backend. Revision `e4f5a6b7c8d9` adds `users.currency`, defaulting existing accounts to MAD without changing any amounts.
+
+Currency is stored on the account and used in web views, assistant replies, Telegram messages and PDF reports. Change it in Settings or ask the assistant. Changing currency preserves numeric amounts; exchange-rate conversion is not implemented.
+
+The receipt scanner is available from Transactions and the camera button in the assistant. Phones can take a photo; desktop users can upload JPG/PNG/WebP. Images are resized in the browser, and the authenticated API validates the image and enforces a 4 MB upload limit. The server uses `GROQ_API_KEY` and `VISION_MODEL` (default `qwen/qwen3.8-27b`). The extracted amount, merchant, category and date must be reviewed before saving. A different receipt currency requires the user to enter and acknowledge a converted total. Images are processed for extraction and are not stored as receipt attachments.
+
+The assistant can manage transactions, budgets, goals, recurring entries (including pause/resume and posting one now), account currency, username and Telegram notifications, open pages, download reports, and open receipt capture. Passwords and avatar uploads remain user interactions in Settings. Successful assistant changes refresh visible account data.
+
+Analysis uses recorded transactions only. Empty accounts have a zero recorded balance and no health score or forecast. Health scores need income and comparative history; spending estimates need three completed months with activity. There are no fabricated confidence percentages or net-worth baselines.
+
+Verification: run `python -m pytest` in `backend/`; run `npm test` and `npm run build` in `frontend/`. The optional PostgreSQL migration integration test requires a disposable `TEST_POSTGRES_ADMIN_URL`.

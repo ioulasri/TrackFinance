@@ -128,8 +128,12 @@ def _bot_username() -> str:
 	return os.getenv("TELEGRAM_BOT_USERNAME", "").lstrip("@")
 
 
+from contextvars import ContextVar
+_currency = ContextVar("telegram_currency", default="MAD")
+
+
 def _fmt_money(n: float) -> str:
-	return f"{n:,.2f} MAD"
+	return f"{n:,.2f} {_currency.get()}"
 
 
 # ============================================================
@@ -444,7 +448,7 @@ def _cmd_recurring(chat_id: str, user: User, db: Session) -> None:
 		emoji = "📥" if r.type == "income" else "📤"
 		active = "" if r.is_active else " _(paused)_"
 		lines.append(
-			f"`#{r.id}` {emoji} *{float(r.amount):,.2f} MAD* · {r.category} · day {r.day_of_month}{active}\n"
+			f"`#{r.id}` {emoji} *{float(r.amount):,.2f} {_currency.get()}* · {r.category} · day {r.day_of_month}{active}\n"
 			f"  Next: {r.next_run_date.strftime('%Y-%m-%d')}"
 		)
 	TelegramService.send_message(chat_id, "\n\n".join(lines), reply_markup=_main_menu_kb())
@@ -980,6 +984,10 @@ def _handle_photo(message: Dict[str, Any], chat_id: str, user: User, db: Session
 		)
 		return
 
+	if extracted.get("currency") and extracted["currency"] != user.currency:
+		TelegramService.send_message(chat_id, f"This receipt is in {extracted['currency']}, but your account uses {user.currency}. Use /add to enter the converted amount, or change your account currency first.")
+		return
+
 	# Seed the standard addtx wizard at the confirm step. Save / Cancel buttons
 	# reuse the existing addtx callbacks.
 	data = {
@@ -1224,6 +1232,17 @@ def _handle_callback(query: Dict[str, Any], db: Session) -> None:
 
 
 def _handle_update(update: Dict[str, Any], db: Session) -> None:
+	message = update.get("message") or update.get("edited_message") or (update.get("callback_query") or {}).get("message") or {}
+	chat_id = (message.get("chat") or {}).get("id")
+	user = db.query(User).filter(User.telegram_chat_id == str(chat_id)).first() if chat_id is not None else None
+	token = _currency.set(user.currency if user else "MAD")
+	try:
+		_dispatch_update(update, db)
+	finally:
+		_currency.reset(token)
+
+
+def _dispatch_update(update: Dict[str, Any], db: Session) -> None:
 	"""
 	Single entry point for both webhook and polling. Returns nothing —
 	I/O is done directly via TelegramService.

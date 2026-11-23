@@ -17,6 +17,7 @@ class User(Base):
 	oauth_provider = Column(String(20), nullable=True)
 	oauth_id = Column(String(255), nullable=True)
 	avatar_url = Column(String(500), nullable=True)
+	currency = Column(String(3), nullable=False, server_default=text("'MAD'"))
 	total_xp = Column(Integer, nullable=False, server_default=text("0"))
 	current_level = Column(Integer, nullable=False, server_default=text("0"))
 	current_xp = Column(Integer, nullable=False, server_default=text("0"))

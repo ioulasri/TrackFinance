@@ -29,6 +29,7 @@ async def get_financial_report(
         # Convert models to dicts for the service
         user_data = {
             "username": current_user.username,
+            "currency": current_user.currency,
             "total_xp": current_user.total_xp,
             "current_level": current_user.current_level,
             "current_streak": current_user.current_streak

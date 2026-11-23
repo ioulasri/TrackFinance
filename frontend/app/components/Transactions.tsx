@@ -1,3 +1,5 @@
+import { ReceiptScanner } from './ReceiptScanner';
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Calendar, Edit, Trash2, ArrowUpRight, ArrowDownRight, Receipt } from 'lucide-react';
 import { CreateTransactionModal } from './CreateTransactionModal';
@@ -7,7 +9,6 @@ import {
   C,
   FONT,
   MONO,
-  fmtMAD,
   colorFor,
   mono,
   Page,
@@ -20,6 +21,9 @@ import {
 } from './ds';
 
 export function Transactions() {
+  const { currency, formatMoney } = useCurrency();
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  useFinanceRefresh(() => { fetchTransactions(); });
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -41,7 +45,7 @@ export function Transactions() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const response = await transactionAPI.list(0, 1000);
+      const response = await transactionAPI.listAll();
       setTransactions(response.data);
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
@@ -63,7 +67,7 @@ export function Transactions() {
 
         const originalDate = new Date(editingTransaction.date).toISOString().split('T')[0];
         if (data.date !== originalDate) {
-          updatePayload.date = data.date;
+          updatePayload.date = `${data.date}T12:00:00`;
         }
 
         await transactionAPI.update(editingTransaction.id, updatePayload);
@@ -73,7 +77,7 @@ export function Transactions() {
           category: data.category,
           type: data.type,
           description: data.description,
-          date: data.date,
+          date: `${data.date}T12:00:00`,
         });
       }
       await fetchTransactions();
@@ -151,10 +155,11 @@ export function Transactions() {
         eyebrow="All accounts"
         title="Transactions"
         actions={
+          <div className="flex flex-wrap gap-2"><GhostButton onClick={() => setReceiptOpen(true)}>Scan receipt</GhostButton>
           <PrimaryButton onClick={() => setIsCreateModalOpen(true)}>
             <Plus size={17} strokeWidth={2} />
             Add Transaction
-          </PrimaryButton>
+          </PrimaryButton></div>
         }
       />
 
@@ -305,7 +310,7 @@ export function Transactions() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {isIncome ? '+' : '−'} {fmtMAD(transaction.amount)}
+                          {isIncome ? '+' : '−'} {formatMoney(transaction.amount)}
                         </span>
                       </td>
                       <td style={{ padding: '12px 24px', textAlign: 'right' }}>
@@ -388,6 +393,7 @@ export function Transactions() {
       `}</style>
 
       {/* Modals */}
+      <ReceiptScanner isOpen={receiptOpen} onClose={() => setReceiptOpen(false)} />
       <CreateTransactionModal
         isOpen={isCreateModalOpen}
         onClose={() => {

@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
@@ -58,6 +59,7 @@ const goalCategories = [
 ];
 
 export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoading = false }: CreateGoalModalProps) {
+  const { currency, formatMoney } = useCurrency();
   const [name, setName] = useState(editingGoal?.name || '');
   const [selectedCategory, setSelectedCategory] = useState(
     editingGoal?.category || goalCategories[0].name
@@ -208,7 +210,7 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
         {/* Amount Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label style={fieldLabel}>Target Amount (MAD)</label>
+            <label style={fieldLabel}>Target Amount ({currency})</label>
             <input
               type="number"
               value={targetAmount}
@@ -224,7 +226,7 @@ export function CreateGoalModal({ isOpen, onClose, onSubmit, editingGoal, isLoad
           </div>
 
           <div>
-            <label style={fieldLabel}>Current Amount (MAD)</label>
+            <label style={fieldLabel}>Current Amount ({currency})</label>
             <input
               type="number"
               value={currentAmount}

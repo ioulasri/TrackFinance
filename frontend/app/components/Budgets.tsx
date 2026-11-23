@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { Plus, Wallet, Edit, Trash2 } from 'lucide-react';
 import { CreateBudgetModal } from './CreateBudgetModal';
@@ -18,6 +19,8 @@ import {
 } from './ds';
 
 export function Budgets() {
+  const { currency, formatMoney } = useCurrency();
+  useFinanceRefresh(() => { fetchBudgets(); });
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredBudget, setHoveredBudget] = useState<number | null>(null);
@@ -130,9 +133,9 @@ export function Budgets() {
             </div>
             <div
               style={{ marginTop: 10, fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: c.color, fontVariantNumeric: 'tabular-nums' }}
-              aria-label={`${c.label}: ${fmt(c.value)} MAD`}
+              aria-label={`${c.label}: ${fmt(c.value)} ${currency}`}
             >
-              {fmt(c.value)} <span style={{ fontSize: 14, color: C.muted, fontWeight: 500 }}>MAD</span>
+              {fmt(c.value)} <span style={{ fontSize: 14, color: C.muted, fontWeight: 500 }}>{currency}</span>
             </div>
           </Card>
         ))}
@@ -181,7 +184,7 @@ export function Budgets() {
                     <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: C.ink }}>{budget.category}</span>
 
                     <span style={{ fontSize: 13, color: C.muted, fontVariantNumeric: 'tabular-nums' }}>
-                      <span style={{ fontWeight: 600, color: C.ink }}>{fmt(spent)}</span> / {fmt(limit)} MAD
+                      <span style={{ fontWeight: 600, color: C.ink }}>{fmt(spent)}</span> / {fmt(limit)} {currency}
                     </span>
 
                     <div
@@ -237,7 +240,7 @@ export function Budgets() {
                     <span
                       style={{ fontSize: 12.5, fontVariantNumeric: 'tabular-nums', color: over ? C.over : C.muted, fontWeight: over ? 600 : 400 }}
                     >
-                      {over ? `${fmt(Math.abs(remaining))} MAD over` : `${fmt(remaining)} MAD left`}
+                      {over ? `${fmt(Math.abs(remaining))} ${currency} over` : `${fmt(remaining)} ${currency} left`}
                     </span>
                   </div>
                 </div>

@@ -189,6 +189,7 @@ def update_current_user(
 			db, current_user,
 			username=update_data.username,
 			telegram_notifications_enabled=update_data.telegram_notifications_enabled,
+			currency=update_data.currency,
 		)
 	except ValueError as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -213,6 +214,8 @@ def update_current_user(
 		longest_streak=updated.longest_streak,
 		created_at=updated.created_at,
 		avatar_url=updated.avatar_url,
+		currency=updated.currency,
+		telegram_notifications_enabled=updated.telegram_notifications_enabled,
 		access_token=new_token,
 	)
 

@@ -1,10 +1,10 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Pause, Play, RotateCw, Loader2, AlertCircle, Check, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { recurringAPI, type RecurringTransaction } from '../api';
 import {
   C,
   FONT,
-  fmtMAD,
   mono,
   Page,
   PageHeader,
@@ -39,6 +39,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function Recurring() {
+  const { currency, formatMoney } = useCurrency();
+  useFinanceRefresh(() => { fetchItems(); });
   const [items, setItems] = useState<RecurringTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -217,7 +219,7 @@ export function Recurring() {
               </div>
 
               <div>
-                <label style={labelStyle}>Amount (MAD)</label>
+                <label style={labelStyle}>Amount ({currency})</label>
                 <input
                   type="number"
                   value={amount}
@@ -340,7 +342,7 @@ export function Recurring() {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div className="flex items-center" style={{ gap: 10, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 16, fontWeight: 600, color: C.ink, ...num }}>{fmtMAD(item.amount)}</span>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: C.ink, ...num }}>{formatMoney(item.amount)}</span>
                       <span style={{ fontSize: 13, color: C.ink2 }}>{item.category}</span>
                       {!item.is_active && <Pill tone="neutral">Paused</Pill>}
                     </div>

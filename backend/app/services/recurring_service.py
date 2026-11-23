@@ -113,6 +113,28 @@ class RecurringTransactionService:
 		return True
 
 	@staticmethod
+	def run_now(db: Session, user_id: int, rid: int) -> Optional[RecurringTransaction]:
+		row = db.query(RecurringTransaction).filter(RecurringTransaction.id == rid, RecurringTransaction.user_id == user_id).with_for_update().first()
+		if row is None:
+			return None
+		now = datetime.now(timezone.utc)
+		try:
+			tx = TransactionService.create_transaction(db, user_id, TransactionCreate(
+				amount=float(row.amount), type=TransactionType(row.type), category=row.category,
+				description=row.description or "Recurring", date=now,
+			), commit=False)
+			row.last_run_at = now
+			row.next_run_date = _compute_next_run(now, row.day_of_month)
+			row.updated_at = now
+			db.commit()
+			db.refresh(row)
+		except Exception:
+			db.rollback()
+			raise
+		notify_recurring_applied(db, row, tx)
+		return row
+
+	@staticmethod
 	def process_due(db: Session, now: Optional[datetime] = None) -> List[Tuple[RecurringTransaction, Transaction]]:
 		"""
 		Materialize every due recurring entry. Returns a list of (recurring, new_transaction)
@@ -176,7 +198,7 @@ def notify_recurring_applied(db: Session, recurring: RecurringTransaction, tx: T
 	notification_service.notify(
 		user,
 		f"{emoji} *Recurring posted*\n"
-		f"`#{tx.id}` {float(tx.amount):,.2f} MAD · {tx.category}\n"
+		f"`#{tx.id}` {float(tx.amount):,.2f} {user.currency} · {tx.category}\n"
 		f"_{recurring.description or 'Recurring'}_\n"
 		f"Next run: {recurring.next_run_date.strftime('%Y-%m-%d')}",
 	)

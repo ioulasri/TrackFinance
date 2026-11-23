@@ -29,9 +29,13 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: Mod
 
       {/* Modal Content */}
       <div
-        className="relative w-full animate-in zoom-in-95 duration-200"
+        role="dialog" aria-modal="true" aria-label={title}
+        className="tf-modal relative w-full animate-in zoom-in-95 duration-200"
         style={{
           maxWidth: maxWidthPx,
+          maxHeight: 'calc(100dvh - 2rem)',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
           background: C.card,
           borderRadius: 14,
           border: `1px solid ${C.border}`,
@@ -47,6 +51,8 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: Mod
             {title}
           </h4>
           <button
+            aria-label="Close dialog"
+            type="button"
             onClick={onClose}
             className="modal-close-btn inline-flex items-center justify-center"
             style={{

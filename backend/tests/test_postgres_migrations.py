@@ -59,8 +59,9 @@ def test_fresh_database_and_existing_database_import(tmp_path):
             try:
                 with target.begin() as conn:
                     assert conn.execute(text("select hashed_password from users where username='migration'")).scalar() == "preserved-hash"
-                    assert conn.execute(text("select version_num from alembic_version")).scalar() == "d3e4f5a6b7c8"
+                    assert conn.execute(text("select version_num from alembic_version")).scalar() == "e4f5a6b7c8d9"
                     assert "telegram_state" in inspect(conn).get_table_names()
+                    assert conn.execute(text("select currency from users where username='migration'")).scalar() == "MAD"
                     # Restored identity sequences must continue beyond imported IDs.
                     new_id = conn.execute(text("insert into users (email, username) values ('next@example.com', 'next') returning id")).scalar()
                     assert new_id > 1

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
+from app.core.currencies import Currency
 
 class UserBase(BaseModel):
 	username: str = Field(..., min_length=3, max_length=50)
@@ -48,6 +49,7 @@ class UserResponse(UserBase):
 	created_at: datetime
 	avatar_url: Optional[str] = None
 	telegram_notifications_enabled: bool = True
+	currency: Currency = "MAD"
 
 	class Config:
 		from_attributes = True
@@ -68,6 +70,7 @@ class CycleStartDayRequest(BaseModel):
 class UserUpdate(BaseModel):
 	username: Optional[str] = Field(None, min_length=3, max_length=50)
 	telegram_notifications_enabled: Optional[bool] = None
+	currency: Optional[Currency] = None
 
 class UserUpdateResponse(UserResponse):
 	"""Extended response for profile updates — carries a fresh token when the username changes."""

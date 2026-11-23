@@ -31,9 +31,9 @@ class PDFService:
     COLOR_MUTED = (149, 165, 166)       # Muted text
 
     @staticmethod
-    def _fmt_mad(amount: float) -> str:
-        """Format amount in MAD."""
-        return f"{amount:,.2f} MAD"
+    def _fmt_currency(amount: float, currency: str = "MAD") -> str:
+        """Format an amount in the account currency."""
+        return f"{amount:,.0f} {currency}" if currency == "JPY" else f"{amount:,.2f} {currency}"
 
     @staticmethod
     def _to_float(v) -> float:
@@ -46,6 +46,7 @@ class PDFService:
         transactions: List[Dict[str, Any]],
         budgets: List[Dict[str, Any]]
     ) -> bytes:
+        currency = user_data.get("currency", "MAD")
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=20)
         # Set consistent margins
@@ -131,13 +132,13 @@ class PDFService:
 
             summary_data = [
                 ("Total Income",
-                 f"+{PDFService._fmt_mad(total_income)}",
+                 f"+{PDFService._fmt_currency(total_income, currency)}",
                  PDFService.COLOR_SUCCESS),
                 ("Total Expenses",
-                 f"-{PDFService._fmt_mad(total_expense)}",
+                 f"-{PDFService._fmt_currency(total_expense, currency)}",
                  PDFService.COLOR_DANGER),
                 ("Net Balance",
-                 PDFService._fmt_mad(net_balance),
+                 PDFService._fmt_currency(net_balance, currency),
                  PDFService.COLOR_PRIMARY if net_balance >= 0 else PDFService.COLOR_DANGER),
             ]
 
@@ -179,8 +180,8 @@ class PDFService:
             pdf.set_font("helvetica", "B", 11)
 
             pdf.cell(BUD_W_CAT,      10, "Category",    0, 0, "L", True)
-            pdf.cell(BUD_W_LIMIT,    10, "Limit (MAD)", 0, 0, "R", True)
-            pdf.cell(BUD_W_SPENT,    10, "Spent (MAD)", 0, 0, "R", True)
+            pdf.cell(BUD_W_LIMIT,    10, f"Limit ({currency})", 0, 0, "R", True)
+            pdf.cell(BUD_W_SPENT,    10, f"Spent ({currency})", 0, 0, "R", True)
             pdf.cell(BUD_W_REMAIN,   10, "Remain",      0, 0, "R", True)
             pdf.cell(BUD_W_PROGRESS, 10, "Progress",    0, 1, "C", True)
 
@@ -211,12 +212,12 @@ class PDFService:
                 else:
                     status_color = PDFService.COLOR_SUCCESS
 
-                pdf.cell(BUD_W_LIMIT, 6, PDFService._fmt_mad(limit), 0, 0, "R")
+                pdf.cell(BUD_W_LIMIT, 6, PDFService._fmt_currency(limit, currency), 0, 0, "R")
                 pdf.set_text_color(*status_color)
-                pdf.cell(BUD_W_SPENT, 6, PDFService._fmt_mad(spent), 0, 0, "R")
+                pdf.cell(BUD_W_SPENT, 6, PDFService._fmt_currency(spent, currency), 0, 0, "R")
                 pdf.set_text_color(*PDFService.COLOR_TEXT)
 
-                remain_txt = PDFService._fmt_mad(remaining)
+                remain_txt = PDFService._fmt_currency(remaining, currency)
                 pdf.cell(BUD_W_REMAIN, 6, remain_txt, 0, 0, "R")
 
                 # Progress bar inside last column
@@ -289,10 +290,10 @@ class PDFService:
                 amount = PDFService._to_float(t.get("amount"))
                 if t.get("type") == "expense":
                     pdf.set_text_color(*PDFService.COLOR_DANGER)
-                    txt = f"-{PDFService._fmt_mad(amount)}"
+                    txt = f"-{PDFService._fmt_currency(amount, currency)}"
                 else:
                     pdf.set_text_color(*PDFService.COLOR_SUCCESS)
-                    txt = f"+{PDFService._fmt_mad(amount)}"
+                    txt = f"+{PDFService._fmt_currency(amount, currency)}"
 
                 pdf.cell(TX_W_AMOUNT, 5, txt, 0, 1, "R")
                 pdf.set_text_color(*PDFService.COLOR_TEXT)

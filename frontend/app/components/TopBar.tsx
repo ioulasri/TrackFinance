@@ -13,11 +13,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Receipt, Wallet, Target, Trophy, Settings,
-  LineChart, RotateCw, Search, Sparkles, Flame, ArrowRight,
+  LineChart, RotateCw, Search, Sparkles, Flame, ArrowRight, Menu,
 } from 'lucide-react';
 import { C, FONT, MONO } from './ds';
 
 interface TopBarProps {
+  onMenuClick?: () => void;
+  mobileMenuOpen?: boolean;
   user: {
     username?: string;
     avatar_url?: string;
@@ -44,14 +46,14 @@ const PALETTE_ITEMS = Object.entries(ROUTE_META).map(([path, m]) => ({
   icon: m.icon,
 }));
 
-export function TopBar({ user }: TopBarProps) {
+export function TopBar({ user, onMenuClick, mobileMenuOpen }: TopBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState('');
   const [paletteIndex, setPaletteIndex] = useState(0);
 
-  const meta = ROUTE_META[location.pathname] ?? { title: 'TrackFinance', icon: LayoutDashboard };
+  const meta = ROUTE_META[location.pathname] ?? { title: 'TrackFinance', subtitle: '', icon: LayoutDashboard };
   const PageIcon = meta.icon;
 
   const initials = (user?.username || '??').substring(0, 2).toUpperCase();
@@ -100,9 +102,10 @@ export function TopBar({ user }: TopBarProps) {
   return (
     <>
       <header
-        className="sticky top-0 z-20 flex items-center gap-5"
+        className="tf-topbar sticky top-0 z-20 flex items-center gap-5"
         style={{ height: 64, padding: '0 28px', background: C.card, borderBottom: `0.5px solid ${C.border}`, fontFamily: FONT, color: C.ink }}
       >
+        <button type="button" className="md:hidden p-2 -ml-1" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={onMenuClick}><Menu size={22} /></button>
         {/* Page title */}
         <div className="flex flex-col min-w-0" style={{ gap: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: '-0.01em' }}>{meta.title}</div>
@@ -115,7 +118,7 @@ export function TopBar({ user }: TopBarProps) {
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="relative mx-auto"
+          className="tf-command-trigger relative mx-auto"
           style={{ flex: 1, maxWidth: 520, display: 'flex', alignItems: 'center', gap: 8, height: 38, padding: '0 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.paper, color: C.muted, cursor: 'pointer', fontFamily: FONT }}
           aria-label="Open command palette"
         >

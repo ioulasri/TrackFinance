@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
@@ -60,6 +61,7 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget, isLoading = false }: CreateBudgetModalProps) {
+  const { currency, formatMoney } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState(editingBudget?.category || 'Food & Dining');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustom, setIsCustom] = useState(false);
@@ -192,7 +194,7 @@ export function CreateBudgetModal({ isOpen, onClose, onSubmit, editingBudget, is
 
         {/* Monthly Limit */}
         <div>
-          <label style={fieldLabel}>Monthly Limit (MAD)</label>
+          <label style={fieldLabel}>Monthly Limit ({currency})</label>
           <input
             type="number"
             value={monthlyLimit}

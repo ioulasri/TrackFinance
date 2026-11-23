@@ -54,13 +54,13 @@ def find_and_send_alerts(db: Session) -> int:
 		if crossed >= 100:
 			text = (
 				f"🚨 *Budget over limit*\n"
-				f"*{b.category}*: {spent:,.2f} / {limit:,.2f} MAD ({pct}%)\n"
+				f"*{b.category}*: {spent:,.2f} / {limit:,.2f} {user.currency} ({pct}%)\n"
 				f"Consider easing up or raising the cap."
 			)
 		else:
 			text = (
 				f"⚠️ *Budget at {pct}%*\n"
-				f"*{b.category}*: {spent:,.2f} / {limit:,.2f} MAD"
+				f"*{b.category}*: {spent:,.2f} / {limit:,.2f} {user.currency}"
 			)
 		notification_service.notify(user, text)
 		b.last_alert_threshold = crossed

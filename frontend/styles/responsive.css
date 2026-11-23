@@ -1,0 +1,24 @@
+.tf-main-content { padding: 30px 36px 48px; }
+.tf-main-column { min-width: 0; }
+.tf-sidebar { height: 100dvh; }
+.tf-sidebar nav { overflow-y: auto; }
+.tf-ai-panel { max-height: calc(100dvh - 4rem); }
+.tf-main-content [style*="grid"] > * { min-width: 0; }
+@media (max-width: 767px) {
+  .tf-main-column { padding-left: 0; }
+  .tf-main-content { padding: 22px 16px calc(84px + env(safe-area-inset-bottom)); }
+  .tf-sidebar { z-index: 40; width: 240px !important; transform: translateX(-100%); visibility: hidden; transition: transform 180ms, visibility 180ms; }
+  .tf-sidebar.mobile-open { transform: translateX(0); visibility: visible; }
+  .tf-topbar { padding: 0 12px !important; gap: 10px !important; }
+  .tf-command-trigger { flex: 0 0 36px !important; padding: 0 !important; justify-content: center; margin-left: auto; margin-right: 0; }
+  .tf-command-trigger span, .tf-command-trigger kbd { display: none; }
+  .tf-main-content h1 { font-size: 30px !important; line-height: 1.2 !important; }
+  .tf-main-content input:not([type="checkbox"]), .tf-main-content select, .tf-main-content textarea,
+  .tf-modal input:not([type="checkbox"]), .tf-modal select, .tf-modal textarea { font-size: 16px !important; }
+  .tf-ai-panel { width: calc(100% - 16px) !important; left: 8px !important; right: 8px !important; bottom: max(8px, env(safe-area-inset-bottom)) !important; height: min(640px, calc(100dvh - 16px)) !important; max-height: calc(100dvh - 16px); }
+  .tf-modal { max-height: calc(100dvh - 24px) !important; }
+  .tf-main-content [style*="justify-between"], .tf-main-content .justify-between { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tf-sidebar, .tf-main-column { transition: none; }
+}

@@ -91,10 +91,10 @@ def build_digest(db: Session, user: User, now: Optional[datetime] = None) -> str
 		f"☀️ *Your week in TrackFinance*",
 		f"_{prev_week_start.strftime('%b %d')} → {now.strftime('%b %d')}_",
 		"",
-		f"💸 Spent this week: *{this_week:,.2f} MAD*{trend}",
+		f"💸 Spent this week: *{this_week:,.2f} {user.currency}*{trend}",
 	]
 	if top:
-		lines.append(f"🥇 Biggest category: *{top['category']}* — {top['total']:,.2f} MAD")
+		lines.append(f"🥇 Biggest category: *{top['category']}* — {top['total']:,.2f} {user.currency}")
 	lines.append(f"🔥 Streak: *{user.current_streak or 0} days* · Level *{user.current_level or 0}* · {user.total_xp or 0} XP")
 	if over_budget:
 		lines.append(f"⚠️ Over-budget categories: *{over_budget}* — try /budgets")

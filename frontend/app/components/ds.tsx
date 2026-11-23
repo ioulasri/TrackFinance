@@ -33,8 +33,7 @@ export const RAMP = [C.accent, C.income, C.gold, C.blue, C.purple, C.faint, '#C9
 export const FONT = "'Inter',-apple-system,system-ui,sans-serif";
 export const MONO = "'IBM Plex Mono',monospace";
 
-export const fmt = (n: number) => Math.round(n || 0).toLocaleString('en-US');
-export const fmtMAD = (n: number) => `${fmt(n)} MAD`;
+export const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 export const colorFor = (key: string) => {
   let h = 0;
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
@@ -160,17 +159,21 @@ export function GhostButton({
   children,
   onClick,
   active,
+  disabled,
   style,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
+  disabled?: boolean;
   style?: React.CSSProperties;
 }) {
   return (
     <button
       onClick={onClick}
-      className="ds-ghost inline-flex items-center"
+      type="button"
+      disabled={disabled}
+      className="ds-ghost inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
       style={{
         gap: 7,
         border: `1px solid ${active ? C.ink : C.border}`,

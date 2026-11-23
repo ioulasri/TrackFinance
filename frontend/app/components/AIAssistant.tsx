@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Sparkles, Trash2 } from 'lucide-react';
-import { chatAPI, ChatResponse } from '../api';
+import { X, Send, Sparkles, Trash2, Camera } from 'lucide-react';
+import { chatAPI, reportAPI, ChatResponse } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { ReceiptScanner } from './ReceiptScanner';
 import { ScrollArea } from './ui/scroll-area';
 
 const CHAT_STORAGE_KEY = 'ai_chat_history';
@@ -37,9 +39,9 @@ interface StoredMessage {
   timestamp: string;
 }
 
-const loadStoredMessages = (): Message[] => {
+const loadStoredMessages = (storageKey: string): Message[] => {
   try {
-    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed: StoredMessage[] = JSON.parse(raw);
     return parsed.map((m) => ({
@@ -52,9 +54,12 @@ const loadStoredMessages = (): Message[] => {
   }
 };
 
-export function AIAssistant() {
+export function AIAssistant({ userId, onProfileUpdate }: { userId: number; onProfileUpdate: (profile: any) => void }) {
+  const storageKey = `${CHAT_STORAGE_KEY}:${userId}`;
+  const navigate = useNavigate();
+  const [receiptOpen, setReceiptOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages());
+  const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages(storageKey));
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -65,14 +70,14 @@ export function AIAssistant() {
   useEffect(() => {
     try {
       if (messages.length === 0) {
-        localStorage.removeItem(CHAT_STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       } else {
         const serialized: StoredMessage[] = messages.map((m) => ({
           role: m.role,
           content: m.content,
           timestamp: m.timestamp.toISOString(),
         }));
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(serialized));
+        localStorage.setItem(storageKey, JSON.stringify(serialized));
       }
     } catch (error) {
       console.error('Failed to persist chat history:', error);
@@ -157,6 +162,17 @@ export function AIAssistant() {
 
       const response: ChatResponse = await chatAPI.sendMessage(messageText, conversationHistory);
 
+      if (response.data?.access_token) localStorage.setItem('token', response.data.access_token);
+      if (response.data?.profile) onProfileUpdate(response.data.profile);
+      if (response.data?.changed) window.dispatchEvent(new Event('tf:data-updated'));
+      for (const action of response.data?.actions || []) {
+        if (action.type === 'scan_receipt') setReceiptOpen(true);
+        if (action.type === 'open_page' && /^\/(dashboard|transactions|budgets|goals|recurring|analysis|achievements|settings)$/.test(action.path || '')) navigate(action.path!);
+        if (action.type === 'export_report') {
+          try { await reportAPI.downloadFinancialReport(response.data?.profile?.username || 'account'); }
+          catch { throw new Error('Your report could not be downloaded. Please try Export report again.'); }
+        }
+      }
       const assistantMessage: Message = {
         role: 'assistant',
         content: response.response,
@@ -183,7 +199,7 @@ export function AIAssistant() {
   const clearConversation = () => {
     setMessages([]);
     try {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } catch {
       // ignore
     }
@@ -208,7 +224,7 @@ export function AIAssistant() {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center z-50 ring-1 ring-border"
+          className="fixed bottom-5 right-5 md:bottom-8 md:right-8 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center z-50 ring-1 ring-border"
           aria-label="Open AI Assistant"
         >
           <Sparkles size={24} />
@@ -218,7 +234,7 @@ export function AIAssistant() {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed bottom-8 right-8 w-[420px] h-[600px] bg-card rounded-2xl shadow-2xl flex flex-col z-50 border border-border overflow-hidden max-sm:w-[calc(100vw-2rem)] max-sm:h-[calc(100vh-2rem)] max-sm:bottom-4 max-sm:right-4 max-sm:left-4"
+          role="dialog" aria-label="AI Assistant" className="tf-ai-panel fixed bottom-8 right-8 w-[420px] h-[600px] bg-card rounded-2xl shadow-2xl flex flex-col z-50 border border-border overflow-hidden max-sm:w-[calc(100vw-2rem)] max-sm:h-[calc(100vh-2rem)] max-sm:bottom-4 max-sm:right-4 max-sm:left-4"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border bg-card">
@@ -232,6 +248,7 @@ export function AIAssistant() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <button onClick={() => setReceiptOpen(true)} disabled={isLoading} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary" aria-label="Scan or upload receipt" title="Scan or upload receipt"><Camera size={19} /></button>
               {messages.length > 0 && (
                 <button
                   onClick={clearConversation}
@@ -263,7 +280,7 @@ export function AIAssistant() {
                   Hi! I'm your AI finance assistant
                 </h4>
                 <p className="text-sm text-muted-foreground mb-6">
-                  I can help you track spending, analyze budgets, and answer questions about your finances.
+                  Manage transactions, budgets, goals, recurring payments and currency, or scan a receipt.
                 </p>
                 {suggestions.length > 0 && (
                   <div className="space-y-2 w-full">
@@ -328,7 +345,7 @@ export function AIAssistant() {
                 placeholder="Ask me anything..."
                 disabled={isLoading}
                 maxLength={MAX_INPUT_CHARS}
-                className="flex-1 px-4 py-2.5 bg-input border border-border text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="min-w-0 flex-1 px-4 py-2.5 bg-input border border-border text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-sm"
               />
               <button
                 type="submit"
@@ -347,6 +364,7 @@ export function AIAssistant() {
           </div>
         </div>
       )}
+      <ReceiptScanner isOpen={receiptOpen} onClose={() => setReceiptOpen(false)} />
     </>
   );
 }

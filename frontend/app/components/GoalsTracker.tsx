@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { Target, PiggyBank, Plane, Plus, TrendingUp, Home, GraduationCap, Heart, Zap } from 'lucide-react';
 import { ProgressBar } from './ProgressBar';
@@ -40,6 +41,7 @@ const getColorForCategory = (category: string | null): string => {
 };
 
 export function GoalsTracker() {
+  const { currency, formatMoney } = useCurrency();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,13 +185,13 @@ export function GoalsTracker() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground font-medium">Current</span>
                     <span className="font-semibold text-foreground">
-                      MAD {goal.current_amount.toLocaleString()}
+                      {currency} {goal.current_amount.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground font-medium">Target</span>
                     <span className="font-semibold text-foreground">
-                      MAD {goal.target_amount.toLocaleString()}
+                      {currency} {goal.target_amount.toLocaleString()}
                     </span>
                   </div>
                   <div className="pt-3 mt-1 border-t border-border">

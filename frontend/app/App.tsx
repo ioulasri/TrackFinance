@@ -17,6 +17,7 @@ import { LandingPage } from './components/LandingPage';
 import { TopBar } from './components/TopBar';
 import { LogoMark } from './components/Logo';
 import { authAPI } from './api';
+import { CurrencyProvider, useFinanceRefresh, type Currency } from './currency';
 
 type AuthState = 'landing' | 'login' | 'register' | 'verify-email' | 'oauth-callback' | 'authenticated';
 
@@ -29,6 +30,7 @@ interface User {
   total_xp: number;
   current_streak?: number;
   avatar_url?: string;
+  currency: Currency;
 }
 
 export default function App() {
@@ -36,6 +38,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loginError, setLoginError] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
     try { return localStorage.getItem('tf_sidebar_pinned') === '1'; } catch { return false; }
   });
@@ -113,6 +116,8 @@ export default function App() {
     }
   };
 
+  useFinanceRefresh(() => { fetchUser(); });
+
   const handleLogin = () => {
     setAuthState('authenticated');
     fetchUser(true);
@@ -131,9 +136,7 @@ export default function App() {
   };
 
   const handleProfileUpdate = (updates: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...updates });
-    }
+    setUser(previous => previous ? { ...previous, ...updates } : previous);
   };
 
   if (loading) {
@@ -191,10 +194,14 @@ export default function App() {
 
   // Main App Layout with Routing
   return (
+    <CurrencyProvider currency={user?.currency || 'MAD'} onUpdate={handleProfileUpdate}>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-background text-foreground">
         {/* Sidebar — fixed left, collapses to 64px */}
+        {mobileMenuOpen && <button className="fixed inset-0 z-30 bg-black/30 md:hidden" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} />}
         <Sidebar
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
           user={{
             username: user?.username ?? 'User',
             current_level: user?.current_level ?? 0,
@@ -207,7 +214,7 @@ export default function App() {
 
         {/* Main column — offset by sidebar (64px collapsed, 240px when pinned) */}
         <div
-          className={`${sidebarPinned ? 'pl-60' : 'pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`}
+          className={`tf-main-column ${sidebarPinned ? 'md:pl-60' : 'md:pl-16'} min-h-screen flex flex-col transition-[padding] duration-200`}
           style={{
             backgroundColor: '#FAFAF7',
             backgroundImage:
@@ -215,8 +222,8 @@ export default function App() {
             backgroundSize: '240px 240px',
           }}
         >
-          <TopBar user={user} />
-          <main className="flex-1" style={{ padding: '30px 36px 48px' }}>
+          <TopBar user={user} onMenuClick={() => setMobileMenuOpen(true)} mobileMenuOpen={mobileMenuOpen} />
+          <main className="tf-main-content flex-1 min-w-0">
             <div style={{ maxWidth: 1320, margin: '0 auto' }}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -235,8 +242,9 @@ export default function App() {
         </div>
 
         {/* AI Assistant - listens for tf:open-ai event from TopBar */}
-        <AIAssistant />
+        <AIAssistant userId={user?.id || 0} onProfileUpdate={handleProfileUpdate} />
       </div>
     </BrowserRouter>
+    </CurrencyProvider>
   );
 }

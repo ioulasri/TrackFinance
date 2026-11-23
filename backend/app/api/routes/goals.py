@@ -20,8 +20,8 @@ def create_goal(
     
     - **name**: Goal name (required)
     - **icon**: Emoji icon (default: 🎯)
-    - **target_amount**: Target amount in MAD (required, must be > 0)
-    - **current_amount**: Current saved amount in MAD (default: 0)
+    - **target_amount**: Target amount in the account currency (required, must be > 0)
+    - **current_amount**: Current saved amount in the account currency (default: 0)
     - **deadline**: Optional deadline date
     - **category**: Optional category (e.g., "Emergency Fund", "Travel")
     - **description**: Optional description

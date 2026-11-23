@@ -103,11 +103,19 @@ export const authAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  updateProfile: (data: { username?: string; telegram_notifications_enabled?: boolean }) =>
+  updateProfile: (data: { username?: string; telegram_notifications_enabled?: boolean; currency?: string }) =>
     api.patch('/v1/users/me', data),
 };
 
 export const transactionAPI = {
+  listAll: async () => {
+    const rows: any[] = [];
+    while (true) {
+      const response = await api.get(`/v1/transactions/?skip=${rows.length}&limit=1000`);
+      rows.push(...response.data);
+      if (response.data.length < 1000) return { data: rows };
+    }
+  },
   list: (skip = 0, limit = 50) =>
     api.get(`/v1/transactions/?skip=${skip}&limit=${limit}`),
 
@@ -236,7 +244,12 @@ export interface ChatResponse {
   response: string;
   function_called?: string | null;
   function_args?: object | null;
-  data?: object | null;
+  data?: {
+    profile?: { username?: string; currency?: string; [key: string]: any };
+    access_token?: string;
+    changed?: boolean;
+    actions?: { type: 'scan_receipt' | 'open_page' | 'export_report'; path?: string }[];
+  } | null;
   conversation_history: ChatMessage[];
 }
 
@@ -339,3 +352,12 @@ export const reportAPI = {
 };
 
 export default api;
+
+export const receiptAPI = {
+  scan: async (file: File) => {
+    const data = new FormData();
+    data.append('file', file);
+    const response = await api.post('/v1/receipts/scan', data, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 });
+    return response.data;
+  },
+};

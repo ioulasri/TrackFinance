@@ -1,3 +1,4 @@
+import { useIsMobile } from './ui/use-mobile';
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -40,6 +41,8 @@ interface SidebarProps {
     avatar_url?: string;
   };
   onLogout: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
   onAvatarUpdate?: (url: string) => void;
 }
 
@@ -56,28 +59,30 @@ const menuItems = [
   { id: 'settings',     path: '/settings',     label: 'Settings',     icon: Settings },
 ];
 
-export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
+export function Sidebar({ user, onLogout, onAvatarUpdate, mobileOpen, onMobileClose }: SidebarProps) {
   // The sidebar has exactly two states — collapsed (64px) and expanded (240px).
   // The "expanded" state is fully sticky (no hover-peek) so that content always
   // knows where the sidebar's right edge is. The toggle is on the user.
-  const [expanded, setExpanded] = useState<boolean>(() => {
+  const [pinned, setExpanded] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PIN_KEY) === '1';
     } catch {
       return false;
     }
   });
+  const isMobile = useIsMobile();
+  const expanded = isMobile || pinned;
   const [isUploading, setIsUploading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
-      localStorage.setItem(PIN_KEY, expanded ? '1' : '0');
+      localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
     } catch { /* ignore */ }
     // Tell App.tsx so it can shift the main column to match.
-    window.dispatchEvent(new CustomEvent('tf:sidebar-pin-change', { detail: { pinned: expanded } }));
-  }, [expanded]);
+    window.dispatchEvent(new CustomEvent('tf:sidebar-pin-change', { detail: { pinned } }));
+  }, [pinned]);
 
   const username = user?.username || 'User';
   const level = user?.current_level ?? 0;
@@ -123,7 +128,8 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
   return (
     <aside
       style={{ width: expanded ? 240 : 64, background: C.card, borderRight: `0.5px solid ${C.border}`, fontFamily: FONT, color: C.ink }}
-      className={`tf-sidebar ${expanded ? '' : 'collapsed'} fixed left-0 top-0 z-30 flex h-screen flex-col transition-[width] duration-200 ease-out`}
+      aria-hidden={isMobile && !mobileOpen}
+      className={`tf-sidebar ${mobileOpen ? 'mobile-open' : ''} ${expanded ? '' : 'collapsed'} fixed left-0 top-0 z-30 flex h-screen flex-col transition-[width] duration-200 ease-out`}
     >
       <style>{`
         .tf-nav{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;border-radius:7px;padding:9px 10px;font-size:13.5px;font-weight:500;cursor:pointer;transition:background 150ms;background:transparent;color:${C.ink2};text-decoration:none;}
@@ -145,7 +151,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
           <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>TrackFinance</div>
           <button
             type="button"
-            onClick={() => setExpanded(false)}
+            onClick={() => isMobile ? onMobileClose?.() : setExpanded(false)}
             className="ml-auto rounded-md p-1.5"
             style={{ color: C.muted, background: 'transparent', border: 0, cursor: 'pointer' }}
             title="Collapse sidebar"
@@ -179,6 +185,7 @@ export function Sidebar({ user, onLogout, onAvatarUpdate }: SidebarProps) {
             <NavLink
               key={item.id}
               to={item.path}
+              onClick={onMobileClose}
               title={expanded ? undefined : item.label}
               className={({ isActive }) => `tf-nav${isActive ? ' active' : ''}`}
             >

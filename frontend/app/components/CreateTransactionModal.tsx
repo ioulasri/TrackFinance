@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
@@ -42,6 +43,7 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTransaction, isLoading = false }: CreateTransactionModalProps) {
+  const { currency, formatMoney } = useCurrency();
   const [formData, setFormData] = useState({
     amount: editingTransaction?.amount?.toString() || '',
     category: editingTransaction?.category || 'Food & Dining',
@@ -124,9 +126,12 @@ export function CreateTransactionModal({ isOpen, onClose, onSubmit, editingTrans
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Amount */}
         <div>
-          <label style={fieldLabel}>Amount (MAD)</label>
+          <label style={fieldLabel}>Amount ({currency})</label>
           <input
             type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
             placeholder="0.00"

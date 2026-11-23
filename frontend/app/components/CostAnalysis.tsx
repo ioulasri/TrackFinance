@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
@@ -23,6 +24,7 @@ const PALETTE = [
 ];
 
 export function CostAnalysis() {
+  const { currency, formatMoney } = useCurrency();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -156,7 +158,7 @@ export function CostAnalysis() {
                   fontWeight: 600,
                 }}
                 itemStyle={{ color: '#09090b', fontWeight: 700, paddingBottom: 4 }}
-                formatter={(value: number) => [`MAD ${value.toLocaleString()}`, 'Amount']}
+                formatter={(value: number) => [formatMoney(value), 'Amount']}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -188,7 +190,7 @@ export function CostAnalysis() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold text-foreground">
-                        MAD {item.value.toLocaleString()}
+                        {currency} {item.value.toLocaleString()}
                       </span>
                       <span className="text-[10px] font-bold text-muted-foreground bg-secondary/80 px-2.5 py-1 rounded-full min-w-[3.5rem] text-center border border-border/50">
                         {percentage}%

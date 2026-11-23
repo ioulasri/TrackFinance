@@ -1,3 +1,4 @@
+import { useCurrency, useFinanceRefresh } from '../currency';
 import React, { useState, useEffect } from 'react';
 import { Plus, Target, PiggyBank, Plane, TrendingUp, Home, GraduationCap, Heart, Zap, Edit, Trash2, Calendar } from 'lucide-react';
 import { CreateGoalModal } from './CreateGoalModal';
@@ -7,7 +8,6 @@ import {
   C,
   FONT,
   MONO,
-  fmtMAD,
   colorFor,
   mono,
   cardStyle,
@@ -34,6 +34,8 @@ const iconMap: Record<string, any> = {
 };
 
 export function Goals() {
+  const { currency, formatMoney } = useCurrency();
+  useFinanceRefresh(() => { fetchGoals(); });
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredGoal, setHoveredGoal] = useState<number | null>(null);
@@ -151,9 +153,9 @@ export function Goals() {
 
   const summary: { label: string; value: string; color?: string }[] = [
     { label: 'Total Goals', value: String(goals.length) },
-    { label: 'Target Amount', value: fmtMAD(totalTargetAmount) },
-    { label: 'Saved So Far', value: fmtMAD(totalCurrentAmount), color: C.income },
-    { label: 'Remaining', value: fmtMAD(Math.max(0, totalRemaining)), color: C.accent },
+    { label: 'Target Amount', value: formatMoney(totalTargetAmount) },
+    { label: 'Saved So Far', value: formatMoney(totalCurrentAmount), color: C.income },
+    { label: 'Remaining', value: formatMoney(Math.max(0, totalRemaining)), color: C.accent },
   ];
 
   return (
@@ -306,16 +308,16 @@ export function Goals() {
                 <div style={{ paddingTop: 14, borderTop: `1px solid ${C.divider}`, display: 'flex', flexDirection: 'column', gap: 9 }}>
                   <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: C.muted }}>Current</span>
-                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{fmtMAD(goal.current_amount)}</span>
+                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{formatMoney(goal.current_amount)}</span>
                   </div>
                   <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: C.muted }}>Target</span>
-                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{fmtMAD(goal.target_amount)}</span>
+                    <span style={{ fontWeight: 600, color: C.ink, ...num }}>{formatMoney(goal.target_amount)}</span>
                   </div>
                   <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: C.muted }}>Remaining</span>
                     <span style={{ fontWeight: 600, color: remaining <= 0 ? C.incomeText : C.accent, ...num }}>
-                      {fmtMAD(Math.max(0, remaining))}
+                      {formatMoney(Math.max(0, remaining))}
                     </span>
                   </div>
                   {goal.deadline && (
